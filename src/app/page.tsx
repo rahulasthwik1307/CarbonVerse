@@ -122,7 +122,7 @@ function CursorGlow() {
         height: 150,
         borderRadius: "50%",
         background:
-          "radial-gradient(circle, rgba(123,198,126,0.12) 0%, transparent 70%)",
+          "radial-gradient(circle, rgba(244,168,50,0.06) 0%, rgba(123,198,126,0.04) 45%, transparent 70%)",
         pointerEvents: "none",
         zIndex: 50,
         x: springX,
@@ -157,10 +157,26 @@ export default function Home() {
       <LandingWorld />
 
       {/* Foreground content */}
-      <div
-        className="relative z-20 flex flex-col items-center justify-center min-h-screen px-6 text-center"
-        style={{ pointerEvents: "none" }}
-      >
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 20,
+        pointerEvents: "none",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingTop: "120px",
+      }}>
+        <div style={{
+          display: "flex",
+          flexDirection: "column", 
+          alignItems: "center",
+          textAlign: "center",
+          maxWidth: 600,
+          padding: "0 24px",
+          gap: 0,
+        }}>
         {/* Verd + greeting row */}
         <motion.div
           initial={{ y: -30, opacity: 0 }}
@@ -173,7 +189,7 @@ export default function Home() {
           className="flex items-center gap-3 mb-6"
           style={{ pointerEvents: "auto" }}
         >
-          <VerdOrb size={40} />
+          <VerdOrb size={56} />
           <span
             className="text-sm font-medium px-4 py-2 rounded-full"
             style={{
@@ -231,8 +247,8 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-              className="mt-4 max-w-md glass-panel p-4 rounded-2xl text-sm leading-relaxed"
-              style={{ color: "#4A7C2F" }}
+              className="mt-6 max-w-md glass-panel p-5 rounded-2xl text-sm leading-relaxed font-medium"
+              style={{ color: "#2D5016" }}
             >
               &ldquo;Hi! I&apos;m Verd 🌿 I won&apos;t judge your choices — I&apos;ll
               just show you how today&apos;s decisions shape tomorrow&apos;s
@@ -243,7 +259,7 @@ export default function Home() {
 
         {/* Buttons */}
         <div
-          className="flex flex-col sm:flex-row gap-4 mt-8"
+          className="flex flex-col sm:flex-row gap-5 mt-10"
           style={{ pointerEvents: "auto" }}
         >
           {/* Primary CTA */}
@@ -300,13 +316,14 @@ export default function Home() {
         {/* Bottom hint */}
         <motion.p
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.6 }}
+          animate={{ opacity: 0.85 }}
           transition={{ delay: 2.8, duration: 0.6 }}
-          className="mt-6 text-xs"
-          style={{ color: "#6B8F5E" }}
+          className="mt-8 text-sm font-medium tracking-wide"
+          style={{ color: "#2D5016" }}
         >
           No sign-in required · Your story, your choices
         </motion.p>
+        </div>
       </div>
 
       {/* Cursor glow trail */}

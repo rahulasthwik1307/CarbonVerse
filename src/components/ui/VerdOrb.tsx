@@ -11,34 +11,74 @@ interface VerdOrbProps {
 export default function VerdOrb({ size = 48, className = "" }: VerdOrbProps) {
   const orbRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isBlinking, setIsBlinking] = useState(false);
 
-  // Spring-based tilt toward mouse
+  // Spring-based tilt toward mouse for the entire orb container
   const rotateX = useMotionValue(0);
   const rotateY = useMotionValue(0);
-  const springRotateX = useSpring(rotateX, { stiffness: 150, damping: 20 });
-  const springRotateY = useSpring(rotateY, { stiffness: 150, damping: 20 });
+  const springRotateX = useSpring(rotateX, { stiffness: 120, damping: 18 });
+  const springRotateY = useSpring(rotateY, { stiffness: 120, damping: 18 });
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!orbRef.current) return;
-      const rect = orbRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const deltaX = (e.clientX - centerX) / 200;
-      const deltaY = (e.clientY - centerY) / 200;
-      rotateX.set(-deltaY * 8);
-      rotateY.set(deltaX * 8);
-    },
-    [rotateX, rotateY]
-  );
+  // Spring-based eye/pupil offset tracking mouse
+  const eyeX = useMotionValue(0);
+  const eyeY = useMotionValue(0);
+  const springEyeX = useSpring(eyeX, { stiffness: 120, damping: 18 });
+  const springEyeY = useSpring(eyeY, { stiffness: 120, damping: 18 });
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!orbRef.current) return;
+    const rect = orbRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    // Tilt the whole orb toward cursor
+    const deltaX = (e.clientX - centerX) / window.innerWidth;
+    const deltaY = (e.clientY - centerY) / window.innerHeight;
+    rotateX.set(-deltaY * 12);
+    rotateY.set(deltaX * 12);
+
+    // Eye tracking — much larger movement range
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance > 0) {
+      // Eyes move up to 6px in any direction
+      const maxMove = 6;
+      const factor = Math.min(1, distance / 300);
+      eyeX.set((dx / distance) * maxMove * factor);
+      eyeY.set((dy / distance) * maxMove * factor);
+    } else {
+      eyeX.set(0);
+      eyeY.set(0);
+    }
+  }, [rotateX, rotateY, eyeX, eyeY]);
 
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [handleMouseMove]);
 
-  const eyeSize = Math.max(3, size * 0.07);
-  const eyeGap = size * 0.18;
+  // Randomized blinking logic
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    const scheduleBlink = () => {
+      // Blink randomly every 3 to 7 seconds
+      const delay = 3000 + Math.random() * 4000;
+      timeoutId = setTimeout(() => {
+        setIsBlinking(true);
+        setTimeout(() => {
+          setIsBlinking(false);
+          scheduleBlink();
+        }, 150); // duration of a blink
+      }, delay);
+    };
+    scheduleBlink();
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  const eyeSize = Math.max(4, size * 0.09);
+  const eyeGap = size * 0.22;
   const leafSize = size * 0.3;
 
   return (
@@ -53,14 +93,23 @@ export default function VerdOrb({ size = 48, className = "" }: VerdOrbProps) {
         rotateX: springRotateX,
         rotateY: springRotateY,
       }}
-      whileHover={{ scale: 1.15, rotate: 5 }}
+      whileHover={{ scale: 1.12, rotate: 4 }}
       whileTap={{ scale: 0.95 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      transition={{ type: "spring", stiffness: 200, damping: 20 }}
     >
-      {/* Main orb body */}
-      <div
+      {/* Main orb body with breathing and glow */}
+      <motion.div
+        animate={{
+          y: [0, -4, 0],
+          scale: [1, 1.025, 1],
+        }}
+        transition={{
+          duration: 3.5,
+          ease: "easeInOut",
+          repeat: Infinity,
+        }}
         style={{
           width: "100%",
           height: "100%",
@@ -70,10 +119,10 @@ export default function VerdOrb({ size = 48, className = "" }: VerdOrbProps) {
             #7BC67E 40%,
             #4A9B5E 80%,
             #2D7A45 100%)`,
-          animation: "cv-float 3s ease-in-out infinite, cv-verd-pulse 2s ease-in-out infinite",
           position: "relative",
           overflow: "visible",
         }}
+        className="cv-verd-glow-effect"
       >
         {/* Inner glass highlight */}
         <div
@@ -89,39 +138,52 @@ export default function VerdOrb({ size = 48, className = "" }: VerdOrbProps) {
           }}
         />
 
-        {/* Eyes */}
-        <div
+        {/* Eyes & Pupils */}
+        <motion.div
           style={{
             position: "absolute",
             top: "42%",
             left: "50%",
-            transform: "translateX(-50%)",
             display: "flex",
             gap: eyeGap,
+            x: springEyeX,
+            y: springEyeY,
+            // Center the eyes group horizontally
+            transform: "translateX(-50%)",
           }}
         >
+          {/* Left Eye */}
           <motion.div
             style={{
               width: eyeSize,
               height: eyeSize,
               borderRadius: "50%",
               backgroundColor: "#1A4A10",
+              transformOrigin: "center",
             }}
-            animate={{ scale: isHovered ? 1.2 : 1 }}
-            transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+            animate={{
+              scaleY: isBlinking ? 0.1 : 1,
+              scaleX: isHovered ? 1.15 : 1,
+            }}
+            transition={{ duration: 0.12 }}
           />
+          {/* Right Eye */}
           <motion.div
             style={{
               width: eyeSize,
               height: eyeSize,
               borderRadius: "50%",
               backgroundColor: "#1A4A10",
+              transformOrigin: "center",
             }}
-            animate={{ scale: isHovered ? 1.2 : 1 }}
-            transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+            animate={{
+              scaleY: isBlinking ? 0.1 : 1,
+              scaleX: isHovered ? 1.15 : 1,
+            }}
+            transition={{ duration: 0.12 }}
           />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Leaf 1 — top-left */}
       <svg
