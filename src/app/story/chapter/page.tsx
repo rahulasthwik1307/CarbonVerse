@@ -1,18 +1,25 @@
 "use client";
-
 import ChapterView from "@/components/story/ChapterView";
 import LandingWorld from "@/components/world/LandingWorld";
 
 export default function ChapterPage() {
   return (
-    <main style={{position:"fixed",inset:0,overflow:"hidden"}}>
+    <main style={{ position:"fixed", inset:0, overflow:"hidden" }}>
       <LandingWorld />
       <div style={{
-        position:"absolute",inset:0,
-        display:"flex",alignItems:"center",
-        justifyContent:"center",zIndex:20,
-        padding:"24px"
+        position: "absolute",
+        inset: 0,
+        zIndex: 20,
+        overflowY: "auto",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        padding: "20px 16px 40px",
+        // Hide scrollbar visually but allow scroll
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
       }}>
+        <style>{`div::-webkit-scrollbar { display: none; }`}</style>
         <ChapterView />
       </div>
     </main>

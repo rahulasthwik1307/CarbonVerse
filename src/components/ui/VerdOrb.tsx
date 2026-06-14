@@ -6,9 +6,10 @@ import { motion, useSpring, useMotionValue, AnimatePresence } from "framer-motio
 interface VerdOrbProps {
   size?: number;
   className?: string;
+  mood?: "eco" | "moderate" | "high" | null;
 }
 
-export default function VerdOrb({ size = 48, className = "" }: VerdOrbProps) {
+export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProps) {
   const orbRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
@@ -77,6 +78,50 @@ export default function VerdOrb({ size = 48, className = "" }: VerdOrbProps) {
     return () => clearTimeout(timeoutId);
   }, []);
 
+  const [animState, setAnimState] = useState<any>({
+    y: [0, -4, 0],
+    scale: [1, 1.025, 1],
+    opacity: 1,
+    transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
+  });
+
+  useEffect(() => {
+    if (mood === "eco") {
+      setAnimState({
+        y: [0, -4, 0],
+        scale: [1, 1.3, 1],
+        opacity: 1,
+        transition: { duration: 0.3, repeat: 2 }
+      });
+      setTimeout(() => setAnimState({
+        y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
+        transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
+      }), 900);
+    } else if (mood === "high") {
+      setAnimState({
+        y: [0, -4, 0],
+        scale: [1, 1.025, 1],
+        opacity: 0.7,
+        transition: { duration: 0.3 }
+      });
+      setTimeout(() => setAnimState({
+        y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
+        transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
+      }), 600);
+    } else if (mood === "moderate") {
+      setAnimState({
+        y: [0, -8, 0],
+        scale: [1, 1.025, 1],
+        opacity: 1,
+        transition: { duration: 0.3 }
+      });
+      setTimeout(() => setAnimState({
+        y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
+        transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
+      }), 300);
+    }
+  }, [mood]);
+
   const eyeSize = Math.max(4, size * 0.09);
   const eyeGap = size * 0.22;
   const leafSize = size * 0.3;
@@ -101,15 +146,7 @@ export default function VerdOrb({ size = 48, className = "" }: VerdOrbProps) {
     >
       {/* Main orb body with breathing and glow */}
       <motion.div
-        animate={{
-          y: [0, -4, 0],
-          scale: [1, 1.025, 1],
-        }}
-        transition={{
-          duration: 3.5,
-          ease: "easeInOut",
-          repeat: Infinity,
-        }}
+        animate={animState}
         style={{
           width: "100%",
           height: "100%",

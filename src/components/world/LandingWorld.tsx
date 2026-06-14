@@ -7,6 +7,8 @@ import { useSessionStore } from "@/lib/session-store";
 
 export default function LandingWorld() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const hillsRef = useRef<HTMLDivElement>(null);
+  const cloudsRef = useRef<HTMLDivElement>(null);
   const { worldState } = useSessionStore();
   const { planetMood } = worldState;
 
@@ -32,16 +34,20 @@ export default function LandingWorld() {
         const mouseX = (clientX / innerWidth - 0.5) * 2;
         const mouseY = (clientY / innerHeight - 0.5) * 2;
 
-        gsap.to(".cv-hills-layer", {
-          y: -mouseY * 8,
-          duration: 1,
-          ease: "power1.out",
-        });
-        gsap.to(".cv-clouds-layer", {
-          x: mouseX * 12,
-          duration: 2,
-          ease: "power1.out",
-        });
+        if (hillsRef.current) {
+          gsap.to(hillsRef.current, {
+            y: -mouseY * 8,
+            duration: 1,
+            ease: "power1.out",
+          });
+        }
+        if (cloudsRef.current) {
+          gsap.to(cloudsRef.current, {
+            x: mouseX * 12,
+            duration: 2,
+            ease: "power1.out",
+          });
+        }
       };
 
       window.addEventListener("mousemove", handleMouseMove);
@@ -136,7 +142,7 @@ export default function LandingWorld() {
       </div>
 
       {/* ═══ LAYER 3 — Clouds ═══ */}
-      <div className="cv-clouds-layer" style={{ zIndex: 3 }}>
+      <div ref={cloudsRef} className="cv-clouds-layer" style={{ zIndex: 3 }}>
         <div
           style={{
             position: "absolute",
@@ -180,6 +186,7 @@ export default function LandingWorld() {
 
       {/* ═══ LAYER 4 — Hills SVG ═══ */}
       <div
+        ref={hillsRef}
         className="cv-hills-layer"
         style={{
           position: "absolute",

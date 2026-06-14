@@ -27,7 +27,7 @@ const FLIGHT_CHOICES = [
 ];
 
 const MESSAGES = [
-  "Where does your journey begin? 🌍",
+  "Hi! I'm Verd 🌿 Tell me — which city is your home?",
   "How do you usually get around? 🚗",
   "What's on your plate? 🥗",
   "Have you flown anywhere recently? ✈️",
@@ -42,7 +42,8 @@ export default function OnboardingFlow() {
   const { profile, setCity, setTransport, setDiet, setFlights, completeOnboarding } = useSessionStore();
 
   const handleCitySubmit = () => {
-    setCity(localCity);
+    if (localCity.trim().length < 2) return;
+    setCity(localCity.trim());
     setStep(1);
   };
 

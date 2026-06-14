@@ -6,39 +6,55 @@ import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/lib/session-store";
 import VerdOrb from "@/components/ui/VerdOrb";
 import ChoiceCard from "@/components/onboarding/ChoiceCard";
+import { useAirQuality } from "@/hooks/useAirQuality";
 
-const CHAPTER_1 = {
-  id: 1,
-  title: "Chapter 1",
-  subtitle: "Tuesday Morning",
-  situation: "You wake up hungry before work. What do you have for breakfast?",
-  decisions: [
-    {
-      id: "plant-breakfast",
-      emoji: "🥗",
-      label: "Plant-based meal",
-      description: "Oats, fruits, and green smoothie",
-      impactType: "eco" as const,
-      carbonDelta: -8,
-    },
-    {
-      id: "local-meal",
-      emoji: "🍳",
-      label: "Local restaurant",
-      description: "Dosa or idli from nearby dhaba",
-      impactType: "moderate" as const,
-      carbonDelta: -2,
-    },
-    {
-      id: "beef-delivery",
-      emoji: "🍔",
-      label: "Delivery burger",
-      description: "Beef burger delivered by bike",
-      impactType: "high" as const,
-      carbonDelta: 15,
-    },
-  ],
-};
+const CHAPTER_1_MOMENTS = [
+  {
+    situation: "Tuesday morning. You're hungry before work.",
+    question: "What do you have for breakfast?",
+    decisions: [
+      { id:"plant-breakfast", emoji:"🥗", label:"Plant-based meal",
+        description:"Oats, fruits, green smoothie",
+        impactType:"eco" as const, carbonDelta:-8 },
+      { id:"local-dhaba", emoji:"🍳", label:"Local dhaba",
+        description:"Dosa or idli nearby",
+        impactType:"moderate" as const, carbonDelta:-2 },
+      { id:"delivery-burger", emoji:"🍔", label:"Delivery burger",
+        description:"Beef burger by delivery bike",
+        impactType:"high" as const, carbonDelta:15 },
+    ]
+  },
+  {
+    situation: "Time to head to work.",
+    question: "How do you commute today?",
+    decisions: [
+      { id:"walk-cycle", emoji:"🚶", label:"Walk or cycle",
+        description:"Zero emissions, stays fit",
+        impactType:"eco" as const, carbonDelta:-12 },
+      { id:"metro", emoji:"🚇", label:"Take the metro",
+        description:"Public transport",
+        impactType:"moderate" as const, carbonDelta:-3 },
+      { id:"cab", emoji:"🚗", label:"Book a cab",
+        description:"Private car ride",
+        impactType:"high" as const, carbonDelta:10 },
+    ]
+  },
+  {
+    situation: "Lunchtime. You have 30 minutes.",
+    question: "What do you eat for lunch?",
+    decisions: [
+      { id:"home-tiffin", emoji:"🥘", label:"Home-cooked tiffin",
+        description:"Brought from home, zero packaging",
+        impactType:"eco" as const, carbonDelta:-6 },
+      { id:"canteen", emoji:"🍱", label:"Office canteen",
+        description:"Local vegetarian meal",
+        impactType:"moderate" as const, carbonDelta:-1 },
+      { id:"delivery-app", emoji:"📱", label:"Food delivery app",
+        description:"Single-use plastic packaging",
+        impactType:"high" as const, carbonDelta:8 },
+    ]
+  },
+];
 
 function SkeletonLine({ width, height }: { width: string; height: number }) {
   return (
@@ -58,16 +74,22 @@ export default function ChapterView() {
   
   const [currentDecision, setCurrentDecision] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [selectedImpact, setSelectedImpact] = useState<"eco" | "moderate" | "high" | null>(null);
   const [narrative, setNarrative] = useState("");
   const [isLoadingNarrative, setIsLoadingNarrative] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [worldReacting, setWorldReacting] = useState(false);
 
-  const handleSelect = async (choiceId: string, impactType: "eco" | "moderate" | "high", carbonDelta: number) => {
+  const { data: aqiData } = useAirQuality();
+
+  const moment = CHAPTER_1_MOMENTS[currentDecision];
+
+  const handleSelect = async (choiceId: string, label: string, impactType: "eco" | "moderate" | "high", carbonDelta: number) => {
     if (selectedChoice) return;
     
     setSelectedChoice(choiceId);
-    applyDecision(choiceId, impactType, carbonDelta);
+    setSelectedImpact(impactType);
+    applyDecision(label, impactType, carbonDelta);
     
     setWorldReacting(true);
     setTimeout(() => setWorldReacting(false), 400);
@@ -79,11 +101,12 @@ export default function ChapterView() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          decision: choiceId,
+          decision: label,
           impactType,
           worldState,
           city: profile.city || "your city",
-          chapter: CHAPTER_1.id,
+          chapter: moment.situation,
+          aqi: aqiData?.aqi || 75,
         })
       });
       const data = await res.json();
@@ -97,11 +120,10 @@ export default function ChapterView() {
   };
 
   const handleNext = () => {
-    // For now we just have 1 decision in the mock, but simulating up to 3 
-    // to match progress bar requirement and user prompt "After last decision in chapter..."
-    if (currentDecision < 2) { 
+    if (currentDecision < CHAPTER_1_MOMENTS.length - 1) { 
       setCurrentDecision(prev => prev + 1);
       setSelectedChoice(null);
+      setSelectedImpact(null);
       setNarrative("");
     } else {
       router.push("/story/summary");
@@ -124,7 +146,40 @@ export default function ChapterView() {
           boxShadow: "0 8px 32px rgba(45, 80, 22, 0.1)",
         }}
       >
-        {/* Top: Chapter badge */}
+        {aqiData && (
+          <motion.div
+            initial={{ opacity:0, y:-10 }}
+            animate={{ opacity:1, y:0 }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              marginBottom: 16,
+              padding: "6px 14px",
+              borderRadius: 20,
+              background: `${aqiData.aqiColor}20`,
+              border: `1px solid ${aqiData.aqiColor}40`,
+              width: "fit-content",
+              margin: "0 auto 16px",
+            }}
+          >
+            <div style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: aqiData.aqiColor,
+              boxShadow: `0 0 6px ${aqiData.aqiColor}`,
+              animation: "cv-verd-pulse 2s ease-in-out infinite"
+            }} />
+            <span style={{
+              fontSize: 12, fontWeight: 600,
+              color: aqiData.aqiColor
+            }}>
+              Air Quality: {aqiData.aqiLevel} · AQI {aqiData.aqi}
+            </span>
+          </motion.div>
+        )}
+
+        {/* Top row: Chapter badge (centered) */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
           <div style={{
             background: "rgba(74, 124, 47, 0.1)",
@@ -135,109 +190,117 @@ export default function ChapterView() {
             fontWeight: 600,
             border: "1px solid rgba(74, 124, 47, 0.2)"
           }}>
-            {CHAPTER_1.title} · {CHAPTER_1.subtitle}
+            Chapter 1 · Tuesday
           </div>
         </div>
 
-        {/* Verd + Narrative Section */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 24, minHeight: 80 }}>
-          <VerdOrb size={44} />
-          <div style={{ flex: 1, color: "#2D5016", fontSize: 15, lineHeight: 1.5, fontWeight: 500 }}>
-            <AnimatePresence mode="wait">
-              {isLoadingNarrative ? (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}
-                >
-                  <SkeletonLine width="90%" height={16} />
-                  <SkeletonLine width="70%" height={16} />
-                  <SkeletonLine width="40%" height={10} />
-                </motion.div>
-              ) : narrative ? (
-                <motion.div
-                  key="narrative"
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  &ldquo;{narrative}&rdquo;
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Situation text */}
-        <motion.div layout style={{ fontSize: 18, fontWeight: 500, color: "#2D5016", textAlign: "center", margin: "20px 0" }}>
-          {CHAPTER_1.situation}
-        </motion.div>
-
-        {/* Decisions */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {/* SINGLE situation block */}
+        <div style={{
+          background: "rgba(74,124,47,0.08)",
+          borderRadius: 16,
+          padding: "16px 20px",
+          marginBottom: 20,
+        }}>
           <div style={{
             display: "flex",
-            flexDirection: "column",
-            gap: 12
+            alignItems: "center", 
+            gap: 12,
+            marginBottom: 8
           }}>
-            {CHAPTER_1.decisions.map((d, index) => {
-              const isSelected = selectedChoice === d.id;
-              const isDimmed = selectedChoice !== null && !isSelected;
-              
-              return (
-                <motion.div
-                  key={d.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: isDimmed ? 0.4 : 1, y: 0 }}
-                  transition={{ delay: selectedChoice ? 0 : index * 0.08 }}
-                  style={{ pointerEvents: selectedChoice ? "none" : "auto" }}
-                >
-                  <ChoiceCard
-                    emoji={d.emoji}
-                    label={d.label}
-                    description={d.description}
-                    isSelected={isSelected}
-                    onClick={() => handleSelect(d.id, d.impactType, d.carbonDelta)}
-                  />
-                </motion.div>
-              );
-            })}
+            <VerdOrb size={36} mood={selectedImpact} />
+            <div style={{
+              fontSize: 14, fontWeight: 600, color: "#4A7C2F"
+            }}>
+              {isLoadingNarrative ? "Verd is thinking..." : 
+               narrative ? "Verd says:" : "Verd says:"}
+            </div>
+          </div>
+          
+          {/* Narrative or situation text */}
+          <div style={{
+            fontSize: 15, 
+            color: narrative 
+              ? selectedImpact === "eco" ? "#2D7A1F" 
+                : selectedImpact === "moderate" ? "#8B6914" 
+                : "#A0401A" 
+              : "#2D5016", 
+            lineHeight: 1.6,
+            fontStyle: narrative || !aqiData ? "italic" : "normal",
+            minHeight: 40,
+          }}>
+            {isLoadingNarrative ? <SkeletonLine width="80%" height={16}/> :
+             narrative ? (selectedImpact === "eco" ? "🌿 " : "") + `"${narrative}"` :
+             aqiData ? aqiData.verdMessage :
+             moment.situation}
           </div>
         </div>
 
-        {/* Next Button */}
+        {/* Question text (bold, centered) */}
+        <div style={{
+          fontSize: 17, fontWeight: 600, color: "#2D5016",
+          textAlign: "center", marginBottom: 20
+        }}>
+          {moment.question}
+        </div>
+
+        {/* Decisions (stacked, full width) */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {moment.decisions.map((d, index) => {
+            const isSelected = selectedChoice === d.id;
+            const isDimmed = selectedChoice !== null && !isSelected;
+            
+            return (
+              <motion.div
+                key={d.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: isDimmed ? 0.4 : 1, y: 0 }}
+                transition={{ delay: selectedChoice ? 0 : index * 0.08 }}
+                style={{ pointerEvents: selectedChoice ? "none" : "auto" }}
+              >
+                <ChoiceCard
+                  emoji={d.emoji}
+                  label={d.label}
+                  description={d.description}
+                  isSelected={isSelected}
+                  onClick={() => handleSelect(d.id, d.label, d.impactType, d.carbonDelta)}
+                />
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Next Button inside the panel */}
         <AnimatePresence>
           {selectedChoice && !isLoadingNarrative && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              style={{ display: "flex", justifyContent: "center", marginTop: 24 }}
+            <motion.button
+              initial={{ opacity:0, y:10 }}
+              animate={{ opacity:1, y:0 }}
+              exit={{ opacity:0 }}
+              whileHover={{ scale:1.03 }}
+              whileTap={{ scale:0.97 }}
+              onClick={handleNext}
+              style={{
+                width: "100%",
+                padding: "14px 0",
+                marginTop: 20,
+                background: "linear-gradient(135deg, #4A7C2F 0%, #2D5016 100%)",
+                color: "white",
+                borderRadius: 14,
+                fontWeight: 600,
+                fontSize: 16,
+                border: "none",
+                cursor: "pointer",
+              }}
             >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleNext}
-                className="px-6 py-3 rounded-xl font-semibold text-white"
-                style={{
-                  background: "linear-gradient(135deg, #4A7C2F 0%, #2D5016 100%)",
-                  border: "none",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(45, 80, 22, 0.2)",
-                }}
-              >
-                Next →
-              </motion.button>
-            </motion.div>
+              {currentDecision < 2 ? "Next →" : "See Your Impact ✨"}
+            </motion.button>
           )}
         </AnimatePresence>
 
         {/* Progress bar */}
-        <div style={{ marginTop: 32, height: 4, width: "100%", background: "rgba(74, 124, 47, 0.1)", borderRadius: 2, overflow: "hidden" }}>
+        <div style={{ marginTop: 24, height: 4, width: "100%", background: "rgba(74, 124, 47, 0.1)", borderRadius: 2, overflow: "hidden" }}>
           <motion.div
-            animate={{ width: `${((currentDecision + (selectedChoice ? 1 : 0)) / 3) * 100}%` }}
+            animate={{ width: `${((currentDecision + 1) / 3) * 100}%` }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
             style={{ height: "100%", background: "#4A7C2F", borderRadius: 2 }}
           />
