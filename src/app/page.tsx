@@ -47,12 +47,13 @@ function TypewriterText({
     <p
       style={{
         fontSize: "clamp(16px, 2.2vw, 22px)",
-        fontWeight: 300,
+        fontWeight: 400,
         fontStyle: "italic",
-        color: "#6B8F5E",
+        color: "#3A6B28",
         letterSpacing: "0.01em",
         minHeight: 36,
         lineHeight: 1.6,
+        textShadow: "0 1px 8px rgba(255,255,255,0.6)",
       }}
     >
       {displayed}

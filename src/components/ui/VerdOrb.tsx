@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { motion, useSpring, useMotionValue } from "framer-motion";
+import { motion, useSpring, useMotionValue, AnimatePresence } from "framer-motion";
 
 interface VerdOrbProps {
   size?: number;
@@ -138,6 +138,52 @@ export default function VerdOrb({ size = 48, className = "" }: VerdOrbProps) {
           }}
         />
 
+        {/* Eyebrows */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: "28%",
+            left: "50%",
+            display: "flex",
+            gap: eyeGap * 1.1,
+            transform: "translateX(-50%)",
+            x: springEyeX,  // eyebrows follow eyes slightly
+          }}
+        >
+          {/* Left eyebrow */}
+          <motion.div
+            style={{
+              width: eyeSize * 1.6,
+              height: Math.max(2, eyeSize * 0.25),
+              backgroundColor: "#1A4A10",
+              borderRadius: eyeSize,
+              transformOrigin: "center",
+            }}
+            animate={{
+              rotate: isHovered ? -12 : 0,  // raises on hover
+              y: isHovered ? -2 : 0,
+              scaleX: isBlinking ? 0.8 : 1,
+            }}
+            transition={{ duration: 0.2, ease: [0.23,1,0.32,1] }}
+          />
+          {/* Right eyebrow */}
+          <motion.div
+            style={{
+              width: eyeSize * 1.6,
+              height: Math.max(2, eyeSize * 0.25),
+              backgroundColor: "#1A4A10",
+              borderRadius: eyeSize,
+              transformOrigin: "center",
+            }}
+            animate={{
+              rotate: isHovered ? 12 : 0,  // raises on hover
+              y: isHovered ? -2 : 0,
+              scaleX: isBlinking ? 0.8 : 1,
+            }}
+            transition={{ duration: 0.2, ease: [0.23,1,0.32,1] }}
+          />
+        </motion.div>
+
         {/* Eyes & Pupils */}
         <motion.div
           style={{
@@ -183,6 +229,46 @@ export default function VerdOrb({ size = 48, className = "" }: VerdOrbProps) {
             transition={{ duration: 0.12 }}
           />
         </motion.div>
+
+        {/* Cheeks — visible on hover */}
+        <AnimatePresence>
+          {isHovered && (
+            <>
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0 }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  position: "absolute",
+                  bottom: "28%",
+                  left: "12%",
+                  width: eyeSize * 1.4,
+                  height: eyeSize * 0.8,
+                  borderRadius: "50%",
+                  background: "rgba(255,150,150,0.35)",
+                  filter: "blur(2px)",
+                }}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0 }}
+                transition={{ duration: 0.2, delay: 0.05 }}
+                style={{
+                  position: "absolute",
+                  bottom: "28%",
+                  right: "12%",
+                  width: eyeSize * 1.4,
+                  height: eyeSize * 0.8,
+                  borderRadius: "50%",
+                  background: "rgba(255,150,150,0.35)",
+                  filter: "blur(2px)",
+                }}
+              />
+            </>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Leaf 1 — top-left */}
