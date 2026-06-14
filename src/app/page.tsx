@@ -7,9 +7,11 @@ import {
   useMotionValue,
   useSpring,
   AnimatePresence,
+  MotionValue,
 } from "framer-motion";
 import LandingWorld from "@/components/world/LandingWorld";
 import VerdOrb from "@/components/ui/VerdOrb";
+import { useSessionStore } from "@/lib/session-store";
 
 /* ─── Typewriter ─── */
 function TypewriterText({
@@ -80,46 +82,10 @@ function TypewriterText({
   );
 }
 
-/* ─── Shimmer button inner ─── */
-function ShimmerEffect({ active }: { active: boolean }) {
-  return (
-    <AnimatePresence>
-      {active && (
-        <motion.div
-          initial={{ x: "-100%" }}
-          animate={{ x: "200%" }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
-            borderRadius: "inherit",
-            zIndex: 0,
-            pointerEvents: "none",
-          }}
-        />
-      )}
-    </AnimatePresence>
-  );
-}
-
 /* ─── Cursor Glow ─── */
-function CursorGlow() {
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+function CursorGlow({ mouseX, mouseY }: { mouseX: MotionValue<number>; mouseY: MotionValue<number> }) {
   const springX = useSpring(mouseX, { stiffness: 150, damping: 20 });
   const springY = useSpring(mouseY, { stiffness: 150, damping: 20 });
-
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX - 75);
-      mouseY.set(e.clientY - 75);
-    };
-    window.addEventListener("mousemove", handleMove);
-    return () => window.removeEventListener("mousemove", handleMove);
-  }, [mouseX, mouseY]);
 
   return (
     <motion.div
@@ -145,11 +111,74 @@ function CursorGlow() {
 export default function Home() {
   const router = useRouter();
   const [typewriterDone, setTypewriterDone] = useState(false);
-  const [shimmerActive, setShimmerActive] = useState(false);
+  const [hoveredButton, setHoveredButton] = useState<"primary" | "secondary" | null>(null);
+  const [idleMode, setIdleMode] = useState(false);
+  const [wipeOrigin, setWipeOrigin] = useState("50% 50%");
+  
+  const { worldState } = useSessionStore();
+  const planetMood = worldState?.planetMood;
+
+  // Shared mouse tracking
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  
+  // Magnetic button values
+  const primaryButtonRef = useRef<HTMLButtonElement>(null);
+  const primaryMagneticX = useMotionValue(0);
+  const primaryMagneticY = useMotionValue(0);
+  const springMagX = useSpring(primaryMagneticX, { stiffness: 150, damping: 18 });
+  const springMagY = useSpring(primaryMagneticY, { stiffness: 150, damping: 18 });
+
+  const lastMouseMoveTime = useRef(Date.now());
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      // Glow coords (-75 to center 150px circle)
+      mouseX.set(e.clientX - 75);
+      mouseY.set(e.clientY - 75);
+      
+      lastMouseMoveTime.current = Date.now();
+      setIdleMode(false); // Reset idle immediately on move
+
+      if (primaryButtonRef.current) {
+        const rect = primaryButtonRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dist = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+        if (dist < 80) {
+          primaryMagneticX.set(Math.max(-6, Math.min(6, (e.clientX - centerX) * 0.15)));
+          primaryMagneticY.set(Math.max(-6, Math.min(6, (e.clientY - centerY) * 0.15)));
+        } else {
+          primaryMagneticX.set(0);
+          primaryMagneticY.set(0);
+        }
+      }
+    };
+    
+    window.addEventListener("mousemove", handleMove);
+    
+    const idleCheck = setInterval(() => {
+      if (Date.now() - lastMouseMoveTime.current > 4000) {
+        setIdleMode(true);
+      }
+    }, 1000);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      clearInterval(idleCheck);
+    };
+  }, [mouseX, mouseY, primaryMagneticX, primaryMagneticY]);
 
   const handleTypewriterComplete = useCallback(() => {
     setTypewriterDone(true);
   }, []);
+  
+  const getGlowColor = () => {
+    if (planetMood === "Thriving") return "rgba(74, 175, 80, 0.4)";
+    if (planetMood === "Under Stress") return "rgba(244, 168, 50, 0.4)";
+    if (planetMood === "Recovering") return "rgba(168, 213, 120, 0.4)";
+    return "rgba(244, 168, 50, 0.4)"; // default fallback matching original orange-green
+  };
 
   return (
     <main
@@ -270,54 +299,181 @@ export default function Home() {
           style={{ pointerEvents: "auto" }}
         >
           {/* Primary CTA */}
-          <motion.button
+          <motion.div
+            style={{
+              position: "relative",
+              x: springMagX,
+              y: springMagY,
+              zIndex: hoveredButton === "primary" ? 10 : 1,
+            }}
             initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            animate={{ 
+              y: 0, 
+              opacity: hoveredButton === "secondary" ? 0.65 : 1,
+              scale: hoveredButton === "secondary" ? 0.98 : (idleMode ? [1, 1.015, 1] : 1)
+            }}
             transition={{
               delay: 1.8,
-              duration: 0.5,
-              ease: [0.23, 1, 0.32, 1],
-            }}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => router.push("/story")}
-            onHoverStart={() => setShimmerActive(true)}
-            onHoverEnd={() => setShimmerActive(false)}
-            className="relative overflow-hidden px-8 py-4 rounded-2xl font-semibold text-lg text-white cursor-pointer outline-none border-none"
-            style={{
-              background:
-                "linear-gradient(135deg, #4A7C2F 0%, #F4A832 100%)",
-              boxShadow: "0 4px 20px rgba(74,124,47,0.35)",
+              duration: hoveredButton === "secondary" ? 0.25 : 0.5,
+              ease: hoveredButton === "secondary" ? undefined : [0.23, 1, 0.32, 1],
+              ...(idleMode && hoveredButton !== "secondary" && {
+                 scale: { duration: 2.5, ease: "easeInOut", repeat: Infinity }
+              })
             }}
           >
-            <ShimmerEffect active={shimmerActive} />
-            <span className="relative z-10">✨ Begin My Story</span>
-          </motion.button>
+            {/* Soft Glow Behind */}
+            <motion.div
+              style={{
+                position: "absolute",
+                inset: "-12px",
+                borderRadius: "1rem",
+                zIndex: 0,
+                filter: "blur(16px)",
+                opacity: 0.6,
+              }}
+              animate={{
+                background: [
+                  `linear-gradient(135deg, #4A7C2F 0%, ${getGlowColor()} 100%)`,
+                  `linear-gradient(135deg, #2D5016 0%, ${getGlowColor()} 100%)`,
+                  `linear-gradient(135deg, #4A7C2F 0%, ${getGlowColor()} 100%)`,
+                ]
+              }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            />
+            <motion.button
+              ref={primaryButtonRef}
+              onHoverStart={() => setHoveredButton("primary")}
+              onHoverEnd={() => setHoveredButton(null)}
+              whileTap={{ y: 2, boxShadow: "0 1px 4px rgba(74,124,47,0.25)" }}
+              onClick={() => router.push("/story")}
+              className="relative px-7 py-3.5 rounded-2xl font-semibold text-base text-white cursor-pointer outline-none border-none"
+              style={{
+                background: "linear-gradient(135deg, #4A7C2F 0%, #F4A832 100%)",
+                boxShadow: "0 6px 20px rgba(74,124,47,0.35)",
+                zIndex: 1,
+                minWidth: "230px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {/* Mask container: fixed size, clips overflow */}
+              <span
+                style={{
+                  position: "relative",
+                  display: "block",
+                  width: "100%",
+                  height: "1.4em",
+                  overflow: "hidden",
+                  textAlign: "center",
+                }}
+              >
+                <motion.span
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    textAlign: "center",
+                    display: "block",
+                  }}
+                  animate={{ y: hoveredButton === "primary" ? "-100%" : 0 }}
+                  transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  ✨ Begin My Story
+                </motion.span>
+                <motion.span
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    textAlign: "center",
+                    display: "block",
+                  }}
+                  initial={{ y: "100%" }}
+                  animate={{ y: hoveredButton === "primary" ? 0 : "100%" }}
+                  transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  → Let&apos;s go
+                </motion.span>
+              </span>
+            </motion.button>
+          </motion.div>
 
           {/* Secondary CTA */}
-          <motion.button
+          <motion.div
+            style={{ position: "relative" }}
             initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            animate={{ 
+              y: 0, 
+              opacity: hoveredButton === "primary" ? 0.65 : 1,
+              scale: hoveredButton === "primary" ? 0.98 : 1
+            }}
             transition={{
               delay: 2.0,
-              duration: 0.5,
-              ease: [0.23, 1, 0.32, 1],
-            }}
-            whileHover={{ scale: 1.03, y: -1 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => router.push("/story")}
-            className="px-8 py-4 rounded-2xl font-medium text-lg cursor-pointer outline-none"
-            style={{
-              background: "rgba(255,255,255,0.75)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: "2px solid #B8D4A8",
-              color: "#2D5016",
-              boxShadow: "0 2px 12px rgba(45,80,22,0.1)",
+              duration: hoveredButton === "primary" ? 0.25 : 0.5,
+              ease: hoveredButton === "primary" ? undefined : [0.23, 1, 0.32, 1],
             }}
           >
-            👀 See Demo
-          </motion.button>
+            {/* Border Drawing */}
+            <motion.div
+              style={{
+                position: "absolute",
+                inset: 0,
+                borderRadius: "1rem", 
+                border: "2px solid #4A7C2F",
+                zIndex: 1,
+                pointerEvents: "none",
+              }}
+              initial={{ clipPath: "inset(0 100% 0 0)" }}
+              animate={{ clipPath: hoveredButton === "secondary" ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)" }}
+              transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            />
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onHoverStart={(e) => {
+                const target = e.target as HTMLElement;
+                const button = target.closest('button');
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  setWipeOrigin(`${e.clientX - rect.left}px ${e.clientY - rect.top}px`);
+                }
+                setHoveredButton("secondary");
+              }}
+              onHoverEnd={() => setHoveredButton(null)}
+              onClick={() => router.push("/story")}
+              className="px-7 py-3.5 rounded-2xl font-medium text-base cursor-pointer outline-none relative overflow-hidden block"
+              style={{
+                background: "rgba(255,255,255,0.75)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "2px solid #B8D4A8",
+                color: "#2D5016",
+                boxShadow: "0 2px 12px rgba(45,80,22,0.1)",
+                zIndex: 2,
+              }}
+            >
+              {/* Wipe background */}
+              <motion.div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "inherit",
+                  background: "rgba(74, 124, 47, 0.12)",
+                  transformOrigin: wipeOrigin,
+                  zIndex: 0,
+                }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{
+                  scale: hoveredButton === "secondary" ? 3 : 0,
+                  opacity: hoveredButton === "secondary" ? 1 : 0
+                }}
+                transition={{ duration: 0.4 }}
+              />
+              <span style={{ position: "relative", zIndex: 1 }}>👀 See Demo</span>
+            </motion.button>
+          </motion.div>
         </div>
 
         {/* Bottom hint */}
@@ -334,7 +490,7 @@ export default function Home() {
       </div>
 
       {/* Cursor glow trail */}
-      <CursorGlow />
+      <CursorGlow mouseX={mouseX} mouseY={mouseY} />
     </main>
   );
 }
