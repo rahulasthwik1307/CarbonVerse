@@ -16,8 +16,8 @@ import { useSessionStore } from "@/lib/session-store";
 /* ─── Typewriter ─── */
 function TypewriterText({
   text,
-  startDelay = 1000,
-  charDelay = 35,
+  startDelay = 800,
+  charDelay = 22,
   onComplete,
 }: {
   text: string;
@@ -43,9 +43,20 @@ function TypewriterText({
       onComplete?.();
       return;
     }
+    
+    let extraDelay = 0;
+    if (displayed.length > 0) {
+      const lastChar = text[displayed.length - 1];
+      if (lastChar === "." || lastChar === "!" || lastChar === "?") {
+        extraDelay = 180;
+      } else if (lastChar === "," || lastChar === ";" || lastChar === ":") {
+        extraDelay = 90;
+      }
+    }
+    
     charTimeoutRef.current = setTimeout(() => {
       setDisplayed(text.slice(0, displayed.length + 1));
-    }, charDelay);
+    }, charDelay + extraDelay);
     return () => {
       if (charTimeoutRef.current) clearTimeout(charTimeoutRef.current);
     };
@@ -70,11 +81,12 @@ function TypewriterText({
           className="cv-verd-cursor"
           style={{
             display: "inline-block",
-            width: 2,
-            height: "1em",
-            backgroundColor: "#6B8F5E",
-            marginLeft: 2,
+            width: 2.5,
+            height: "1.1em",
+            backgroundColor: "#2D5016",
+            marginLeft: 1,
             verticalAlign: "text-bottom",
+            boxShadow: "0 0 6px rgba(45,80,22,0.4)",
           }}
         />
       )}
@@ -91,11 +103,11 @@ function CursorGlow({ mouseX, mouseY }: { mouseX: MotionValue<number>; mouseY: M
     <motion.div
       style={{
         position: "fixed",
-        width: 150,
-        height: 150,
+        width: 180,
+        height: 180,
         borderRadius: "50%",
         background:
-          "radial-gradient(circle, rgba(244,168,50,0.06) 0%, rgba(123,198,126,0.04) 45%, transparent 70%)",
+          "radial-gradient(circle, rgba(244,168,50,0.14) 0%, rgba(123,198,126,0.10) 45%, transparent 70%)",
         pointerEvents: "none",
         zIndex: 50,
         x: springX,
@@ -121,6 +133,8 @@ export default function Home() {
   // Shared mouse tracking
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const titleParallaxX = useMotionValue(0);
+  const pillParallaxY = useMotionValue(0);
   
   // Magnetic button values
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
@@ -133,9 +147,14 @@ export default function Home() {
 
   useEffect(() => {
     const handleMove = (e: MouseEvent) => {
-      // Glow coords (-75 to center 150px circle)
-      mouseX.set(e.clientX - 75);
-      mouseY.set(e.clientY - 75);
+      // Glow coords (-90 to center 180px circle)
+      mouseX.set(e.clientX - 90);
+      mouseY.set(e.clientY - 90);
+
+      const mouseX_normalized = (e.clientX / window.innerWidth - 0.5) * 2;
+      const mouseY_normalized = (e.clientY / window.innerHeight - 0.5) * 2;
+      titleParallaxX.set(mouseX_normalized * 4);
+      pillParallaxY.set(mouseY_normalized * -2);
       
       lastMouseMoveTime.current = Date.now();
       setIdleMode(false); // Reset idle immediately on move
@@ -167,7 +186,7 @@ export default function Home() {
       window.removeEventListener("mousemove", handleMove);
       clearInterval(idleCheck);
     };
-  }, [mouseX, mouseY, primaryMagneticX, primaryMagneticY]);
+  }, [mouseX, mouseY, titleParallaxX, pillParallaxY, primaryMagneticX, primaryMagneticY]);
 
   const handleTypewriterComplete = useCallback(() => {
     setTypewriterDone(true);
@@ -218,7 +237,7 @@ export default function Home() {
           initial={{ y: -30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{
-            delay: 0.3,
+            delay: 0.1,
             duration: 0.6,
             ease: [0.23, 1, 0.32, 1],
           }}
@@ -226,7 +245,15 @@ export default function Home() {
           style={{ pointerEvents: "auto" }}
         >
           <VerdOrb size={56} />
-          <span
+          <motion.span
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: idleMode ? [1, 0.92, 1] : 1, x: 0 }}
+            transition={{
+              x: { delay: 0.3, duration: 0.5, ease: [0.23, 1, 0.32, 1] },
+              opacity: idleMode 
+                ? { duration: 4, ease: "easeInOut", repeat: Infinity, delay: 3 }
+                : { delay: 0.3, duration: 0.5, ease: [0.23, 1, 0.32, 1] }
+            }}
             className="text-sm font-medium px-4 py-2 rounded-full"
             style={{
               background: "rgba(255,255,255,0.8)",
@@ -234,47 +261,60 @@ export default function Home() {
               WebkitBackdropFilter: "blur(8px)",
               border: "1px solid #B8D4A8",
               color: "#4A7C2F",
+              y: pillParallaxY,
             }}
           >
             Meet Verd, your Carbon Guide 🌱
-          </span>
+          </motion.span>
         </motion.div>
 
         {/* Main title */}
-        <motion.h1
-          initial={{ scale: 0.85, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{
-            delay: 0.5,
-            type: "spring",
-            stiffness: 200,
-            damping: 20,
-          }}
-          style={{
-            fontSize: "clamp(52px, 9vw, 96px)",
-            fontWeight: 800,
-            letterSpacing: "-0.03em",
-            lineHeight: 1.05,
-            background:
-              "linear-gradient(135deg, #2D5016 0%, #4A7C2F 40%, #F4A832 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            filter: "drop-shadow(0 2px 8px rgba(45,80,22,0.15))",
-          }}
+        <motion.div
+          animate={{ scale: [1, 1.008, 1] }}
+          transition={{ duration: 6, ease: "easeInOut", repeat: Infinity }}
+          style={{ display: "inline-block", x: titleParallaxX }}
         >
-          CarbonVerse
-        </motion.h1>
+          <motion.h1
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{
+              delay: 0.5,
+              type: "spring",
+              stiffness: 180,
+              damping: 22,
+            }}
+            viewport={{ once: true }}
+            style={{
+              fontSize: "clamp(52px, 9vw, 96px)",
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+              lineHeight: 1.05,
+              background:
+                "linear-gradient(135deg, #2D5016 0%, #4A7C2F 40%, #F4A832 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              filter: "drop-shadow(0 2px 8px rgba(45,80,22,0.15))",
+            }}
+          >
+            CarbonVerse
+          </motion.h1>
+        </motion.div>
 
         {/* Subtitle — typewriter */}
-        <div className="mt-4 max-w-lg">
+        <motion.div 
+          className="mt-4 max-w-lg"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.3 }}
+        >
           <TypewriterText
             text="Every choice you make today shapes tomorrow's world."
-            startDelay={1000}
-            charDelay={35}
+            startDelay={800}
+            charDelay={22}
             onComplete={handleTypewriterComplete}
           />
-        </div>
+        </motion.div>
 
         {/* Verd's intro message */}
         <AnimatePresence>
@@ -282,13 +322,11 @@ export default function Home() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              transition={{ duration: 0.4, delay: 0.15, ease: [0.23, 1, 0.32, 1] }}
               className="mt-6 max-w-md glass-panel p-5 rounded-2xl text-sm leading-relaxed font-medium"
               style={{ color: "#2D5016" }}
             >
-              &ldquo;Hi! I&apos;m Verd 🌿 I won&apos;t judge your choices — I&apos;ll
-              just show you how today&apos;s decisions shape tomorrow&apos;s
-              world.&rdquo;
+              &ldquo;Ready to begin? I&apos;ll be right here 🌿&rdquo;
             </motion.div>
           )}
         </AnimatePresence>
@@ -313,7 +351,7 @@ export default function Home() {
               scale: hoveredButton === "secondary" ? 0.98 : (idleMode ? [1, 1.015, 1] : 1)
             }}
             transition={{
-              delay: 1.8,
+              delay: 1.95,
               duration: hoveredButton === "secondary" ? 0.25 : 0.5,
               ease: hoveredButton === "secondary" ? undefined : [0.23, 1, 0.32, 1],
               ...(idleMode && hoveredButton !== "secondary" && {
@@ -411,7 +449,7 @@ export default function Home() {
               scale: hoveredButton === "primary" ? 0.98 : 1
             }}
             transition={{
-              delay: 2.0,
+              delay: 2.03,
               duration: hoveredButton === "primary" ? 0.25 : 0.5,
               ease: hoveredButton === "primary" ? undefined : [0.23, 1, 0.32, 1],
             }}
@@ -480,7 +518,7 @@ export default function Home() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.85 }}
-          transition={{ delay: 2.8, duration: 0.6 }}
+          transition={{ delay: 2.8, duration: 0.5 }}
           className="mt-8 text-sm font-medium tracking-wide"
           style={{ color: "#2D5016" }}
         >
