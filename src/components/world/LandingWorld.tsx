@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { useSessionStore } from "@/lib/session-store";
@@ -11,6 +11,14 @@ export default function LandingWorld() {
   const cloudsRef = useRef<HTMLDivElement>(null);
   const { worldState } = useSessionStore();
   const { planetMood } = worldState;
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   let overlayColor = "rgba(0, 0, 0, 0)";
   if (planetMood === "Thriving") {
@@ -207,50 +215,55 @@ export default function LandingWorld() {
             display: "block",
           }}
         />
-      </div>
 
-      {/* ═══ NEW LAYER — Proportional Trees ═══ */}
-      {[
-        { left:"1%",  bottom:"20%", w:130, delay:0.2 },
-        { left:"8%",  bottom:"26%", w:160, delay:0.5 },
-        { left:"16%", bottom:"23%", w:140, delay:0.3 },
-        { left:"24%", bottom:"28%", w:185, delay:0.7 },
-        { left:"38%", bottom:"25%", w:145, delay:0.4 },
-        { left:"48%", bottom:"22%", w:115, delay:0.9 },
-        { left:"58%", bottom:"27%", w:170, delay:0.6 },
-        { left:"68%", bottom:"24%", w:148, delay:0.8 },
-        { left:"78%", bottom:"26%", w:163, delay:0.5 },
-        { left:"86%", bottom:"21%", w:133, delay:0.3 },
-        { left:"91%", bottom:"23%", w:120, delay:0.7 },
-      ].map((tree, i) => (
-        <motion.div
-          key={`tree-${i}`}
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{
-            delay: tree.delay,
-            type: "spring",
-            stiffness: 180,
-            damping: 22,
-          }}
-          style={{
-            position: "absolute",
-            bottom: tree.bottom,
-            left: tree.left,
-            width: tree.w,
-            aspectRatio: "250 / 300",
-            zIndex: 6,
-            pointerEvents: "none",
-          }}
-        >
-          <DotLottieReact
-            src="/lottie/tree.json"
-            loop
-            autoplay
-            style={{ width: "100%", height: "100%" }}
-          />
-        </motion.div>
-      ))}
+        {/* ═══ NEW LAYER — Proportional Trees ═══ */}
+        {[
+          { left: "1%", bottom: 20, w: 130, delay: 0.2 },
+          { left: "8%", bottom: 26, w: 160, delay: 0.5 },
+          { left: "16%", bottom: 23, w: 140, delay: 0.3 },
+          { left: "24%", bottom: 28, w: 185, delay: 0.7 },
+          { left: "38%", bottom: 25, w: 145, delay: 0.4 },
+          { left: "48%", bottom: 22, w: 115, delay: 0.9 },
+          { left: "58%", bottom: 27, w: 170, delay: 0.6 },
+          { left: "68%", bottom: 24, w: 148, delay: 0.8 },
+          { left: "78%", bottom: 26, w: 163, delay: 0.5 },
+          { left: "86%", bottom: 21, w: 133, delay: 0.3 },
+          { left: "91%", bottom: 23, w: 120, delay: 0.7 },
+        ].map((tree, i) => {
+          const adjustedBottom = isMobile ? tree.bottom - 8 : tree.bottom;
+          return (
+            <motion.div
+              key={`tree-${i}`}
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{
+                delay: tree.delay,
+                type: "spring",
+                stiffness: 180,
+                damping: 22,
+              }}
+              style={{
+                position: "absolute",
+                bottom: `${adjustedBottom}%`,
+                left: tree.left,
+                width: tree.w,
+                height: tree.w,
+                zIndex: 6,
+                pointerEvents: "none",
+              }}
+            >
+              <div style={{ width: "100%", height: "100%", transform: "translateY(18%)" }}>
+                <DotLottieReact
+                  src="/lottie/tree.json"
+                  loop
+                  autoplay
+                  style={{ width: "100%", height: "100%" }}
+                />
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
 
       {/* ═══ LAYER 5 — Birds (Lottie) ═══ */}
       {[

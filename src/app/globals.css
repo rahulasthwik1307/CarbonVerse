@@ -217,6 +217,10 @@
   animation: cv-verd-pulse 2.5s ease-in-out infinite;
 }
 
+.cv-verd-cursor {
+  animation: cv-verd-pulse 0.8s ease-in-out infinite;
+}
+
 
 @keyframes cv-sunrise {
   0% {

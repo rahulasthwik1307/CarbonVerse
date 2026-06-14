@@ -205,7 +205,6 @@ export default function ChapterView() {
             display: "flex",
             alignItems: "center", 
             gap: 12,
-            marginBottom: 8
           }}>
             <VerdOrb size={36} mood={selectedImpact} />
             <div style={{
@@ -218,6 +217,12 @@ export default function ChapterView() {
           
           {/* Narrative or situation text */}
           <div style={{
+            marginLeft: 48,
+            marginTop: 8,
+            padding: "12px 16px",
+            background: "rgba(255, 255, 255, 0.6)",
+            borderRadius: "0 12px 12px 12px",
+            borderLeft: "3px solid #4A7C2F",
             fontSize: 15, 
             color: narrative 
               ? selectedImpact === "eco" ? "#2D7A1F" 
@@ -225,13 +230,13 @@ export default function ChapterView() {
                 : "#A0401A" 
               : "#2D5016", 
             lineHeight: 1.6,
-            fontStyle: narrative || !aqiData ? "italic" : "normal",
+            fontStyle: "italic",
             minHeight: 40,
           }}>
             {isLoadingNarrative ? <SkeletonLine width="80%" height={16}/> :
-             narrative ? (selectedImpact === "eco" ? "🌿 " : "") + `"${narrative}"` :
-             aqiData ? aqiData.verdMessage :
-             moment.situation}
+             narrative ? (selectedImpact === "eco" ? "🌿 " : "") + `“${narrative}”` :
+             aqiData ? `“${aqiData.verdMessage}”` :
+             `“${moment.situation}”`}
           </div>
         </div>
 

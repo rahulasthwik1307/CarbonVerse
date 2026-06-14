@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   motion,
@@ -25,10 +25,14 @@ function TypewriterText({
 }) {
   const [displayed, setDisplayed] = useState("");
   const [started, setStarted] = useState(false);
+  const startTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const charTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setStarted(true), startDelay);
-    return () => clearTimeout(timeout);
+    startTimeoutRef.current = setTimeout(() => setStarted(true), startDelay);
+    return () => {
+      if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
+    };
   }, [startDelay]);
 
   useEffect(() => {
@@ -37,10 +41,12 @@ function TypewriterText({
       onComplete?.();
       return;
     }
-    const timeout = setTimeout(() => {
+    charTimeoutRef.current = setTimeout(() => {
       setDisplayed(text.slice(0, displayed.length + 1));
     }, charDelay);
-    return () => clearTimeout(timeout);
+    return () => {
+      if (charTimeoutRef.current) clearTimeout(charTimeoutRef.current);
+    };
   }, [started, displayed, text, charDelay, onComplete]);
 
   return (
@@ -53,19 +59,19 @@ function TypewriterText({
         letterSpacing: "0.01em",
         minHeight: 36,
         lineHeight: 1.6,
-        textShadow: "0 0 12px rgba(255,255,255,0.8), 0 1px 3px rgba(255,255,255,1)",
+        textShadow: "0 1px 2px rgba(255,255,255,0.9)",
       }}
     >
       {displayed}
       {started && displayed.length < text.length && (
         <span
+          className="cv-verd-cursor"
           style={{
             display: "inline-block",
             width: 2,
             height: "1em",
             backgroundColor: "#6B8F5E",
             marginLeft: 2,
-            animation: "cv-verd-pulse 0.8s ease-in-out infinite",
             verticalAlign: "text-bottom",
           }}
         />
