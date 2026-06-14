@@ -99,11 +99,11 @@ export default function LandingWorld() {
       <div
         style={{
           position: "absolute",
-          top: "2%",
+          top: "-15%",
           left: "50%",
           transform: "translateX(-50%)",
-          width: 180,
-          height: 180,
+          width: 360,
+          height: 360,
           pointerEvents: "none",
           zIndex: 2,
         }}
@@ -218,8 +218,8 @@ export default function LandingWorld() {
       ].map((tree, i) => (
         <motion.div
           key={`tree-${i}`}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           transition={{
             delay: tree.delay,
             type: "spring",
@@ -249,16 +249,28 @@ export default function LandingWorld() {
       {[
         { id:1, src:"/lottie/bird1.json", size:90,  top:"28%",
           dir:"ltr", duration:20, delay:0,  yOffset:[0,-10,0] },
-        { id:2, src:"/lottie/bird2.json", size:110, top:"18%",
+        { id:2, src:"/lottie/bird2.json", size:165, top:"18%",
           dir:"rtl", duration:24, delay:3,  yOffset:[6,-6,6] },
         { id:3, src:"/lottie/bird1.json", size:90,  top:"32%",
           dir:"ltr", duration:17, delay:7,  yOffset:[-5,8,-5] },
-        { id:4, src:"/lottie/bird2.json", size:110, top:"22%",
+        { id:4, src:"/lottie/bird2.json", size:165, top:"22%",
           dir:"rtl", duration:21, delay:10, yOffset:[5,-10,5] },
         { id:5, src:"/lottie/bird1.json", size:90,  top:"25%",
           dir:"ltr", duration:26, delay:4,  yOffset:[0,6,0] },
-        { id:6, src:"/lottie/bird2.json", size:110, top:"15%",
+        { id:6, src:"/lottie/bird2.json", size:165, top:"15%",
           dir:"rtl", duration:15, delay:12, yOffset:[-6,4,-6] },
+        { id:7, src:"/lottie/bird1.json", size:95,  top:"20%",
+          dir:"ltr", duration:22, delay:2,  yOffset:[0,-8,0] },
+        { id:8, src:"/lottie/bird2.json", size:165, top:"12%",
+          dir:"rtl", duration:18, delay:5,  yOffset:[4,-4,4] },
+        { id:9, src:"/lottie/bird1.json", size:85,  top:"35%",
+          dir:"ltr", duration:19, delay:8,  yOffset:[-4,6,-4] },
+        { id:10, src:"/lottie/bird2.json", size:165, top:"26%",
+          dir:"rtl", duration:25, delay:1,  yOffset:[5,-8,5] },
+        { id:11, src:"/lottie/bird1.json", size:95,  top:"16%",
+          dir:"ltr", duration:23, delay:11, yOffset:[0,5,0] },
+        { id:12, src:"/lottie/bird2.json", size:165, top:"29%",
+          dir:"rtl", duration:20, delay:6,  yOffset:[-5,5,-5] },
       ].map((bird) => {
         const isLeftToRight = bird.dir === "ltr";
         const getScaleX = (src: string, dir: string) => {
