@@ -99,7 +99,7 @@ export default function LandingWorld() {
       <div
         style={{
           position: "absolute",
-          top: "-15%",
+          top: "-12%",
           left: "50%",
           transform: "translateX(-50%)",
           width: 360,

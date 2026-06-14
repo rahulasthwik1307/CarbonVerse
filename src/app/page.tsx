@@ -167,7 +167,7 @@ export default function Home() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        paddingTop: "120px",
+        paddingTop: "135px",
       }}>
         <div style={{
           display: "flex",
