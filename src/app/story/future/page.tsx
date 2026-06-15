@@ -3,6 +3,7 @@
 import FutureSimulator from "@/components/story/FutureSimulator"; // Refresh
 
 import LandingWorld from "@/components/world/LandingWorld";
+import MemoryBookButton from "@/components/ui/MemoryBookButton";
 
 export default function FuturePage() {
   return (
@@ -16,6 +17,7 @@ export default function FuturePage() {
         <style>{`div::-webkit-scrollbar { display: none; }`}</style>
         <FutureSimulator />
       </div>
+      <MemoryBookButton />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import MemoryGarden from "@/components/story/MemoryGarden";
 import LandingWorld from "@/components/world/LandingWorld";
+import MemoryBookButton from "@/components/ui/MemoryBookButton";
 
 export default function GardenPage() {
   return (
@@ -15,6 +16,7 @@ export default function GardenPage() {
         <style>{`div::-webkit-scrollbar { display: none; }`}</style>
         <MemoryGarden />
       </div>
+      <MemoryBookButton />
     </main>
   );
 }

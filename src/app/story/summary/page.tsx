@@ -1,14 +1,16 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import VerdOrb from "@/components/ui/VerdOrb";
 import LandingWorld from "@/components/world/LandingWorld";
 import { useSessionStore } from "@/lib/session-store";
+import MemoryBookButton from "@/components/ui/MemoryBookButton";
 
 export default function SummaryPage() {
   const router = useRouter();
-  const { worldState, decisions, resetSession, currentChapter, advanceChapter } = useSessionStore();
+  const { profile, worldState, decisions, resetSession, currentChapter, advanceChapter } = useSessionStore();
 
   const handlePlayAgain = () => {
     resetSession();
@@ -20,6 +22,86 @@ export default function SummaryPage() {
 
   const chapter1Decisions = decisions.filter(d => d.chapter === 1);
   const chapter2Decisions = decisions.filter(d => d.chapter === 2);
+
+  const [actionPlan, setActionPlan] = useState<string[]>([]);
+  const [loadingPlan, setLoadingPlan] = useState(false);
+
+  useEffect(() => {
+    const fetchActionPlan = async () => {
+      setLoadingPlan(true);
+      try {
+        const highImpactDecisions = decisions
+          .filter(d => d.impactType === "high")
+          .map(d => d.choice);
+        
+        const ecoDecisions = decisions
+          .filter(d => d.impactType === "eco")
+          .map(d => d.choice);
+
+        const res = await fetch("/api/narrate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            decision: "action_plan",
+            impactType: totalCarbon < 0 ? "eco" : "high",
+            worldState,
+            city: profile.city || "your city",
+            chapter: `High impact choices: ${highImpactDecisions.join(", ") || "none"}. 
+                      Eco choices: ${ecoDecisions.join(", ") || "none"}.
+                      Generate exactly 4 specific action items for tomorrow.
+                      Format: Return ONLY a JSON array of 4 strings.
+                      Each string starts with an emoji.
+                      Example: ["🚶 Walk to the nearby shop","🥗 Try a vegetarian lunch"]`,
+            aqi: 75,
+          })
+        });
+        
+        const data = await res.json();
+        
+        try {
+          const parsed = JSON.parse(data.narrative);
+          if (Array.isArray(parsed)) {
+            setActionPlan(parsed.slice(0, 4));
+          } else {
+            throw new Error("not array");
+          }
+        } catch {
+          const plan = [];
+          if (highImpactDecisions.some(d => d.toLowerCase().includes("cab") || d.toLowerCase().includes("car"))) {
+            plan.push("🚇 Try public transport tomorrow");
+          }
+          if (highImpactDecisions.some(d => d.toLowerCase().includes("burger") || d.toLowerCase().includes("meat"))) {
+            plan.push("🥗 Try one vegetarian meal");
+          }
+          if (highImpactDecisions.some(d => d.toLowerCase().includes("delivery") || d.toLowerCase().includes("mall"))) {
+            plan.push("🛒 Buy from a local shop");
+          }
+          if (highImpactDecisions.some(d => d.toLowerCase().includes("game") || d.toLowerCase().includes("stream"))) {
+            plan.push("💡 Switch off unused devices tonight");
+          }
+          const generalTips = [
+            "🌱 Carry a reusable water bottle",
+            "🚶 Walk for trips under 1km",
+            "🥗 Try a plant-based breakfast",
+            "♻️ Sort your recyclables today",
+          ];
+          while (plan.length < 4) { plan.push(generalTips[plan.length]); }
+          setActionPlan(plan);
+        }
+      } catch {
+        setActionPlan([
+          "🚶 Walk or cycle for short trips",
+          "🥗 Try one plant-based meal",
+          "🛒 Shop locally when possible",
+          "💡 Switch off unused appliances",
+        ]);
+      } finally {
+        setLoadingPlan(false);
+      }
+    };
+    
+    fetchActionPlan();
+  }, [decisions, totalCarbon, worldState, profile.city]);
 
   return (
     <main style={{
@@ -145,6 +227,66 @@ export default function SummaryPage() {
             </div>
           </div>
 
+          <div style={{
+            marginTop: 24, width: "100%", padding: 20,
+            background: "rgba(255,248,230,0.8)",
+            borderRadius: 16,
+            border: "2px solid rgba(244,168,50,0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <VerdOrb size={32} />
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#2D5016" }}>Verd's Plan for Tomorrow 🌟</div>
+            </div>
+
+            {loadingPlan ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[1, 2, 3].map(i => (
+                  <div key={i} style={{ position: "relative", overflow: "hidden", height: 24, width: "100%", borderRadius: 4, background: "rgba(244,168,50,0.1)" }}>
+                    <motion.div
+                      animate={{ x: ["-100%", "200%"] }}
+                      transition={{ duration: 1.5, ease: "linear", repeat: Infinity }}
+                      style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)" }}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {actionPlan.map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: i * 0.1 }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "10px 0",
+                      borderBottom: i < actionPlan.length - 1 ? "1px solid rgba(184,212,168,0.3)" : "none",
+                    }}
+                  >
+                    <div
+                      onClick={(e) => {
+                        const target = e.currentTarget;
+                        target.style.background = "#4A7C2F";
+                        target.innerHTML = `<span style="color:white;font-size:12px;line-height:20px;text-align:center;display:block;">✓</span>`;
+                      }}
+                      style={{
+                        width: 20, height: 20, borderRadius: "50%",
+                        border: "2px solid #B8D4A8", background: "white",
+                        cursor: "pointer", flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ fontSize: 14, color: "#2D5016", fontWeight: 500 }}>{item}</div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+            
+            <div style={{ fontSize: 12, color: "#6B8F5E", fontStyle: "italic", marginTop: 16 }}>
+              Complete these tomorrow to grow your garden! 🌱
+            </div>
+          </div>
+
           <div style={{ marginTop: 32, width: "100%", display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
             <div style={{
               fontSize: 14, color: "#6B8F5E", textAlign: "center",
@@ -195,6 +337,7 @@ export default function SummaryPage() {
           </div>
         </motion.div>
       </div>
+      <MemoryBookButton />
     </main>
   );
 }

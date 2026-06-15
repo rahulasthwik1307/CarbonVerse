@@ -67,6 +67,23 @@ export default function CarbonDetective() {
       }
       
       setResult(data);
+      
+      const { addReceiptToMemoryBook, updateMissionProgress, checkAndUnlockAchievements } = useSessionStore.getState();
+      
+      addReceiptToMemoryBook({
+        receiptType: data.receiptType,
+        merchantName: data.merchantName || "Unknown",
+        totalCO2: data.totalCO2,
+        impactLevel: data.impactLevel,
+        items: data.items.map((i: any) => ({
+          name: i.name,
+          estimatedCO2: i.estimatedCO2
+        }))
+      });
+
+      updateMissionProgress("receipt_upload");
+      checkAndUnlockAchievements();
+
       setStep("results");
       
     } catch {

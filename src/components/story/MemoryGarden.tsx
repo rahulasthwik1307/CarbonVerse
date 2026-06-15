@@ -143,8 +143,50 @@ export default function MemoryGarden() {
     return colors[i % colors.length];
   };
 
-  const handleShare = () => {
-    alert("Garden screenshot coming soon! 🌿");
+  const [shareState, setShareState] = useState<"idle"|"generating"|"ready">("idle");
+  const [shareText, setShareText] = useState("");
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  const generateShareText = () => {
+    const eco = decisions.filter(d=>d.impactType==="eco").length;
+    const total = decisions.length;
+    const carbon = Math.abs(totalCarbonDelta);
+    const mood = worldState.planetMood;
+    
+    return `🌍 My CarbonVerse Story\n\n🌱 ${eco}/${total} eco choices made\n${totalCarbonDelta < 0 ? `▼ ${carbon} kg CO₂ saved` : `▲ ${carbon} kg CO₂ impact`}\n🌿 Planet Mood: ${mood}\n${profile.city ? `📍 ${profile.city}\n` : ""}\n${mood === "Thriving" ? "My garden is flourishing! 🌸🦋🌳" : mood === "Recovering" ? "My garden is growing stronger! 🌿🌱" : "Every eco choice grows my garden! 🌱"}\n\nPlay your own carbon story:\n#CarbonVerse #SustainabilityChallenge`;
+  };
+
+  const handleShare = async () => {
+    setShareState("generating");
+    const text = generateShareText();
+    setShareText(text);
+    
+    // Try native share API first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "My CarbonVerse Garden 🌱",
+          text: text,
+          url: window.location.origin,
+        });
+        setShareState("idle");
+        return;
+      } catch {
+        // Fall through to copy
+      }
+    }
+    
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(text);
+      setShareState("ready");
+      // Reset after 3s
+      setTimeout(() => setShareState("idle"), 3000);
+    } catch {
+      // Last fallback: show text in a modal
+      setShareState("idle");
+      setShowShareModal(true);
+    }
   };
 
   const dateStr = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date());
@@ -274,13 +316,47 @@ export default function MemoryGarden() {
           <motion.button
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
             onClick={handleShare}
-            style={{ padding: "14px", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(8px)", color: "#2D5016", borderRadius: 16, fontWeight: 600, fontSize: 15, border: "1px solid #B8D4A8", cursor: "pointer" }}
+            style={{ padding: "14px", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(8px)", color: shareState === "ready" ? "#2D7A1F" : "#2D5016", borderRadius: 16, fontWeight: 600, fontSize: 15, border: "1px solid #B8D4A8", cursor: "pointer" }}
           >
-            🌱 Share My Garden
+            {shareState === "idle" ? "🌱 Share My Garden" : shareState === "generating" ? "Preparing..." : "✓ Copied to clipboard!"}
           </motion.button>
         </div>
       </motion.div>
 
+      <AnimatePresence>
+        {showShareModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(255,255,255,0.6)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              style={{ background: "white", padding: 24, borderRadius: 24, width: "100%", maxWidth: 400, border: "1px solid #B8D4A8", boxShadow: "0 12px 48px rgba(45,80,22,0.1)" }}
+            >
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2D5016", marginBottom: 16 }}>Share Your Garden 🌱</h2>
+              <textarea
+                readOnly
+                value={shareText}
+                style={{ width: "100%", height: 160, padding: 12, borderRadius: 12, border: "1px solid rgba(184,212,168,0.5)", background: "rgba(74,124,47,0.05)", color: "#2D5016", fontSize: 14, resize: "none", marginBottom: 16 }}
+              />
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  style={{ flex: 1, padding: "12px", background: "rgba(0,0,0,0.05)", color: "#6B8F5E", borderRadius: 12, fontWeight: 600, border: "none", cursor: "pointer" }}
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(shareText); setShowShareModal(false); setShareState("ready"); setTimeout(() => setShareState("idle"), 3000); }}
+                  style={{ flex: 1, padding: "12px", background: "#4A7C2F", color: "white", borderRadius: 12, fontWeight: 600, border: "none", cursor: "pointer" }}
+                >
+                  Copy Text
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

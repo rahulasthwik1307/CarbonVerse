@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { DetectiveResult } from "@/types/carbon";
 import VerdOrb from "@/components/ui/VerdOrb";
 import { useRouter } from "next/navigation";
+import MemoryBookButton from "@/components/ui/MemoryBookButton";
 
 interface DetectiveResultsProps {
   result: DetectiveResult;
@@ -280,7 +281,7 @@ export default function DetectiveResults({ result, city, onReset }: DetectiveRes
           </motion.div>
         </button>
       </motion.div>
-
+      <MemoryBookButton />
     </div>
   );
 }
