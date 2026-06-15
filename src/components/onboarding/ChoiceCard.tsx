@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChoiceCardProps {
@@ -25,8 +25,10 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
       y: e.clientY - rect.top,
     });
     setShowRipple(true);
+    setShowParticles(true);
     onClick();
     setTimeout(() => setShowRipple(false), 500);
+    setTimeout(() => setShowParticles(false), 1200);
   };
 
   const isRecommended = aqiBadge === "recommended";
@@ -37,28 +39,28 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
 
   // --- Pre-selection background tints (communicate impact at a glance) ---
   const restBg = isEco
-    ? "rgba(240,250,240,0.7)"       // soft mint
+    ? "rgba(232,248,232,0.85)"       // richer mint
     : isHigh
-      ? "rgba(255,248,235,0.7)"     // soft warm cream
+      ? "rgba(255,244,225,0.85)"     // richer warm cream
       : "#FFFFFF";
 
   const selectedBg = isEco
-    ? "rgba(224,245,224,0.9)"       // stronger mint
+    ? "rgba(210,242,210,0.95)"       // saturated mint
     : isHigh
-      ? "rgba(255,240,218,0.8)"     // stronger warm
-      : "rgba(240,250,240,0.8)";
+      ? "rgba(255,236,205,0.9)"      // saturated warm
+      : "rgba(240,250,240,0.85)";
 
   // --- Border colors ---
   const restBorder = isRecommended
-    ? "rgba(76,175,80,0.5)"
+    ? "rgba(76,175,80,0.55)"
     : isDanger
-      ? "rgba(210,145,100,0.4)"
+      ? "rgba(210,155,90,0.45)"
       : isWarning
-        ? "rgba(200,160,80,0.35)"
+        ? "rgba(200,160,80,0.4)"
         : isEco
-          ? "rgba(76,175,80,0.3)"
+          ? "rgba(76,175,80,0.4)"
           : isHigh
-            ? "rgba(210,165,100,0.3)"
+            ? "rgba(210,155,90,0.35)"
             : "rgba(184,212,168,0.45)";
 
   const selectedBorder = isRecommended
@@ -73,10 +75,14 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
             ? "#C8945A"
             : "#4CAF50";
 
-  // --- Shadows ---
+  // --- Shadows (ambient for eco/high even at rest) ---
   const restShadow = isRecommended
-    ? "0 2px 12px rgba(76,175,80,0.1)"
-    : "0 2px 8px rgba(45,80,22,0.04)";
+    ? "0 2px 14px rgba(76,175,80,0.12)"
+    : isEco
+      ? "0 2px 12px rgba(76,175,80,0.1)"
+      : isHigh
+        ? "0 2px 10px rgba(210,155,90,0.08)"
+        : "0 2px 8px rgba(45,80,22,0.04)";
 
   const hoverShadow = isRecommended
     ? "0 5px 18px rgba(76,175,80,0.14)"
@@ -92,6 +98,30 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
   const rippleColor = isHigh
     ? "rgba(210,145,100,0.2)"
     : "rgba(76,175,80,0.18)";
+
+  // --- Selection particles ---
+  const [showParticles, setShowParticles] = useState(false);
+  const particles = useMemo(() => {
+    if (isEco) {
+      // Leaf-like particles floating up
+      return Array.from({ length: 4 }, (_, i) => ({
+        id: i,
+        x: 30 + Math.random() * 40,  // % from left
+        delay: i * 0.12,
+        color: `rgba(76,175,80,${0.3 + Math.random() * 0.3})`,
+      }));
+    }
+    if (isHigh) {
+      // Amber dots drifting sideways
+      return Array.from({ length: 3 }, (_, i) => ({
+        id: i,
+        x: 30 + Math.random() * 40,
+        delay: i * 0.1,
+        color: `rgba(210,155,90,${0.25 + Math.random() * 0.25})`,
+      }));
+    }
+    return [];
+  }, [isEco, isHigh]);
 
   // --- Warning/danger badge styles ---
   const getBadgeStyles = () => {
@@ -139,7 +169,7 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
       style={{
         position: "relative",
         borderRadius: 18,
-        border: isRecommended ? "1.5px solid" : "1px solid",
+        border: (isRecommended || isEco) ? "1.5px solid" : "1px solid",
         padding: "10px 14px",
         cursor: "pointer",
         display: "flex",
@@ -169,6 +199,42 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
             }}
           />
         )}
+      </AnimatePresence>
+
+      {/* Selection particles */}
+      <AnimatePresence>
+        {showParticles && particles.map((p) => (
+          <motion.div
+            key={`particle-${p.id}`}
+            initial={{
+              opacity: 0.8,
+              x: `${p.x}%`,
+              y: "50%",
+              scale: 0.6,
+            }}
+            animate={{
+              opacity: 0,
+              y: isEco ? "-40%" : "50%",
+              x: isEco ? `${p.x}%` : `${p.x + (p.id % 2 === 0 ? 20 : -20)}%`,
+              scale: 0,
+            }}
+            exit={{ opacity: 0 }}
+            transition={{
+              duration: 1,
+              delay: p.delay,
+              ease: [0.23, 1, 0.32, 1],
+            }}
+            style={{
+              position: "absolute",
+              width: isEco ? 6 : 5,
+              height: isEco ? 8 : 5,
+              borderRadius: isEco ? "50% 0 50% 50%" : "50%",
+              backgroundColor: p.color,
+              pointerEvents: "none",
+              transform: isEco ? "rotate(45deg)" : undefined,
+            }}
+          />
+        ))}
       </AnimatePresence>
 
       {/* 🌿 Verd Recommends pill — centered capsule */}

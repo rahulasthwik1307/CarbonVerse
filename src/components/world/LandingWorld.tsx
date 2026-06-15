@@ -10,7 +10,7 @@ export default function LandingWorld() {
   const hillsRef = useRef<HTMLDivElement>(null);
   const cloudsRef = useRef<HTMLDivElement>(null);
   const { worldState } = useSessionStore();
-  const { planetMood } = worldState;
+  const { planetMood, skyQuality, birdCount, greenCoverage } = worldState;
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -19,6 +19,18 @@ export default function LandingWorld() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // --- Sky quality drives gradient vibrancy ---
+  const skyFactor = skyQuality / 100; // 0..1
+  // Interpolate sky blue: dull (hazy gold) at low, vivid blue at high
+  const skyBlueTop = `rgba(${Math.round(135 * skyFactor + 200 * (1 - skyFactor))}, ${Math.round(206 * skyFactor + 190 * (1 - skyFactor))}, ${Math.round(235 * skyFactor + 170 * (1 - skyFactor))}, 1)`;
+  const skyBlueMid = `rgba(${Math.round(184 * skyFactor + 220 * (1 - skyFactor))}, ${Math.round(224 * skyFactor + 210 * (1 - skyFactor))}, ${Math.round(247 * skyFactor + 190 * (1 - skyFactor))}, 1)`;
+
+  // --- Bird visibility: show ceil(birdCount / 8.3) out of 12 ---
+  const visibleBirdCount = Math.max(2, Math.ceil(birdCount / 8.3));
+
+  // --- Ground overlay opacity scales with greenCoverage ---
+  const groundOpacity = 0.3 + (greenCoverage / 100) * 0.3; // 0.3 to 0.6
 
   let overlayColor = "rgba(0, 0, 0, 0)";
   if (planetMood === "Thriving") {
@@ -83,16 +95,19 @@ export default function LandingWorld() {
       }}
     >
       {/* ═══ LAYER 1 — Sky Gradient ═══ */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
+      <motion.div
+        animate={{
           background: `linear-gradient(180deg,
-            #87CEEB 0%,
-            #B8E0F7 20%,
+            ${skyBlueTop} 0%,
+            ${skyBlueMid} 20%,
             #FFE5A0 55%,
             #FFD580 75%,
             #FFF8E7 100%)`,
+        }}
+        transition={{ duration: 2, ease: "easeInOut" }}
+        style={{
+          position: "absolute",
+          inset: 0,
           zIndex: 1,
         }}
       />
@@ -265,7 +280,7 @@ export default function LandingWorld() {
         })}
       </div>
 
-      {/* ═══ LAYER 5 — Birds (Lottie) ═══ */}
+      {/* ═══ LAYER 5 — Birds (Lottie) — count driven by worldState.birdCount ═══ */}
       {[
         { id:1, src:"/lottie/bird1.json", size:90,  top:"28%",
           dir:"ltr", duration:20, delay:0,  yOffset:[0,-10,0] },
@@ -291,7 +306,7 @@ export default function LandingWorld() {
           dir:"ltr", duration:23, delay:11, yOffset:[0,5,0] },
         { id:12, src:"/lottie/bird2.json", size:165, top:"29%",
           dir:"rtl", duration:20, delay:6,  yOffset:[-5,5,-5] },
-      ].map((bird) => {
+      ].slice(0, visibleBirdCount).map((bird) => {
         const isLeftToRight = bird.dir === "ltr";
         const getScaleX = (src: string, dir: string) => {
           const isBird2 = src.includes("bird2");
@@ -350,17 +365,20 @@ export default function LandingWorld() {
 
       {/* FloatingLeaf removed — trees sway instead */}
 
-      {/* ═══ LAYER 7 — Ground Overlay ═══ */}
-      <div
+      {/* ═══ LAYER 7 — Ground Overlay (greener with more eco choices) ═══ */}
+      <motion.div
+        animate={{
+          background: `linear-gradient(180deg,
+            transparent 0%,
+            rgba(200, 230, 160, ${(groundOpacity * 0.6).toFixed(2)}) 50%,
+            rgba(168, 216, 120, ${groundOpacity.toFixed(2)}) 100%)`,
+        }}
+        transition={{ duration: 2, ease: "easeInOut" }}
         style={{
           position: "absolute",
           bottom: 0,
           width: "100%",
           height: "30%",
-          background: `linear-gradient(180deg,
-            transparent 0%,
-            rgba(200, 230, 160, 0.3) 50%,
-            rgba(168, 216, 120, 0.5) 100%)`,
           zIndex: 7,
           pointerEvents: "none",
         }}

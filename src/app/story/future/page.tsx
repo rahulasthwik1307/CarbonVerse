@@ -1,6 +1,7 @@
 "use client";
 
 import FutureSimulator from "@/components/story/FutureSimulator"; // Refresh
+import FutureEarth from "@/components/story/FutureEarth";
 
 import LandingWorld from "@/components/world/LandingWorld";
 import MemoryBookButton from "@/components/ui/MemoryBookButton";
@@ -16,6 +17,9 @@ export default function FuturePage() {
       }}>
         <style>{`div::-webkit-scrollbar { display: none; }`}</style>
         <FutureSimulator />
+        <div style={{marginTop: 32}}>
+          <FutureEarth />
+        </div>
       </div>
       <MemoryBookButton />
     </main>

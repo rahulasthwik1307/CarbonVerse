@@ -1,11 +1,13 @@
 "use client";
 import ChapterView from "@/components/story/ChapterView";
 import LandingWorld from "@/components/world/LandingWorld";
+import WorldFeedback from "@/components/world/WorldFeedback";
 
 export default function ChapterPage() {
   return (
     <main style={{ position:"fixed", inset:0, overflow:"hidden" }}>
       <LandingWorld />
+      <WorldFeedback />
       <div style={{
         position: "absolute",
         inset: 0,

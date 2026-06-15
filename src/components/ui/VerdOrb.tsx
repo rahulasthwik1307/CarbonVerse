@@ -13,6 +13,9 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
   const orbRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isBlinking, setIsBlinking] = useState(false);
+  const [showMoodCheeks, setShowMoodCheeks] = useState(false);
+  const [moodGlow, setMoodGlow] = useState("none");
+  const [eyebrowWorry, setEyebrowWorry] = useState(0); // 0 = neutral, positive = worried
 
   // Spring-based tilt toward mouse for the entire orb container
   const rotateX = useMotionValue(0);
@@ -89,25 +92,40 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
     if (mood === "eco") {
       setAnimState({
         y: [0, -4, 0],
-        scale: [1, 1.3, 1],
+        scale: [1, 1.08, 1],
         opacity: 1,
-        transition: { duration: 0.3, repeat: 2 }
+        transition: { duration: 0.4, repeat: 2 }
       });
+      // Show cheek blush briefly
+      setShowMoodCheeks(true);
+      setMoodGlow("0 0 20px rgba(76,175,80,0.3)");
+      setEyebrowWorry(0);
+      setTimeout(() => {
+        setShowMoodCheeks(false);
+        setMoodGlow("0 0 12px rgba(76,175,80,0.15)");
+      }, 2000);
       setTimeout(() => setAnimState({
         y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
         transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
-      }), 900);
+      }), 1200);
     } else if (mood === "high") {
       setAnimState({
         y: [0, -4, 0],
         scale: [1, 1.025, 1],
-        opacity: 0.7,
+        opacity: 0.85,
         transition: { duration: 0.3 }
       });
-      setTimeout(() => setAnimState({
-        y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
-        transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
-      }), 600);
+      setShowMoodCheeks(false);
+      setMoodGlow("0 0 8px rgba(76,175,80,0.1)");
+      setEyebrowWorry(1);
+      setTimeout(() => {
+        setEyebrowWorry(0);
+        setMoodGlow("none");
+        setAnimState({
+          y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
+          transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
+        });
+      }, 2500);
     } else if (mood === "moderate") {
       setAnimState({
         y: [0, -8, 0],
@@ -158,6 +176,8 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
             #2D7A45 100%)`,
           position: "relative",
           overflow: "visible",
+          boxShadow: moodGlow,
+          transition: "box-shadow 0.8s ease",
         }}
         className="cv-verd-glow-effect"
       >
@@ -197,8 +217,8 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
               transformOrigin: "center",
             }}
             animate={{
-              rotate: isHovered ? -12 : 0,  // raises on hover
-              y: isHovered ? -2 : 0,
+              rotate: isHovered ? -12 : eyebrowWorry > 0 ? 6 : 0,
+              y: isHovered ? -2 : eyebrowWorry > 0 ? 1 : 0,
               scaleX: isBlinking ? 0.8 : 1,
             }}
             transition={{ duration: 0.2, ease: [0.23,1,0.32,1] }}
@@ -213,8 +233,8 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
               transformOrigin: "center",
             }}
             animate={{
-              rotate: isHovered ? 12 : 0,  // raises on hover
-              y: isHovered ? -2 : 0,
+              rotate: isHovered ? 12 : eyebrowWorry > 0 ? -6 : 0,
+              y: isHovered ? -2 : eyebrowWorry > 0 ? 1 : 0,
               scaleX: isBlinking ? 0.8 : 1,
             }}
             transition={{ duration: 0.2, ease: [0.23,1,0.32,1] }}
@@ -267,9 +287,9 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
           />
         </motion.div>
 
-        {/* Cheeks — visible on hover */}
+        {/* Cheeks — visible on hover OR mood reaction */}
         <AnimatePresence>
-          {isHovered && (
+          {(isHovered || showMoodCheeks) && (
             <>
               <motion.div
                 initial={{ opacity: 0, scale: 0 }}

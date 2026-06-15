@@ -47,6 +47,14 @@ export default function MemoryBook() {
 
   const cats = calculateCategories();
 
+  const trendData = memoryBook.stories.slice(-7).map((story) => ({
+    label: new Date(story.date).toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
+    carbon: story.totalCarbonKg,
+    mood: story.planetMood,
+  }));
+
+  const maxAbsCarbon = Math.max(1, ...trendData.map((d) => Math.abs(d.carbon)));
+
   return (
     <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
       {/* HEADER */}
@@ -266,6 +274,120 @@ export default function MemoryBook() {
                 {Math.round((memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) * 10) / 10} kg
               </div>
               <div style={{ fontSize: 13, color: "#8B6914" }}>Combined from stories and receipts</div>
+            </div>
+
+            {/* Carbon Trend Graph */}
+            <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: 20, padding: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#2D5016" }}>Your Carbon Journey 📈</div>
+                  <div style={{ fontSize: 11, color: "#6B8F5E" }}>Last {trendData.length} stories</div>
+                </div>
+              </div>
+              
+              {trendData.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                  <VerdOrb size={40} mood="moderate" className="mx-auto mb-2" />
+                  <div style={{ fontSize: 12, color: "#6B8F5E" }}>Play a story to see your trend!</div>
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  style={{ width: "100%", height: 180, position: "relative" }}
+                >
+                  <svg viewBox="0 0 300 180" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", height: "100%", overflow: "visible" }}>
+                    {/* Y-axis baseline */}
+                    <line x1="20" y1="140" x2="290" y2="140" stroke="rgba(184,212,168,0.4)" strokeWidth="1" />
+                    
+                    {/* Zero line label */}
+                    <text x="5" y="143" fontSize="8" fill="#A8BEA9" fontWeight="500">0 kg</text>
+                    
+                    {/* Bars */}
+                    {trendData.map((d, i) => {
+                      const barWidth = 30;
+                      const gap = (270 - trendData.length * barWidth) / (trendData.length + 1);
+                      const x = 20 + gap + i * (barWidth + gap);
+                      
+                      const rawHeight = (Math.abs(d.carbon) / maxAbsCarbon) * 100;
+                      const barHeight = Math.max(2, rawHeight);
+                      
+                      const isEco = d.carbon < 0;
+                      const isHigh = d.carbon > 0;
+                      
+                      const y = isEco ? 140 - barHeight : 140;
+                      const fill = isEco ? "#4CAF50" : isHigh ? "#D4845A" : "#B8D4A8";
+                      
+                      const labelY = isEco ? y - 6 : y + barHeight + 10;
+                      
+                      const moodEmoji = d.mood === "Thriving" ? "🟢" : d.mood === "Under Stress" ? "🔴" : "🟡";
+                      const emojiY = isEco ? y - 18 : 140 - 10;
+                      
+                      return (
+                        <g key={i}>
+                          <motion.rect
+                            x={x}
+                            y={isEco ? 140 : 140}
+                            width={barWidth}
+                            height={0}
+                            fill={fill}
+                            rx={4}
+                            animate={{ y: y, height: barHeight }}
+                            transition={{ duration: 0.6, delay: i * 0.08, ease: "easeOut" }}
+                          />
+                          
+                          {/* CO2 Value */}
+                          <motion.text
+                            x={x + barWidth / 2}
+                            y={labelY}
+                            fontSize="7"
+                            fontWeight="bold"
+                            fill={fill}
+                            textAnchor="middle"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3, delay: 0.4 + i * 0.08 }}
+                          >
+                            {d.carbon > 0 ? "+" : ""}{d.carbon}
+                          </motion.text>
+                          
+                          {/* Mood Emoji */}
+                          <motion.text
+                            x={x + barWidth / 2}
+                            y={emojiY}
+                            fontSize="8"
+                            textAnchor="middle"
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3, delay: 0.5 + i * 0.08, type: "spring" }}
+                          >
+                            {moodEmoji}
+                          </motion.text>
+                          
+                          {/* Date Label */}
+                          <text
+                            x={x + barWidth / 2}
+                            y="155"
+                            fontSize="7"
+                            fill="#6B8F5E"
+                            textAnchor="end"
+                            transform={`rotate(-30, ${x + barWidth / 2}, 155)`}
+                          >
+                            {d.label}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                  
+                  {trendData.length === 1 && (
+                    <div style={{ textAlign: "center", fontSize: 11, color: "#6B8F5E", marginTop: 8 }}>
+                      Play more stories to see your trend! 📈
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </div>
 
             {/* Category Breakdown */}
