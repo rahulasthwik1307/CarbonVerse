@@ -33,6 +33,7 @@ interface SessionState {
   setDiet: (d: UserProfile["diet"]) => void;
   setFlights: (f: UserProfile["flights"]) => void;
   completeOnboarding: () => void;
+  advanceChapter: () => void;
   applyDecision: (choice: string, impactType: "eco" | "moderate" | "high", carbonDelta: number) => void;
   resetSession: () => void;
 }
@@ -69,6 +70,8 @@ export const useSessionStore = create<SessionState>((set) => ({
   setFlights: (flights) => set((state) => ({ profile: { ...state.profile, flights } })),
   
   completeOnboarding: () => set({ isOnboarded: true }),
+  
+  advanceChapter: () => set((state) => ({ currentChapter: state.currentChapter + 1 })),
 
   applyDecision: (choice, impactType, carbonDelta) => set((state) => {
     let { skyQuality, treeDensity, trafficLevel, birdCount, greenCoverage } = state.worldState;

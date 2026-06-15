@@ -10,8 +10,8 @@ import { useAirQuality } from "@/hooks/useAirQuality";
 
 const CHAPTER_1_MOMENTS = [
   {
-    situation: "Tuesday morning. You're hungry before work.",
-    question: "What do you have for breakfast?",
+    situation: "Tuesday morning in your city. You're getting ready for work.",
+    question: "How do you start your morning meal?",
     decisions: [
       { id:"plant-breakfast", emoji:"🥗", label:"Plant-based meal",
         description:"Oats, fruits, green smoothie",
@@ -40,8 +40,8 @@ const CHAPTER_1_MOMENTS = [
     ]
   },
   {
-    situation: "Lunchtime. You have 30 minutes.",
-    question: "What do you eat for lunch?",
+    situation: "Lunchtime. 30 minutes to eat.",
+    question: "What do you pick for lunch?",
     decisions: [
       { id:"home-tiffin", emoji:"🥘", label:"Home-cooked tiffin",
         description:"Brought from home, zero packaging",
@@ -56,6 +56,68 @@ const CHAPTER_1_MOMENTS = [
   },
 ];
 
+const CHAPTER_2_MOMENTS = [
+  {
+    situation: "Evening. You need a few things from the market.",
+    question: "How do you shop?",
+    decisions: [
+      { id:"local-market", emoji:"🛒", 
+        label:"Local kirana store",
+        description:"Walk to the corner shop",
+        impactType:"eco" as const, carbonDelta:-5 },
+      { id:"online-order", emoji:"📦",
+        label:"Order online",
+        description:"Home delivery with packaging",
+        impactType:"moderate" as const, carbonDelta:3 },
+      { id:"mall-trip", emoji:"🏬",
+        label:"Drive to the mall",
+        description:"Car trip, air-conditioned mall",
+        impactType:"high" as const, carbonDelta:12 },
+    ]
+  },
+  {
+    situation: "After shopping. Dinner time.",
+    question: "What do you cook for dinner?",
+    decisions: [
+      { id:"home-cook", emoji:"🥘",
+        label:"Cook at home",
+        description:"Fresh vegetables, minimal waste",
+        impactType:"eco" as const, carbonDelta:-7 },
+      { id:"order-veggie", emoji:"🥗",
+        label:"Order vegetarian",
+        description:"Local restaurant delivery",
+        impactType:"moderate" as const, carbonDelta:2 },
+      { id:"order-meat", emoji:"🥩",
+        label:"Order meat dish",
+        description:"High-carbon protein delivery",
+        impactType:"high" as const, carbonDelta:14 },
+    ]
+  },
+  {
+    situation: "Before bed. Time to relax.",
+    question: "How do you wind down?",
+    decisions: [
+      { id:"read-book", emoji:"📚",
+        label:"Read or meditate",
+        description:"Zero energy, maximum calm",
+        impactType:"eco" as const, carbonDelta:-2 },
+      { id:"stream-show", emoji:"📺",
+        label:"Stream a show",
+        description:"Moderate energy consumption",
+        impactType:"moderate" as const, carbonDelta:1 },
+      { id:"game-all-night", emoji:"🎮",
+        label:"Game all night",
+        description:"High electricity usage",
+        impactType:"high" as const, carbonDelta:6 },
+    ]
+  },
+];
+
+const CHAPTERS: Record<number, typeof CHAPTER_1_MOMENTS> = {
+  1: CHAPTER_1_MOMENTS,
+  2: CHAPTER_2_MOMENTS,
+};
+
 function SkeletonLine({ width, height }: { width: string; height: number }) {
   return (
     <div style={{ position: "relative", overflow: "hidden", height, width, borderRadius: 4, background: "rgba(74, 124, 47, 0.1)" }}>
@@ -66,6 +128,27 @@ function SkeletonLine({ width, height }: { width: string; height: number }) {
       />
     </div>
   );
+}
+
+const getAqiBadge = (
+  impactType: "eco"|"moderate"|"high",
+  aqi: number
+) => {
+  if (aqi > 100) {
+    if (impactType === "eco") 
+      return { badge: "recommended" as const, label: "✓ Best for your city today" }
+    if (impactType === "high") 
+      return { badge: "danger" as const, label: "⚠ Adds to today's pollution" }
+    if (impactType === "moderate")
+      return { badge: "warning" as const, label: "Moderate impact today" }
+  }
+  if (aqi > 50) {
+    if (impactType === "eco")
+      return { badge: "recommended" as const, label: "✓ Good choice for today" }
+    if (impactType === "high")
+      return { badge: "warning" as const, label: "Higher impact today" }
+  }
+  return { badge: null, label: "" }
 }
 
 export default function ChapterView() {
@@ -79,10 +162,16 @@ export default function ChapterView() {
   const [isLoadingNarrative, setIsLoadingNarrative] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [worldReacting, setWorldReacting] = useState(false);
+  const [showChapterComplete, setShowChapterComplete] = useState(false);
 
   const { data: aqiData } = useAirQuality();
 
-  const moment = CHAPTER_1_MOMENTS[currentDecision];
+  const chapter = useSessionStore(s => s.currentChapter);
+  const advanceChapter = useSessionStore(s => s.advanceChapter);
+  const chapterMoments = CHAPTERS[chapter] || CHAPTER_1_MOMENTS;
+
+  const moment = chapterMoments[currentDecision];
+  const currentSituation = moment.situation;
 
   const handleSelect = async (choiceId: string, label: string, impactType: "eco" | "moderate" | "high", carbonDelta: number) => {
     if (selectedChoice) return;
@@ -105,7 +194,7 @@ export default function ChapterView() {
           impactType,
           worldState,
           city: profile.city || "your city",
-          chapter: moment.situation,
+          chapter: currentSituation,
           aqi: aqiData?.aqi || 75,
         })
       });
@@ -120,13 +209,25 @@ export default function ChapterView() {
   };
 
   const handleNext = () => {
-    if (currentDecision < CHAPTER_1_MOMENTS.length - 1) { 
+    if (currentDecision < chapterMoments.length - 1) { 
       setCurrentDecision(prev => prev + 1);
       setSelectedChoice(null);
       setSelectedImpact(null);
       setNarrative("");
     } else {
-      router.push("/story/summary");
+      if (chapter === 1) {
+        setShowChapterComplete(true);
+        setTimeout(() => {
+          advanceChapter();
+          setShowChapterComplete(false);
+          setCurrentDecision(0);
+          setSelectedChoice(null);
+          setSelectedImpact(null);
+          setNarrative("");
+        }, 1800);
+      } else {
+        router.push("/story/summary");
+      }
     }
   };
 
@@ -146,39 +247,6 @@ export default function ChapterView() {
           boxShadow: "0 8px 32px rgba(45, 80, 22, 0.1)",
         }}
       >
-        {aqiData && (
-          <motion.div
-            initial={{ opacity:0, y:-10 }}
-            animate={{ opacity:1, y:0 }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              marginBottom: 16,
-              padding: "6px 14px",
-              borderRadius: 20,
-              background: `${aqiData.aqiColor}20`,
-              border: `1px solid ${aqiData.aqiColor}40`,
-              width: "fit-content",
-              margin: "0 auto 16px",
-            }}
-          >
-            <div style={{
-              width: 8, height: 8, borderRadius: "50%",
-              background: aqiData.aqiColor,
-              boxShadow: `0 0 6px ${aqiData.aqiColor}`,
-              animation: "cv-verd-pulse 2s ease-in-out infinite"
-            }} />
-            <span style={{
-              fontSize: 12, fontWeight: 600,
-              color: aqiData.aqiColor
-            }}>
-              Air Quality: {aqiData.aqiLevel} · AQI {aqiData.aqi}
-            </span>
-          </motion.div>
-        )}
-
         {/* Top row: Chapter badge (centered) */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
           <div style={{
@@ -190,7 +258,7 @@ export default function ChapterView() {
             fontWeight: 600,
             border: "1px solid rgba(74, 124, 47, 0.2)"
           }}>
-            Chapter 1 · Tuesday
+            Chapter {chapter} · {chapter === 1 ? "Tuesday" : "Evening"}
           </div>
         </div>
 
@@ -235,8 +303,7 @@ export default function ChapterView() {
           }}>
             {isLoadingNarrative ? <SkeletonLine width="80%" height={16}/> :
              narrative ? (selectedImpact === "eco" ? "🌿 " : "") + `“${narrative}”` :
-             aqiData ? `“${aqiData.verdMessage}”` :
-             `“${moment.situation}”`}
+             `“${currentSituation}”`}
           </div>
         </div>
 
@@ -254,6 +321,8 @@ export default function ChapterView() {
             const isSelected = selectedChoice === d.id;
             const isDimmed = selectedChoice !== null && !isSelected;
             
+            const { badge, label } = getAqiBadge(d.impactType, aqiData?.aqi || 50);
+
             return (
               <motion.div
                 key={d.id}
@@ -268,6 +337,8 @@ export default function ChapterView() {
                   description={d.description}
                   isSelected={isSelected}
                   onClick={() => handleSelect(d.id, d.label, d.impactType, d.carbonDelta)}
+                  aqiBadge={badge}
+                  aqiLabel={label}
                 />
               </motion.div>
             );
@@ -311,6 +382,44 @@ export default function ChapterView() {
           />
         </div>
       </motion.div>
+
+      {/* Chapter Complete Overlay */}
+      <AnimatePresence>
+        {showChapterComplete && (
+          <motion.div
+            initial={{ opacity:0, scale:0.8 }}
+            animate={{ opacity:1, scale:1 }}
+            exit={{ opacity:0, scale:1.1 }}
+            style={{
+              position: "fixed", inset: 0, zIndex: 100,
+              display: "flex", alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(240,250,240,0.85)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            <div style={{ textAlign: "center" }}>
+              <motion.div
+                animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 0.6, repeat: 2 }}
+                style={{ fontSize: 72, marginBottom: 16 }}
+              >
+                ✨
+              </motion.div>
+              <div style={{ 
+                fontSize: 28, fontWeight: 800, color: "#2D5016" 
+              }}>
+                Chapter 1 Complete!
+              </div>
+              <div style={{ 
+                fontSize: 16, color: "#4A7C2F", marginTop: 8 
+              }}>
+                Evening choices await...
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

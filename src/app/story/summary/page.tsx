@@ -8,8 +8,7 @@ import { useSessionStore } from "@/lib/session-store";
 
 export default function SummaryPage() {
   const router = useRouter();
-  const { worldState, decisions, resetSession } = useSessionStore();
-  const chapter1Decisions = decisions.filter((d) => d.chapter === 1);
+  const { worldState, decisions, resetSession, currentChapter, advanceChapter } = useSessionStore();
 
   const handlePlayAgain = () => {
     resetSession();
@@ -18,6 +17,9 @@ export default function SummaryPage() {
 
   const totalCarbon = decisions.reduce((sum, d) => sum + d.carbonDelta, 0);
   const isPositive = totalCarbon < 0;
+
+  const chapter1Decisions = decisions.filter(d => d.chapter === 1);
+  const chapter2Decisions = decisions.filter(d => d.chapter === 2);
 
   return (
     <main style={{
@@ -59,7 +61,7 @@ export default function SummaryPage() {
           </motion.div>
           
           <h1 style={{ marginTop: 24, color: "#2D5016", fontSize: 28, fontWeight: 800, textAlign: "center" }}>
-            Chapter 1 Complete! 🎉
+            Your Journey Complete! 🎉
           </h1>
 
           <div style={{ 
@@ -100,24 +102,38 @@ export default function SummaryPage() {
           </div>
 
           <div style={{ marginTop: 12, width: "100%" }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, color: "#6B8F5E", marginBottom: 16 }}>Your Decisions:</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600, color: "#6B8F5E", marginBottom: 12 }}>Chapter 1 Decisions:</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
               {chapter1Decisions.map((d, i) => (
-                <div key={i} style={{ 
-                  display: "flex", 
-                  justifyContent: "space-between", 
-                  alignItems: "center",
-                  padding: "12px 16px",
-                  background: "#F0FAF0",
-                  borderRadius: 12,
-                  border: "1px solid #B8D4A8"
+                <div key={`c1-${i}`} style={{ 
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "10px 14px", background: "#F0FAF0",
+                  borderRadius: 12, border: "1px solid #B8D4A8"
                 }}>
-                  <span style={{ color: "#2D5016", fontWeight: 500 }}>{d.choice}</span>
+                  <span style={{ color: "#2D5016", fontWeight: 500, fontSize: 14 }}>{d.choice}</span>
                   <span style={{ 
-                    fontSize: 12, 
-                    fontWeight: 600, 
-                    padding: "4px 8px", 
-                    borderRadius: 8,
+                    fontSize: 11, fontWeight: 700, padding: "3px 6px", borderRadius: 6,
+                    background: d.impactType === "eco" ? "#A8D878" : d.impactType === "moderate" ? "#FFD580" : "rgba(255,107,107,0.15)",
+                    color: d.impactType === "eco" ? "#2D5016" : d.impactType === "moderate" ? "#5A4000" : "#A0401A",
+                    border: d.impactType === "high" ? "1px solid rgba(255,107,107,0.3)" : "none"
+                  }}>
+                    {d.impactType.toUpperCase()}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <h2 style={{ fontSize: 16, fontWeight: 600, color: "#6B8F5E", marginBottom: 12 }}>Chapter 2 Decisions:</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {chapter2Decisions.map((d, i) => (
+                <div key={`c2-${i}`} style={{ 
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  padding: "10px 14px", background: "#F0FAF0",
+                  borderRadius: 12, border: "1px solid #B8D4A8"
+                }}>
+                  <span style={{ color: "#2D5016", fontWeight: 500, fontSize: 14 }}>{d.choice}</span>
+                  <span style={{ 
+                    fontSize: 11, fontWeight: 700, padding: "3px 6px", borderRadius: 6,
                     background: d.impactType === "eco" ? "#A8D878" : d.impactType === "moderate" ? "#FFD580" : "rgba(255,107,107,0.15)",
                     color: d.impactType === "eco" ? "#2D5016" : d.impactType === "moderate" ? "#5A4000" : "#A0401A",
                     border: d.impactType === "high" ? "1px solid rgba(255,107,107,0.3)" : "none"
@@ -134,12 +150,28 @@ export default function SummaryPage() {
               fontSize: 14, color: "#6B8F5E", textAlign: "center",
               lineHeight: 1.6, fontStyle: "italic", marginBottom: 4
             }}>
-              {worldState.planetMood === "Thriving" 
-                ? "Your choices are making a real difference! 🌍" 
-                : worldState.planetMood === "Recovering"
-                ? "Things are improving — one choice at a time. 🌿"
-                : "Every journey starts with a single step. 🌱"}
+              Two chapters done! Your choices are shaping your world. 🌍
             </div>
+
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => router.push("/story/future")}
+              style={{
+                padding: "12px 24px",
+                background: "rgba(74,124,47,0.1)",
+                color: "#2D5016",
+                borderRadius: 14,
+                fontWeight: 600,
+                fontSize: 15,
+                border: "2px solid #B8D4A8",
+                cursor: "pointer",
+                width: "100%",
+                marginTop: 8,
+              }}
+            >
+              See Your Future →
+            </motion.button>
 
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -160,9 +192,6 @@ export default function SummaryPage() {
             >
               Play Again
             </motion.button>
-            <span style={{ color: "#6B8F5E", fontSize: 14, fontWeight: 500 }}>
-              Chapter 2 coming soon...
-            </span>
           </div>
         </motion.div>
       </div>
