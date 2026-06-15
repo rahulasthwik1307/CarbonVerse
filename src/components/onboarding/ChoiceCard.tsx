@@ -11,9 +11,10 @@ interface ChoiceCardProps {
   onClick: () => void;
   aqiBadge?: "recommended" | "warning" | "danger" | null;
   aqiLabel?: string;
+  impactType?: "eco" | "moderate" | "high";
 }
 
-export default function ChoiceCard({ emoji, label, description, isSelected, onClick, aqiBadge, aqiLabel }: ChoiceCardProps) {
+export default function ChoiceCard({ emoji, label, description, isSelected, onClick, aqiBadge, aqiLabel, impactType }: ChoiceCardProps) {
   const [showRipple, setShowRipple] = useState(false);
   const [ripplePos, setRipplePos] = useState({ x: 0, y: 0 });
 
@@ -31,49 +32,80 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
   const isRecommended = aqiBadge === "recommended";
   const isDanger = aqiBadge === "danger";
   const isWarning = aqiBadge === "warning";
+  const isEco = impactType === "eco";
+  const isHigh = impactType === "high";
+
+  // --- Pre-selection background tints (communicate impact at a glance) ---
+  const restBg = isEco
+    ? "rgba(240,250,240,0.7)"       // soft mint
+    : isHigh
+      ? "rgba(255,248,235,0.7)"     // soft warm cream
+      : "#FFFFFF";
+
+  const selectedBg = isEco
+    ? "rgba(224,245,224,0.9)"       // stronger mint
+    : isHigh
+      ? "rgba(255,240,218,0.8)"     // stronger warm
+      : "rgba(240,250,240,0.8)";
 
   // --- Border colors ---
-  const borderColor = isSelected
-    ? (isRecommended ? "#4CAF50" : isDanger ? "#D4845A" : isWarning ? "#D4A04A" : "#4CAF50")
-    : (isRecommended ? "rgba(76,175,80,0.45)"
-      : isDanger ? "rgba(210,132,90,0.35)"
-      : isWarning ? "rgba(212,160,74,0.35)"
-      : "rgba(184,212,168,0.5)");
+  const restBorder = isRecommended
+    ? "rgba(76,175,80,0.5)"
+    : isDanger
+      ? "rgba(210,145,100,0.4)"
+      : isWarning
+        ? "rgba(200,160,80,0.35)"
+        : isEco
+          ? "rgba(76,175,80,0.3)"
+          : isHigh
+            ? "rgba(210,165,100,0.3)"
+            : "rgba(184,212,168,0.45)";
+
+  const selectedBorder = isRecommended
+    ? "#4CAF50"
+    : isDanger
+      ? "#C87A50"
+      : isWarning
+        ? "#C8A040"
+        : isEco
+          ? "#4CAF50"
+          : isHigh
+            ? "#C8945A"
+            : "#4CAF50";
 
   // --- Shadows ---
   const restShadow = isRecommended
     ? "0 2px 12px rgba(76,175,80,0.1)"
-    : "0 2px 10px rgba(45,80,22,0.05)";
+    : "0 2px 8px rgba(45,80,22,0.04)";
 
   const hoverShadow = isRecommended
-    ? "0 6px 20px rgba(76,175,80,0.15)"
-    : "0 6px 18px rgba(45,80,22,0.1)";
+    ? "0 5px 18px rgba(76,175,80,0.14)"
+    : "0 5px 16px rgba(45,80,22,0.08)";
 
-  // --- Background ---
-  const bgColor = isSelected
-    ? (isDanger ? "rgba(210,132,90,0.04)" : isWarning ? "rgba(212,160,74,0.04)" : "#F0FAF0")
-    : "#FFFFFF";
+  const selectedShadow = isRecommended
+    ? "0 4px 20px rgba(76,175,80,0.18)"
+    : isHigh
+      ? "0 4px 16px rgba(210,145,100,0.12)"
+      : "0 4px 16px rgba(45,80,22,0.08)";
 
   // --- Ripple color ---
-  const rippleColor = isDanger
-    ? "rgba(210,132,90,0.25)"
-    : isWarning
-      ? "rgba(212,160,74,0.25)"
-      : "rgba(76,175,80,0.2)";
+  const rippleColor = isHigh
+    ? "rgba(210,145,100,0.2)"
+    : "rgba(76,175,80,0.18)";
 
   // --- Warning/danger badge styles ---
   const getBadgeStyles = () => {
     if (isWarning) {
       return {
-        bg: "rgba(212,160,74,0.1)",
-        border: "1px solid rgba(212,160,74,0.25)",
+        bg: "rgba(200,160,80,0.1)",
+        border: "1px solid rgba(200,160,80,0.25)",
         color: "#8B6914",
       };
     }
     if (isDanger) {
       return {
-        bg: "rgba(210,132,90,0.08)",
-        border: "1px solid rgba(210,132,90,0.25)",
+        bg: "rgba(210,145,100,0.08)",
+        border: "1px solid rgba(210,145,100,0.25)",
         color: "#8B4A2A",
       };
     }
@@ -85,13 +117,13 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
   return (
     <motion.div
       onClick={handleClick}
-      initial={{ y: 16, opacity: 0 }}
+      initial={{ y: 12, opacity: 0 }}
       animate={{
         y: 0,
         opacity: 1,
-        borderColor: borderColor,
-        backgroundColor: bgColor,
-        boxShadow: isSelected ? hoverShadow : restShadow,
+        borderColor: isSelected ? selectedBorder : restBorder,
+        backgroundColor: isSelected ? selectedBg : restBg,
+        boxShadow: isSelected ? selectedShadow : restShadow,
       }}
       whileHover={{
         y: -2,
@@ -106,9 +138,9 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
       }}
       style={{
         position: "relative",
-        borderRadius: 20,
+        borderRadius: 18,
         border: isRecommended ? "1.5px solid" : "1px solid",
-        padding: "12px 16px",
+        padding: "10px 14px",
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
@@ -139,36 +171,17 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
         )}
       </AnimatePresence>
 
-      {/* Gentle floating for recommended only — translateY only, no opacity */}
-      {isRecommended && !isSelected && (
-        <motion.div
-          animate={{ y: [-1, 1, -1] }}
-          transition={{
-            repeat: Infinity,
-            duration: 3.5,
-            ease: "easeInOut",
-          }}
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            borderRadius: 20,
-            boxShadow: "0 0 0 0.5px rgba(76,175,80,0.08)",
-          }}
-        />
-      )}
-
       {/* 🌿 Verd Recommends pill — centered capsule */}
       {isRecommended && (
         <div
           style={{
             background: "rgba(76,175,80,0.1)",
             color: "#2D7A1F",
-            padding: "3px 14px",
+            padding: "2px 12px",
             borderRadius: 999,
-            fontSize: 11,
+            fontSize: 10.5,
             fontWeight: 600,
-            marginBottom: 8,
+            marginBottom: 6,
             border: "1px solid rgba(76,175,80,0.2)",
             letterSpacing: "0.01em",
           }}
@@ -177,27 +190,27 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
         </div>
       )}
 
-      {/* Emoji — smaller, centered, bounce only on select */}
+      {/* Emoji — centered, bounce only on select */}
       <motion.div
-        animate={isSelected ? { scale: [1, 1.12, 1] } : {}}
+        animate={isSelected ? { scale: [1, 1.1, 1] } : {}}
         transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-        style={{ fontSize: 28, marginBottom: 4, lineHeight: 1 }}
+        style={{ fontSize: 26, marginBottom: 3, lineHeight: 1 }}
       >
         {emoji}
       </motion.div>
 
       {/* Title */}
-      <div style={{ fontSize: 15, fontWeight: 700, color: "#2D5016", marginBottom: 2 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#2D5016", marginBottom: 1 }}>
         {label}
       </div>
 
       {/* Description */}
       <div style={{
-        fontSize: 12.5,
+        fontSize: 12,
         fontWeight: 400,
         color: "#6B8F5E",
-        lineHeight: 1.4,
-        marginBottom: (aqiBadge && !isRecommended && badgeStyles) ? 6 : 0,
+        lineHeight: 1.35,
+        marginBottom: (aqiBadge && !isRecommended && badgeStyles) ? 4 : 0,
       }}>
         {description}
       </div>
@@ -208,9 +221,9 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
           background: badgeStyles.bg,
           border: badgeStyles.border,
           color: badgeStyles.color,
-          fontSize: 10.5,
+          fontSize: 10,
           fontWeight: 500,
-          padding: "3px 10px",
+          padding: "2px 9px",
           borderRadius: 999,
           marginTop: 2,
         }}>

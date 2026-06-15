@@ -257,13 +257,13 @@ export default function ChapterView() {
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ width: "100%", maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
       <motion.div
         layout
         className="glass-panel"
         style={{
           width: "100%",
-          padding: 36,
+          padding: "24px 28px",
           borderRadius: 28,
           background: "rgba(255, 255, 255, 0.8)",
           backdropFilter: "blur(12px)",
@@ -273,7 +273,7 @@ export default function ChapterView() {
         }}
       >
         {/* Top row: Chapter badge (centered) */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
           <div style={{
             background: "rgba(74, 124, 47, 0.1)",
             color: "#4A7C2F",
@@ -295,12 +295,12 @@ export default function ChapterView() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
             style={{
-              background: "rgba(255,255,255,0.7)",
-              borderRadius: 20,
-              padding: "20px 24px",
-              marginBottom: 24,
-              boxShadow: "0 4px 16px rgba(45,80,22,0.04)",
-              border: "1px solid rgba(184,212,168,0.4)"
+              background: "rgba(255,255,255,0.65)",
+              borderRadius: 16,
+              padding: "14px 18px",
+              marginBottom: 14,
+              boxShadow: "0 2px 10px rgba(45,80,22,0.03)",
+              border: "1px solid rgba(184,212,168,0.35)"
             }}
           >
             <div style={{
@@ -308,9 +308,9 @@ export default function ChapterView() {
               alignItems: "center", 
               gap: 14,
             }}>
-              <VerdOrb size={40} mood={selectedImpact} />
+              <VerdOrb size={34} mood={selectedImpact} />
               <div style={{
-                fontSize: 15, fontWeight: 700, color: "#4A7C2F"
+                fontSize: 13, fontWeight: 700, color: "#4A7C2F"
               }}>
                 {isLoadingNarrative ? "Verd is thinking..." : 
                  narrative ? "Verd says:" : "Verd says:"}
@@ -319,20 +319,20 @@ export default function ChapterView() {
             
             {/* Narrative or situation text */}
             <div style={{
-              marginLeft: 54,
-              marginTop: 12,
-              fontSize: 20, 
+              marginLeft: 48,
+              marginTop: 6,
+              fontSize: 14, 
               color: narrative 
                 ? selectedImpact === "eco" ? "#2D7A1F" 
                   : selectedImpact === "moderate" ? "#8B6914" 
                   : "#A0401A" 
                 : "#2D5016", 
-              lineHeight: 1.6,
+              lineHeight: 1.5,
               fontWeight: 300,
               fontStyle: "italic",
-              minHeight: 48,
+              minHeight: 28,
             }}>
-              {isLoadingNarrative ? <SkeletonLine width="80%" height={20}/> :
+              {isLoadingNarrative ? <SkeletonLine width="80%" height={14}/> :
                narrative ? (selectedImpact === "eco" ? "🌿 " : "") + `“${narrative}”` :
                `“${currentSituation}”`}
             </div>
@@ -346,8 +346,8 @@ export default function ChapterView() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
           style={{
-            fontSize: 24, fontWeight: 800, color: "#2D5016",
-            textAlign: "center", marginBottom: 28,
+            fontSize: 19, fontWeight: 700, color: "#2D5016",
+            textAlign: "center", marginBottom: 14,
             letterSpacing: "-0.01em"
           }}
         >
@@ -355,7 +355,7 @@ export default function ChapterView() {
         </motion.div>
 
         {/* Decisions (stacked, full width) */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {shuffledDecisions.map((d, index) => {
             const isSelected = selectedChoice === d.id;
             const isDimmed = selectedChoice !== null && !isSelected;
@@ -378,6 +378,7 @@ export default function ChapterView() {
                   onClick={() => handleSelect(d.id, d.label, d.impactType, d.carbonDelta)}
                   aqiBadge={badge}
                   aqiLabel={label}
+                  impactType={d.impactType}
                 />
               </motion.div>
             );
@@ -396,8 +397,8 @@ export default function ChapterView() {
               onClick={handleNext}
               style={{
                 width: "100%",
-                padding: "14px 0",
-                marginTop: 20,
+                padding: "12px 0",
+                marginTop: 14,
                 background: "linear-gradient(135deg, #4A7C2F 0%, #2D5016 100%)",
                 color: "white",
                 borderRadius: 14,
@@ -414,7 +415,7 @@ export default function ChapterView() {
 
         {/* Premium Progress bar */}
         <div style={{ 
-          marginTop: 32, 
+          marginTop: 20, 
           height: 8, 
           width: "100%", 
           background: "rgba(74, 124, 47, 0.08)", 
