@@ -241,7 +241,7 @@ export default function Home() {
             duration: 0.6,
             ease: [0.23, 1, 0.32, 1],
           }}
-          className="flex items-center gap-3 mb-6"
+          className="flex items-center gap-3 mt-4 mb-6"
           style={{ pointerEvents: "auto" }}
         >
           <VerdOrb size={56} />
@@ -549,16 +549,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Bottom hint */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.85 }}
-          transition={{ delay: 2.8, duration: 0.5 }}
-          className="mt-8 text-sm font-medium tracking-wide"
-          style={{ color: "#2D5016" }}
-        >
-          No sign-in required · Your story, your choices
-        </motion.p>
+
         </div>
       </div>
 
