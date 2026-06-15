@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/lib/session-store";
@@ -173,6 +173,13 @@ export default function ChapterView() {
   const moment = chapterMoments[currentDecision];
   const currentSituation = moment.situation;
 
+  // Stable shuffle for options
+  const [shuffledDecisions, setShuffledDecisions] = useState(moment.decisions);
+
+  useEffect(() => {
+    setShuffledDecisions([...moment.decisions].sort(() => Math.random() - 0.5));
+  }, [moment]);
+
   const handleSelect = async (choiceId: string, label: string, impactType: "eco" | "moderate" | "high", carbonDelta: number) => {
     if (selectedChoice) return;
     
@@ -280,62 +287,76 @@ export default function ChapterView() {
           </div>
         </div>
 
-        {/* SINGLE situation block */}
-        <div style={{
-          background: "rgba(74,124,47,0.08)",
-          borderRadius: 16,
-          padding: "16px 20px",
-          marginBottom: 20,
-        }}>
-          <div style={{
-            display: "flex",
-            alignItems: "center", 
-            gap: 12,
-          }}>
-            <VerdOrb size={36} mood={selectedImpact} />
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={currentDecision}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            style={{
+              background: "rgba(255,255,255,0.7)",
+              borderRadius: 20,
+              padding: "20px 24px",
+              marginBottom: 24,
+              boxShadow: "0 4px 16px rgba(45,80,22,0.04)",
+              border: "1px solid rgba(184,212,168,0.4)"
+            }}
+          >
             <div style={{
-              fontSize: 14, fontWeight: 600, color: "#4A7C2F"
+              display: "flex",
+              alignItems: "center", 
+              gap: 14,
             }}>
-              {isLoadingNarrative ? "Verd is thinking..." : 
-               narrative ? "Verd says:" : "Verd says:"}
+              <VerdOrb size={40} mood={selectedImpact} />
+              <div style={{
+                fontSize: 15, fontWeight: 700, color: "#4A7C2F"
+              }}>
+                {isLoadingNarrative ? "Verd is thinking..." : 
+                 narrative ? "Verd says:" : "Verd says:"}
+              </div>
             </div>
-          </div>
-          
-          {/* Narrative or situation text */}
-          <div style={{
-            marginLeft: 48,
-            marginTop: 8,
-            padding: "12px 16px",
-            background: "rgba(255, 255, 255, 0.6)",
-            borderRadius: "0 12px 12px 12px",
-            borderLeft: "3px solid #4A7C2F",
-            fontSize: 15, 
-            color: narrative 
-              ? selectedImpact === "eco" ? "#2D7A1F" 
-                : selectedImpact === "moderate" ? "#8B6914" 
-                : "#A0401A" 
-              : "#2D5016", 
-            lineHeight: 1.6,
-            fontStyle: "italic",
-            minHeight: 40,
-          }}>
-            {isLoadingNarrative ? <SkeletonLine width="80%" height={16}/> :
-             narrative ? (selectedImpact === "eco" ? "🌿 " : "") + `“${narrative}”` :
-             `“${currentSituation}”`}
-          </div>
-        </div>
+            
+            {/* Narrative or situation text */}
+            <div style={{
+              marginLeft: 54,
+              marginTop: 12,
+              fontSize: 20, 
+              color: narrative 
+                ? selectedImpact === "eco" ? "#2D7A1F" 
+                  : selectedImpact === "moderate" ? "#8B6914" 
+                  : "#A0401A" 
+                : "#2D5016", 
+              lineHeight: 1.6,
+              fontWeight: 300,
+              fontStyle: "italic",
+              minHeight: 48,
+            }}>
+              {isLoadingNarrative ? <SkeletonLine width="80%" height={20}/> :
+               narrative ? (selectedImpact === "eco" ? "🌿 " : "") + `“${narrative}”` :
+               `“${currentSituation}”`}
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Question text (bold, centered) */}
-        <div style={{
-          fontSize: 17, fontWeight: 600, color: "#2D5016",
-          textAlign: "center", marginBottom: 20
-        }}>
+        <motion.div 
+          key={`q-${currentDecision}`}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
+          style={{
+            fontSize: 24, fontWeight: 800, color: "#2D5016",
+            textAlign: "center", marginBottom: 28,
+            letterSpacing: "-0.01em"
+          }}
+        >
           {moment.question}
-        </div>
+        </motion.div>
 
         {/* Decisions (stacked, full width) */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {moment.decisions.map((d, index) => {
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {shuffledDecisions.map((d, index) => {
             const isSelected = selectedChoice === d.id;
             const isDimmed = selectedChoice !== null && !isSelected;
             
@@ -391,13 +412,39 @@ export default function ChapterView() {
           )}
         </AnimatePresence>
 
-        {/* Progress bar */}
-        <div style={{ marginTop: 24, height: 4, width: "100%", background: "rgba(74, 124, 47, 0.1)", borderRadius: 2, overflow: "hidden" }}>
+        {/* Premium Progress bar */}
+        <div style={{ 
+          marginTop: 32, 
+          height: 8, 
+          width: "100%", 
+          background: "rgba(74, 124, 47, 0.08)", 
+          borderRadius: 999, 
+          overflow: "hidden",
+          position: "relative",
+          boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)"
+        }}>
           <motion.div
-            animate={{ width: `${((currentDecision + 1) / 3) * 100}%` }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
-            style={{ height: "100%", background: "#4A7C2F", borderRadius: 2 }}
-          />
+            initial={{ width: 0 }}
+            animate={{ width: `${((currentDecision + 1) / chapterMoments.length) * 100}%` }}
+            transition={{ type: "spring", stiffness: 60, damping: 15 }}
+            style={{ 
+              height: "100%", 
+              background: "linear-gradient(90deg, #7BC67E 0%, #4CAF50 100%)", 
+              borderRadius: 999,
+              position: "relative",
+              overflow: "hidden"
+            }}
+          >
+            <motion.div
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 2, ease: "linear", repeat: Infinity, repeatDelay: 1 }}
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)",
+              }}
+            />
+          </motion.div>
         </div>
       </motion.div>
 
