@@ -64,7 +64,13 @@ If it IS a receipt but has zero carbon impact items, still set
 isValid true but items array will be empty with totalCO2 of 0.
 
 IMPORTANT: Carbon estimates should be realistic and educational.
-Never shame the user. Always be warm and encouraging.`;
+Never shame the user. Always be warm and encouraging.
+
+IMPORTANT: In the 'note' field for each item,
+if you can identify a quantity (liters of fuel,
+kWh of electricity, kg of food), include it.
+Format: 'X liters', 'X kWh', 'X kg'
+This helps calculate precise emissions.`;
 
 export async function POST(req: Request) {
   try {
@@ -175,6 +181,76 @@ export async function POST(req: Request) {
         suggestions: [],
         topInsight: ""
       });
+    }
+
+    // Use any for DetectiveItem to avoid declaring an interface inline
+    if (result.receiptType === "fuel" && result.items) {
+      // Look for fuel quantities in items
+      const totalLiters = result.items.reduce((sum: number, item: any) => {
+        // Groq should include liters in the note field
+        const literMatch = item.note?.match(/(\d+(?:\.\d+)?)\s*(?:liters?|litres?|L)/i);
+        if (literMatch) return sum + parseFloat(literMatch[1]);
+        return sum;
+      }, 0);
+      
+      if (totalLiters > 0) {
+        try {
+          const emissionsRes = await fetch(
+            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/carbon`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                activityId: "fuel_type_diesel-fuel_use_na",
+                value: totalLiters,
+                unit: "l"
+              })
+            }
+          );
+          const emissionsData = await emissionsRes.json();
+          if (emissionsData.co2kg) {
+            result.totalCO2 = emissionsData.co2kg;
+            result.totalCO2Label = 
+              `${totalLiters}L fuel = ${emissionsData.co2kg.toFixed(1)} kg CO₂`;
+          }
+        } catch {
+          // Keep Groq's estimate
+        }
+      }
+    }
+
+    if (result.receiptType === "electricity" && result.items) {
+      // Look for kWh in items
+      const totalKwh = result.items.reduce((sum: number, item: any) => {
+        const kwhMatch = item.note?.match(/(\d+(?:\.\d+)?)\s*kWh/i);
+        if (kwhMatch) return sum + parseFloat(kwhMatch[1]);
+        return sum;
+      }, 0);
+      
+      if (totalKwh > 0) {
+        try {
+          const emissionsRes = await fetch(
+            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/carbon`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                activityId: "electricity-supply_grid-source_residual_mix",
+                value: totalKwh,
+                unit: "kWh"
+              })
+            }
+          );
+          const emissionsData = await emissionsRes.json();
+          if (emissionsData.co2kg) {
+            result.totalCO2 = emissionsData.co2kg;
+            result.totalCO2Label = 
+              `${totalKwh} kWh = ${emissionsData.co2kg.toFixed(1)} kg CO₂ (India grid)`;
+          }
+        } catch {
+          // Keep Groq's estimate  
+        }
+      }
     }
 
     return NextResponse.json(result);

@@ -104,6 +104,7 @@ interface SessionState {
   updateMissionProgress: (targetType: string) => void;
   checkAndUnlockAchievements: () => void;
   clearPendingAchievements: () => void;
+  generateNewMissions: () => void;
 }
 
 const defaultState = {
@@ -295,6 +296,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   }),
 
   addReceiptToMemoryBook: (receipt) => set((state) => ({
+    totalCarbonDelta: state.totalCarbonDelta + receipt.totalCO2,
     memoryBook: {
       ...state.memoryBook,
       receipts: [...state.memoryBook.receipts, {
@@ -339,22 +341,31 @@ export const useSessionStore = create<SessionState>((set) => ({
         case "story-complete":
           unlock = state.memoryBook.stories.length >= 1;
           break;
-        case "metro-master":
-          const publicChoices = state.memoryBook.stories.flatMap(s => s.decisions).filter(d => d.choice.toLowerCase().includes("metro") || d.choice.toLowerCase().includes("public") || d.choice.toLowerCase().includes("bus"));
+        case "metro-master": {
+          const publicChoices = state.memoryBook.stories.flatMap(s => s.decisions)
+            .filter(d => d.choice.toLowerCase().includes("metro") || d.choice.toLowerCase().includes("walk"));
           unlock = publicChoices.length >= 3;
           break;
-        case "plant-pro":
-          const plantChoices = state.memoryBook.stories.flatMap(s => s.decisions).filter(d => d.choice.toLowerCase().includes("plant") || d.choice.toLowerCase().includes("vegan"));
+        }
+        case "plant-pro": {
+          const plantChoices = state.memoryBook.stories.flatMap(s => s.decisions)
+            .filter(d => d.impactType === "eco" && (d.choice.toLowerCase().includes("plant") || d.choice.toLowerCase().includes("tiffin") || d.choice.toLowerCase().includes("canteen")));
           unlock = plantChoices.length >= 3;
           break;
+        }
         case "garden-guardian":
+          unlock = state.memoryBook.ecoChoicesCount >= 5;
           break;
         case "aqi-protector":
           unlock = state.memoryBook.ecoChoicesCount >= 10;
           break;
-        case "sustainability-hero":
-          unlock = state.memoryBook.stories.some(s => s.decisions.length > 0 && s.decisions.every(d => d.impactType === "eco"));
+        case "sustainability-hero": {
+          if (state.memoryBook.stories.length >= 1) {
+            const recentStory = state.memoryBook.stories[state.memoryBook.stories.length - 1];
+            unlock = recentStory.decisions.length > 0 && recentStory.decisions.every(d => d.impactType === "eco");
+          }
           break;
+        }
       }
       
       if (unlock) {
@@ -371,5 +382,89 @@ export const useSessionStore = create<SessionState>((set) => ({
     };
   }),
 
-  clearPendingAchievements: () => set({ pendingAchievements: [] })
+  clearPendingAchievements: () => set({ pendingAchievements: [] }),
+
+  generateNewMissions: () => set((state) => {
+    const decisions = state.memoryBook.stories.flatMap(s => s.decisions);
+    
+    const highTransport = decisions.filter(d => 
+      d.moment === "commute" && d.impactType === "high"
+    ).length;
+    
+    const highFood = decisions.filter(d =>
+      ["breakfast","lunch","dinner"].includes(d.moment || "") 
+      && d.impactType === "high"
+    ).length;
+    
+    const highShopping = decisions.filter(d =>
+      d.moment === "shopping" && d.impactType === "high"
+    ).length;
+
+    const newMissions = [];
+    
+    if (highTransport > 0) {
+      newMissions.push({
+        id: `mission-transport-${Date.now()}`,
+        title: "Commute Champion",
+        description: "Choose public transport or walk in next story",
+        emoji: "🚇",
+        targetType: "eco_choices" as const,
+        targetCount: 1,
+        currentCount: 0,
+        completed: false,
+        reward: "Metro Master badge",
+      });
+    }
+    
+    if (highFood > 0) {
+      newMissions.push({
+        id: `mission-food-${Date.now()}`,
+        title: "Green Plate",
+        description: "Choose a plant-based or local meal",
+        emoji: "🥗",
+        targetType: "eco_choices" as const,
+        targetCount: 1,
+        currentCount: 0,
+        completed: false,
+        reward: "Plant-Based Pro badge",
+      });
+    }
+    
+    if (highShopping > 0) {
+      newMissions.push({
+        id: `mission-shop-${Date.now()}`,
+        title: "Local Buyer",
+        description: "Choose local kirana store in next story",
+        emoji: "🛒",
+        targetType: "eco_choices" as const,
+        targetCount: 1,
+        currentCount: 0,
+        completed: false,
+        reward: "Garden Guardian badge",
+      });
+    }
+    
+    if (state.memoryBook.receipts.length === 0) {
+      newMissions.push({
+        id: `mission-receipt-${Date.now()}`,
+        title: "Receipt Detective",
+        description: "Analyze your first real receipt",
+        emoji: "🔍",
+        targetType: "receipt_upload" as const,
+        targetCount: 1,
+        currentCount: 0,
+        completed: false,
+        reward: "Carbon Detective badge",
+      });
+    }
+
+    const completedMissions = state.activeMissions.filter(m => m.completed);
+    
+    return {
+      activeMissions: [
+        ...completedMissions,
+        ...newMissions.slice(0, 3),
+      ]
+    };
+  })
 }));

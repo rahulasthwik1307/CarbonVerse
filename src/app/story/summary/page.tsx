@@ -10,7 +10,7 @@ import MemoryBookButton from "@/components/ui/MemoryBookButton";
 
 export default function SummaryPage() {
   const router = useRouter();
-  const { profile, worldState, decisions, resetSession, currentChapter, advanceChapter } = useSessionStore();
+  const { profile, worldState, decisions, resetSession, currentChapter, advanceChapter, activeMissions } = useSessionStore();
 
   const handlePlayAgain = () => {
     resetSession();
@@ -286,6 +286,35 @@ export default function SummaryPage() {
               Complete these tomorrow to grow your garden! 🌱
             </div>
           </div>
+
+          {activeMissions && activeMissions.filter(m => !m.completed).length > 0 && (
+            <div style={{
+              marginTop: 24, width: "100%", padding: 20,
+              background: "rgba(255,255,255,0.8)",
+              borderRadius: 16,
+              border: "1px solid rgba(74, 124, 47, 0.3)",
+            }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#2D5016", marginBottom: 12 }}>
+                🎯 New Missions Unlocked!
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {activeMissions.filter(m => !m.completed).map(mission => (
+                  <div key={mission.id} style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    background: "rgba(74, 124, 47, 0.05)",
+                    padding: 12, borderRadius: 12,
+                    border: "1px dashed rgba(74, 124, 47, 0.2)"
+                  }}>
+                    <div style={{ fontSize: 24 }}>{mission.emoji}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#2D5016" }}>{mission.title}</div>
+                      <div style={{ fontSize: 12, color: "#6B8F5E" }}>{mission.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={{ marginTop: 32, width: "100%", display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
             <div style={{

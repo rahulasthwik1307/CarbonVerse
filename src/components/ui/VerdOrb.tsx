@@ -6,7 +6,7 @@ import { motion, useSpring, useMotionValue, AnimatePresence } from "framer-motio
 interface VerdOrbProps {
   size?: number;
   className?: string;
-  mood?: "eco" | "moderate" | "high" | null;
+  mood?: "eco" | "moderate" | "high" | "thinking" | null;
 }
 
 export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProps) {
@@ -30,7 +30,7 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
   const springEyeY = useSpring(eyeY, { stiffness: 120, damping: 18 });
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!orbRef.current) return;
+    if (!orbRef.current || mood === "thinking") return;
     const rect = orbRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -62,6 +62,17 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [handleMouseMove]);
+
+  useEffect(() => {
+    if (mood === "thinking") {
+      eyeX.set(-3);
+      eyeY.set(-4);
+      rotateY.set(-8); // slight head tilt
+    } else {
+      // Spring back naturally on mouse move or when mood changes back
+      rotateY.set(0);
+    }
+  }, [mood, eyeX, eyeY, rotateY]);
 
   // Randomized blinking logic
   useEffect(() => {
@@ -147,7 +158,7 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
   return (
     <motion.div
       ref={orbRef}
-      className={className}
+      className={`${className} ${mood === "thinking" ? "cv-verd-thinking" : ""}`}
       style={{
         width: size,
         height: size,
@@ -383,6 +394,46 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
           opacity={0.5}
         />
       </svg>
+
+      {/* Thought bubbles when thinking */}
+      <AnimatePresence>
+        {mood === "thinking" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "absolute",
+              top: "-10%",
+              right: "-5%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {[8, 6, 4].map((s, i) => (
+              <motion.div
+                key={i}
+                initial={{ y: 0, opacity: 0.6 }}
+                animate={{ y: -20, opacity: 0 }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  delay: (2 - i) * 0.3, // 4px dot first, then 6px, then 8px
+                  ease: "easeOut",
+                }}
+                style={{
+                  width: s,
+                  height: s,
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(74,124,47,0.4)",
+                }}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

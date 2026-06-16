@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { DetectiveResult } from "@/types/carbon";
 import VerdOrb from "@/components/ui/VerdOrb";
 import { useRouter } from "next/navigation";
 import MemoryBookButton from "@/components/ui/MemoryBookButton";
+import { useSessionStore } from "@/lib/session-store";
 
 interface DetectiveResultsProps {
   result: DetectiveResult;
@@ -41,6 +43,19 @@ export default function DetectiveResults({ result, city, onReset }: DetectiveRes
   const typeBadge = TYPE_BADGES[result.receiptType] || TYPE_BADGES.unknown;
   const impactColor = IMPACT_COLORS[result.impactLevel] || IMPACT_COLORS.moderate;
   const impactFill = IMPACT_FILLS[result.impactLevel] || "45%";
+
+  const { addReceiptToMemoryBook, updateMissionProgress, checkAndUnlockAchievements } = useSessionStore();
+  const [addedToStory, setAddedToStory] = useState(false);
+
+  const handleAddToStory = () => {
+    addReceiptToMemoryBook({
+      ...result,
+      merchantName: result.merchantName || "Unknown"
+    } as any);
+    updateMissionProgress("receipt_upload");
+    checkAndUnlockAchievements();
+    setAddedToStory(true);
+  };
 
   return (
     <div className="w-full flex flex-col gap-8 pb-12">
@@ -245,6 +260,26 @@ export default function DetectiveResults({ result, city, onReset }: DetectiveRes
         className="flex flex-col gap-4 mt-8 pt-4 border-t border-[rgba(184,212,168,0.4)]"
       >
         <button
+          onClick={handleAddToStory}
+          disabled={addedToStory}
+          className="w-full py-4 rounded-2xl font-semibold shadow-lg relative overflow-hidden transition-colors duration-500"
+          style={{
+            background: addedToStory ? "#4CAF50" : "rgba(255,255,255,0.8)",
+            backdropFilter: addedToStory ? "none" : "blur(12px)",
+            color: addedToStory ? "white" : "#2D5016",
+            border: addedToStory ? "none" : "1px solid rgba(184,212,168,0.6)",
+          }}
+        >
+          <motion.div 
+            whileHover={!addedToStory ? { scale: 1.02 } : {}} 
+            whileTap={!addedToStory ? { scale: 0.98 } : {}}
+            className="w-full h-full flex items-center justify-center gap-2"
+          >
+            {addedToStory ? "✓ Added to Memory Book" : "📖 Add to My Story"}
+          </motion.div>
+        </button>
+
+        <button
           onClick={() => router.push("/story")}
           className="w-full py-4 rounded-2xl font-semibold text-white shadow-lg relative overflow-hidden"
           style={{
@@ -260,10 +295,6 @@ export default function DetectiveResults({ result, city, onReset }: DetectiveRes
             ✨ Start My Story
           </motion.div>
         </button>
-
-        <div className="text-center text-[12px] font-medium" style={{ color: "#6B8F5E" }}>
-          Add this to your carbon story →
-        </div>
 
         <button
           onClick={onReset}

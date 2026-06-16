@@ -127,8 +127,9 @@ export default function Home() {
   const [idleMode, setIdleMode] = useState(false);
   const [wipeOrigin, setWipeOrigin] = useState("50% 50%");
   
-  const { worldState } = useSessionStore();
+  const { worldState, memoryBook } = useSessionStore();
   const planetMood = worldState?.planetMood;
+  const showNav = memoryBook.stories.length > 0 || memoryBook.receipts.length > 0;
 
   // Shared mouse tracking
   const mouseX = useMotionValue(0);
@@ -210,6 +211,46 @@ export default function Home() {
     >
       {/* Background world */}
       <LandingWorld />
+
+      {/* Top right navigation */}
+      {showNav && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            position: "absolute",
+            top: 24, right: 24,
+            zIndex: 50,
+            display: "flex",
+            gap: 12
+          }}
+        >
+          <button
+            onClick={() => router.push("/memory")}
+            className="px-4 py-2 rounded-xl font-semibold cursor-pointer shadow-sm transition-transform hover:scale-105 active:scale-95"
+            style={{
+              background: "rgba(255,255,255,0.8)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(184,212,168,0.6)",
+              color: "#2D5016",
+            }}
+          >
+            📖 Memory
+          </button>
+          <button
+            onClick={() => router.push("/badges")}
+            className="px-4 py-2 rounded-xl font-semibold cursor-pointer shadow-sm transition-transform hover:scale-105 active:scale-95"
+            style={{
+              background: "rgba(255,255,255,0.8)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(184,212,168,0.6)",
+              color: "#2D5016",
+            }}
+          >
+            🏆 Badges
+          </button>
+        </motion.div>
+      )}
 
       {/* Foreground content */}
       <div style={{

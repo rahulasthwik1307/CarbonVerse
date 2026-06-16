@@ -221,6 +221,10 @@
   animation: cv-verd-pulse 0.8s ease-in-out infinite;
 }
 
+.cv-verd-thinking .cv-verd-glow-effect {
+  animation: cv-verd-pulse 1s ease-in-out infinite !important;
+}
+
 
 @keyframes cv-sunrise {
   0% {

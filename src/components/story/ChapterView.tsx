@@ -151,6 +151,66 @@ const getAqiBadge = (
   return { badge: null, label: "" }
 }
 
+const getCommuteCO2 = async (choiceId: string): Promise<number> => {
+  // Activity IDs and distances for Indian commute
+  const commuteConfig: Record<string, {
+    activityId: string, value: number, unit: string
+  }> = {
+    "walk-cycle": {
+      activityId: "passenger_vehicle-vehicle_type_bicycle-fuel_source_na-engine_size_na-vehicle_age_na-vehicle_weight_na",
+      value: 5, unit: "km"
+    },
+    "metro": {
+      activityId: "passenger_vehicle-vehicle_type_subway-fuel_source_electricity-engine_size_na-vehicle_age_na-vehicle_weight_na", 
+      value: 8, unit: "passenger_km"
+    },
+    "cab": {
+      activityId: "passenger_vehicle-vehicle_type_taxi-fuel_source_petrol-engine_size_na-vehicle_age_na-vehicle_weight_na",
+      value: 8, unit: "passenger_km"
+    },
+  };
+  
+  const config = commuteConfig[choiceId];
+  if (!config) return 0;
+  
+  // Zero emissions for walking/cycling
+  if (choiceId === "walk-cycle") return -12;
+  
+  try {
+    const res = await fetch("/api/carbon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config)
+    });
+    const data = await res.json();
+    
+    // Return as negative for metro (saves vs car baseline)
+    // positive for cab
+    if (choiceId === "metro") return -(data.co2kg || 3);
+    if (choiceId === "cab") return data.co2kg || 10;
+    return data.co2kg || 0;
+  } catch {
+    // Fallback values
+    return choiceId === "cab" ? 10 : -3;
+  }
+};
+
+function TypewriterText({ text }: { text: string }) {
+  const [displayedText, setDisplayedText] = useState("");
+  useEffect(() => {
+    setDisplayedText("");
+    const chars = Array.from(text);
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayedText(chars.slice(0, i + 1).join(""));
+      i++;
+      if (i >= chars.length) clearInterval(interval);
+    }, 25);
+    return () => clearInterval(interval);
+  }, [text]);
+  return <span>{displayedText}</span>;
+}
+
 export default function ChapterView() {
   const router = useRouter();
   const { profile, worldState, applyDecision } = useSessionStore();
@@ -159,10 +219,11 @@ export default function ChapterView() {
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [selectedImpact, setSelectedImpact] = useState<"eco" | "moderate" | "high" | null>(null);
   const [narrative, setNarrative] = useState("");
-  const [isLoadingNarrative, setIsLoadingNarrative] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [thinkingPhase, setThinkingPhase] = useState<"idle"|"thinking"|"speaking">("idle");
   const [worldReacting, setWorldReacting] = useState(false);
   const [showChapterComplete, setShowChapterComplete] = useState(false);
+  const [branchContext, setBranchContext] = useState<string[]>([]);
+  const [verdPulseKey, setVerdPulseKey] = useState(0);
 
   const { data: aqiData } = useAirQuality();
 
@@ -185,12 +246,27 @@ export default function ChapterView() {
     
     setSelectedChoice(choiceId);
     setSelectedImpact(impactType);
-    applyDecision(label, impactType, carbonDelta);
+    setBranchContext(prev => [...prev, choiceId]);
+
+    // For commute choices, get real emissions.dev value
+    let finalCarbonDelta = carbonDelta; // default hardcoded
+    if (currentDecision === 1 && chapter === 1) {
+      // This is the commute choice — use real API
+      const realCO2 = await getCommuteCO2(choiceId);
+      finalCarbonDelta = realCO2;
+    }
+
+    applyDecision(label, impactType, finalCarbonDelta);
     
     setWorldReacting(true);
     setTimeout(() => setWorldReacting(false), 400);
 
-    setIsLoadingNarrative(true);
+    // Pulse Verd once when an eco option is selected
+    if (impactType === "eco") {
+      setVerdPulseKey(prev => prev + 1);
+    }
+
+    setThinkingPhase("thinking");
     
     try {
       const res = await fetch("/api/narrate", {
@@ -211,7 +287,7 @@ export default function ChapterView() {
       console.error(e);
       setNarrative("Every choice matters. Let's see what happens next! 🌱");
     } finally {
-      setIsLoadingNarrative(false);
+      setThinkingPhase("speaking");
     }
   };
 
@@ -221,6 +297,7 @@ export default function ChapterView() {
       setSelectedChoice(null);
       setSelectedImpact(null);
       setNarrative("");
+      setThinkingPhase("idle");
     } else {
       if (chapter === 1) {
         setShowChapterComplete(true);
@@ -231,9 +308,10 @@ export default function ChapterView() {
           setSelectedChoice(null);
           setSelectedImpact(null);
           setNarrative("");
+          setThinkingPhase("idle");
         }, 1800);
       } else {
-        const { decisions, totalCarbonDelta, worldState, addStoryToMemoryBook, updateMissionProgress, checkAndUnlockAchievements } = useSessionStore.getState();
+        const { decisions, totalCarbonDelta, worldState, addStoryToMemoryBook, updateMissionProgress, checkAndUnlockAchievements, generateNewMissions } = useSessionStore.getState();
         
         addStoryToMemoryBook({
           chapterNumber: chapter,
@@ -250,11 +328,14 @@ export default function ChapterView() {
 
         updateMissionProgress("story_complete");
         checkAndUnlockAchievements();
+        generateNewMissions();
 
         router.push("/story/summary");
       }
     }
   };
+
+  const verdMood = thinkingPhase === "thinking" ? "thinking" : selectedImpact;
 
   return (
     <div style={{ width: "100%", maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
@@ -308,12 +389,21 @@ export default function ChapterView() {
               alignItems: "center", 
               gap: 14,
             }}>
-              <VerdOrb size={34} mood={selectedImpact} />
+              <motion.div
+                key={verdPulseKey}
+                animate={{ scale: thinkingPhase === "speaking" ? [1, 1.1, 1] : 1 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <VerdOrb size={34} mood={verdMood} />
+              </motion.div>
               <div style={{
-                fontSize: 13, fontWeight: 700, color: "#4A7C2F"
+                fontSize: 13, fontWeight: 700, color: "#4A7C2F", display: "flex", flexDirection: "column"
               }}>
-                {isLoadingNarrative ? "Verd is thinking..." : 
-                 narrative ? "Verd says:" : "Verd says:"}
+                {thinkingPhase === "thinking" ? (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ fontSize: 12, color: "#6B8F5E", fontStyle: "italic" }}>
+                    Verd is thinking...
+                  </motion.div>
+                ) : narrative ? "Verd says:" : "Verd says:"}
               </div>
             </div>
             
@@ -332,10 +422,87 @@ export default function ChapterView() {
               fontStyle: "italic",
               minHeight: 28,
             }}>
-              {isLoadingNarrative ? <SkeletonLine width="80%" height={14}/> :
-               narrative ? (selectedImpact === "eco" ? "🌿 " : "") + `“${narrative}”` :
+              {thinkingPhase === "thinking" ? (
+                <div style={{ display: "flex", gap: 4, alignItems: "center", padding: "8px 12px", background: "rgba(255,255,255,0.8)", borderRadius: 16, border: "1px solid rgba(184,212,168,0.5)", width: "fit-content", position: "relative" }}>
+                  <div style={{ position: "absolute", left: -6, top: 10, width: 0, height: 0, borderTop: "6px solid transparent", borderBottom: "6px solid transparent", borderRight: "6px solid rgba(184,212,168,0.5)" }} />
+                  <div style={{ position: "absolute", left: -5, top: 10, width: 0, height: 0, borderTop: "6px solid transparent", borderBottom: "6px solid transparent", borderRight: "6px solid rgba(255,255,255,0.8)" }} />
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      animate={{ scale: [0.4, 1, 0.4] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+                      style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#4A7C2F" }}
+                    />
+                  ))}
+                </div>
+              ) :
+               narrative ? (
+                 <motion.div
+                   initial={{ opacity: 0, y: 5 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ duration: 0.3 }}
+                 >
+                   <TypewriterText text={(selectedImpact === "eco" ? "🌿 " : selectedImpact === "high" ? "☀️ " : "") + `“${narrative}”`} />
+                 </motion.div>
+               ) :
                `“${currentSituation}”`}
             </div>
+
+            {/* Branching Line */}
+            {(thinkingPhase === "idle") && (() => {
+              const getBranchingLine = (momentIndex: number, context: string[]) => {
+                if (momentIndex === 0) return "";
+                
+                const hadCab = context.includes("cab");
+                const hadBurger = context.includes("delivery-burger");
+                const hadEco = context.some(c => 
+                  ["walk-cycle","plant-breakfast","home-tiffin"].includes(c));
+                
+                if (momentIndex === 1) {
+                  if (hadBurger) return "After that delivery, the air feels a bit heavy. 🌫️";
+                  if (hadEco) return "Your plant-based start is already helping! 🌿";
+                }
+                if (momentIndex === 2) {
+                  if (hadCab) return "The cab ride added to today's footprint. 🚕";
+                  if (context.includes("walk-cycle")) return "Your morning walk kept the air cleaner! 🚶";
+                }
+                if (momentIndex >= 3) {
+                  const previousHighCount = context.filter(c => 
+                    ["cab","delivery-burger","delivery-app",
+                     "mall-trip","order-meat","game-all-night"].includes(c)
+                  ).length;
+                  if (previousHighCount >= 2) return "Traffic is heavier than usual today. 🌫️";
+                  if (previousHighCount === 0) return "Your choices are keeping things green! 🌱";
+                }
+                return "";
+              };
+
+              const globalMomentIndex = (chapter - 1) * 3 + currentDecision;
+              const branchingLine = getBranchingLine(globalMomentIndex, branchContext);
+
+              if (!branchingLine) return null;
+
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  style={{
+                    marginLeft: 48,
+                    fontSize: 13,
+                    color: branchContext.some(c => 
+                      ["cab","delivery-burger"].includes(c))
+                      ? "#8B6914" 
+                      : "#2D7A1F",
+                    fontStyle: "italic",
+                    marginTop: 8,
+                    fontWeight: 500,
+                  }}
+                >
+                  {branchingLine}
+                </motion.div>
+              );
+            })()}
           </motion.div>
         </AnimatePresence>
 
@@ -387,7 +554,7 @@ export default function ChapterView() {
 
         {/* Next Button inside the panel */}
         <AnimatePresence>
-          {selectedChoice && !isLoadingNarrative && (
+          {selectedChoice && thinkingPhase !== "thinking" && (
             <motion.button
               initial={{ opacity:0, y:10 }}
               animate={{ opacity:1, y:0 }}

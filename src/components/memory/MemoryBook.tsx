@@ -23,25 +23,28 @@ export default function MemoryBook() {
     let transport = 0, food = 0, shopping = 0, electricity = 0;
     memoryBook.stories.forEach(s => {
       s.decisions.forEach(d => {
-        if (d.moment === "commute") transport += d.carbonKg;
-        if (["breakfast", "lunch", "dinner"].includes(d.moment)) food += d.carbonKg;
-        if (d.moment === "shopping") shopping += d.carbonKg;
-        if (d.moment === "wind-down") electricity += d.carbonKg;
+        const amt = Math.abs(d.carbonKg);
+        if (d.moment === "commute") transport += amt;
+        if (["breakfast", "lunch", "dinner"].includes(d.moment)) food += amt;
+        if (d.moment === "shopping") shopping += amt;
+        if (d.moment === "wind-down") electricity += amt;
       });
     });
     
-    // Convert to positive for charting purposes
-    transport = Math.abs(transport);
-    food = Math.abs(food);
-    shopping = Math.abs(shopping);
-    electricity = Math.abs(electricity);
+    memoryBook.receipts.forEach(r => {
+      const amt = r.totalCO2;
+      if (r.receiptType === "fuel" || r.receiptType === "transport") transport += amt;
+      else if (r.receiptType === "food") food += amt;
+      else if (r.receiptType === "shopping") shopping += amt;
+      else if (r.receiptType === "electricity") electricity += amt;
+    });
 
-    const total = transport + food + shopping + electricity;
+    const total = transport + food + shopping + electricity || 1;
     return {
-      transport: { value: transport, pct: total ? (transport/total)*100 : 0 },
-      food: { value: food, pct: total ? (food/total)*100 : 0 },
-      shopping: { value: shopping, pct: total ? (shopping/total)*100 : 0 },
-      electricity: { value: electricity, pct: total ? (electricity/total)*100 : 0 }
+      transport: { value: transport, pct: Math.round((transport/total)*100) },
+      food: { value: food, pct: Math.round((food/total)*100) },
+      shopping: { value: shopping, pct: Math.round((shopping/total)*100) },
+      electricity: { value: electricity, pct: Math.round((electricity/total)*100) }
     };
   };
 
@@ -392,30 +395,75 @@ export default function MemoryBook() {
 
             {/* Category Breakdown */}
             <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: 20, padding: 20 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#2D5016", marginBottom: 16 }}>Category Breakdown</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {[
-                  { label: "Transport", data: cats.transport, color: "#4A9B8E" },
-                  { label: "Food", data: cats.food, color: "#4A7C2F" },
-                  { label: "Shopping", data: cats.shopping, color: "#F4A832" },
-                  { label: "Electricity", data: cats.electricity, color: "#D4845A" }
-                ].map((c, i) => (
-                  <div key={i}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#2D5016", marginBottom: 4 }}>
-                      <span>{c.label}</span>
-                      <span>{c.data.value} kg</span>
-                    </div>
-                    <div style={{ height: 8, background: "rgba(0,0,0,0.05)", borderRadius: 4, overflow: "hidden" }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${c.data.pct}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        style={{ height: "100%", background: c.color, borderRadius: 4 }}
-                      />
-                    </div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#2D5016", marginBottom: 16 }}>Where Your Carbon Comes From 📊</div>
+              
+              {cats.transport.value === 0 && cats.food.value === 0 && cats.shopping.value === 0 && cats.electricity.value === 0 ? (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {[1,2,3,4].map(i => (
+                      <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                        <div style={{ width: 80, height: 14, background: "rgba(0,0,0,0.05)", borderRadius: 4 }} />
+                        <div style={{ flex: 1, height: 14, background: "rgba(0,0,0,0.05)", borderRadius: 7 }} />
+                        <div style={{ width: 40, height: 14, background: "rgba(0,0,0,0.05)", borderRadius: 4 }} />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                  <div style={{ marginTop: 16, fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
+                    Play a story to see your breakdown! 🌱
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {[
+                      { id: "transport", emoji: "🚗", label: "Transport", data: cats.transport, color: "#4A9B8E" },
+                      { id: "food", emoji: "🍽️", label: "Food", data: cats.food, color: "#4A7C2F" },
+                      { id: "shopping", emoji: "🛍️", label: "Shopping", data: cats.shopping, color: "#F4A832" },
+                      { id: "electricity", emoji: "⚡", label: "Electricity", data: cats.electricity, color: "#D4845A" }
+                    ].map((c, i) => (
+                      <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        {/* Left: emoji + label */}
+                        <div style={{ width: 80, fontSize: 12, fontWeight: 600, color: "#2D5016", display: "flex", alignItems: "center", gap: 4 }}>
+                          <span>{c.emoji}</span>
+                          <span>{c.label}</span>
+                        </div>
+                        
+                        {/* Middle: bar track */}
+                        <div style={{ flex: 1, height: 14, borderRadius: 7, background: "rgba(184,212,168,0.2)" }}>
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${c.data.pct}%` }}
+                            transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }}
+                            style={{ height: "100%", borderRadius: 7, background: c.color }}
+                          />
+                        </div>
+
+                        {/* Right: percentage + kg */}
+                        <div style={{ width: 60, textAlign: "right", display: "flex", flexDirection: "column" }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: c.color }}>{c.data.pct}%</span>
+                          <span style={{ fontSize: 11, color: "#6B8F5E" }}>{Math.round(c.data.value * 10) / 10} kg</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {(() => {
+                    const sorted = Object.entries(cats).sort((a, b) => b[1].value - a[1].value);
+                    const highestId = sorted[0][0];
+                    const suggestions: Record<string, string> = {
+                      transport: "taking public transport for one trip daily",
+                      food: "one plant-based meal per day",
+                      shopping: "buying from local stores instead",
+                      electricity: "switching off devices when not in use"
+                    };
+                    return (
+                      <div style={{ marginTop: 16, color: "#6B8F5E", fontStyle: "italic", fontSize: 13 }}>
+                        Tip: {highestId} is your biggest source. Try {suggestions[highestId]}!
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
             </div>
 
             {/* Missions */}
