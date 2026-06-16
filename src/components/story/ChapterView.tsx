@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/lib/session-store";
 import VerdOrb from "@/components/ui/VerdOrb";
 import ChoiceCard from "@/components/onboarding/ChoiceCard";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { useAirQuality } from "@/hooks/useAirQuality";
 
 const CHAPTER_1_MOMENTS = [
@@ -214,6 +215,8 @@ function TypewriterText({ text }: { text: string }) {
 export default function ChapterView() {
   const router = useRouter();
   const { profile, worldState, applyDecision } = useSessionStore();
+  const ecoChoicesCount = useSessionStore(s => s.decisions.filter(d => d.impactType === "eco").length);
+  const isEcoChapter = ecoChoicesCount >= 2;
   
   const [currentDecision, setCurrentDecision] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -339,20 +342,27 @@ export default function ChapterView() {
 
   return (
     <div style={{ width: "100%", maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
-      <motion.div
-        layout
-        className="glass-panel"
-        style={{
-          width: "100%",
-          padding: "24px 28px",
-          borderRadius: 28,
-          background: "rgba(255, 255, 255, 0.8)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
-          border: "1px solid rgba(255, 255, 255, 0.5)",
-          boxShadow: "0 8px 32px rgba(45, 80, 22, 0.1)",
-        }}
-      >
+      <AnimatePresence mode="popLayout">
+        {!showChapterComplete && (
+          <motion.div
+            layout
+            key="chapter-panel"
+            className="glass-panel"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            style={{
+              width: "100%",
+              padding: "24px 28px",
+              borderRadius: 28,
+              background: "rgba(255, 255, 255, 0.8)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(255, 255, 255, 0.5)",
+              boxShadow: "0 8px 32px rgba(45, 80, 22, 0.1)",
+            }}
+          >
         {/* Top row: Chapter badge (centered) */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
           <div style={{
@@ -615,39 +625,94 @@ export default function ChapterView() {
           </motion.div>
         </div>
       </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Chapter Complete Overlay */}
       <AnimatePresence>
         {showChapterComplete && (
           <motion.div
-            initial={{ opacity:0, scale:0.8 }}
-            animate={{ opacity:1, scale:1 }}
-            exit={{ opacity:0, scale:1.1 }}
+            key="chapter-transition"
+            initial={{ opacity: 0, x: "-50%", y: "calc(-50% + 20px)", scale: 0.95 }}
+            animate={{ opacity: 1, x: "-50%", y: "-50%", scale: 1 }}
+            exit={{ opacity: 0, x: "-50%", y: "calc(-50% - 20px)", scale: 0.95 }}
+            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
             style={{
-              position: "fixed", inset: 0, zIndex: 100,
-              display: "flex", alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(240,250,240,0.85)",
-              backdropFilter: "blur(12px)",
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              zIndex: 100,
+              width: "90%",
+              maxWidth: 380,
+              background: "rgba(255, 255, 255, 0.85)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(255, 255, 255, 0.6)",
+              boxShadow: "0 12px 40px rgba(45, 80, 22, 0.15)",
+              borderRadius: 32,
+              padding: "40px 24px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              overflow: "hidden", // clip leaves and butterflies
             }}
           >
-            <div style={{ textAlign: "center" }}>
+            {/* Particles container */}
+            <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+              {/* 3-5 leaves */}
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={`leaf-${i}`}
+                  initial={{ x: -20, y: 150, rotate: 0, opacity: 0, scale: 0.5 }}
+                  animate={{ x: 380, y: -40, rotate: 360, opacity: [0, 1, 1, 0], scale: 1 }}
+                  transition={{ duration: 1.2 + i * 0.2, delay: i * 0.1, ease: "easeInOut" }}
+                  style={{
+                    position: "absolute",
+                    width: 14, height: 18,
+                    borderRadius: "50% 0 50% 50%",
+                    backgroundColor: `rgba(76,175,80,${0.4 + i * 0.1})`,
+                    left: 20 + i * 40,
+                  }}
+                />
+              ))}
+
+              {/* Butterflies if eco */}
+              {isEcoChapter && [...Array(2)].map((_, i) => (
+                <motion.div
+                  key={`tb-${i}`}
+                  initial={{ opacity: 0, x: i === 0 ? -40 : 380, y: 150, scale: 0.5 }}
+                  animate={{ opacity: [0, 1, 1, 0], x: i === 0 ? 300 : -20, y: -50, scale: 0.8 }}
+                  transition={{ duration: 1.5, delay: i * 0.2, ease: "easeOut" }}
+                  style={{
+                    position: "absolute",
+                    width: 60, height: 60,
+                  }}
+                >
+                  <DotLottieReact src="/lottie/butterfly.json" loop autoplay renderConfig={{ autoResize: false }} style={{ width: "100%", height: "100%" }} />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <motion.div
-                animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 0.6, repeat: 2 }}
-                style={{ fontSize: 72, marginBottom: 16 }}
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 1.2, ease: "easeInOut", repeat: Infinity }}
               >
-                ✨
+                <VerdOrb size={56} mood="eco" />
               </motion.div>
-              <div style={{ 
-                fontSize: 28, fontWeight: 800, color: "#2D5016" 
-              }}>
-                Chapter 1 Complete!
+              
+              <div style={{ fontSize: 24, fontWeight: 800, color: "#2D5016", marginTop: 16 }}>
+                ✨ Chapter {chapter} Complete
               </div>
-              <div style={{ 
-                fontSize: 16, color: "#4A7C2F", marginTop: 8 
-              }}>
-                Evening choices await...
+
+              <div style={{ fontSize: 14, color: "#4A7C2F", fontWeight: 500, marginTop: 8 }}>
+                {isEcoChapter ? "You made some great green choices!" : "Every small step counts towards tomorrow."}
+              </div>
+
+              <div style={{ fontSize: 13, color: "#6B8F5E", marginTop: 24, fontStyle: "italic" }}>
+                Evening begins...
               </div>
             </div>
           </motion.div>
