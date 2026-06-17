@@ -13,10 +13,11 @@ export default function MemoryBook() {
   const { memoryBook, activeMissions, achievements } = useSessionStore();
   const [activeTab, setActiveTab] = useState<Tab>("stories");
   const [expandedStoryId, setExpandedStoryId] = useState<string | null>(null);
+  const [expandedReceiptId, setExpandedReceiptId] = useState<string | null>(null);
 
   const formatDate = (isoString: string) => {
     const d = new Date(isoString);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} • ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
   };
 
   const calculateCategories = () => {
@@ -140,6 +141,7 @@ export default function MemoryBook() {
                         
                         <motion.div
                           layout
+                          whileHover={{ scale: 1.01 }}
                           onClick={() => setExpandedStoryId(isExpanded ? null : story.id)}
                           style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", borderRadius: 16, padding: 20, cursor: "pointer", border: "1px solid rgba(184,212,168,0.5)" }}
                         >
@@ -148,9 +150,15 @@ export default function MemoryBook() {
                               <span style={{ fontSize: 12, fontWeight: 700, background: "#4A7C2F", color: "white", padding: "4px 8px", borderRadius: 8 }}>Ch. {story.chapterNumber}</span>
                               <span style={{ fontSize: 13, background: "rgba(74, 124, 47, 0.1)", color: "#4A7C2F", padding: "4px 8px", borderRadius: 12 }}>{story.planetMood}</span>
                             </div>
-                            <span style={{ fontWeight: 800, fontSize: 18, color: story.totalCarbonKg <= 0 ? "#2D7A1F" : "#A0401A" }}>
-                              {story.totalCarbonKg > 0 ? "+" : ""}{story.totalCarbonKg} kg CO₂
-                            </span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              <div style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                                {isExpanded ? "Hide Details" : "View Details"}
+                                <motion.span animate={{ rotate: isExpanded ? 180 : 0 }} style={{ display: "inline-block" }}>▼</motion.span>
+                              </div>
+                              <span style={{ fontWeight: 800, fontSize: 18, color: story.totalCarbonKg <= 0 ? "#2D7A1F" : "#A0401A" }}>
+                                {story.totalCarbonKg > 0 ? "+" : ""}{story.totalCarbonKg} kg CO₂
+                              </span>
+                            </div>
                           </div>
                           
                           <AnimatePresence>
@@ -161,20 +169,40 @@ export default function MemoryBook() {
                                 exit={{ opacity: 0, height: 0 }}
                                 style={{ overflow: "hidden", marginTop: 16 }}
                               >
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 16, borderTop: "1px solid rgba(184,212,168,0.3)" }}>
-                                  {story.decisions.map((d, di) => {
-                                    const emoji = d.moment === "breakfast" ? "🌅" : d.moment === "commute" ? "🌆" : d.moment === "lunch" ? "🌞" : d.moment === "shopping" ? "🌇" : d.moment === "dinner" ? "🌙" : d.moment === "wind-down" ? "😴" : "✨";
+                                <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 16, borderTop: "1px solid rgba(184,212,168,0.3)" }}>
+                                  {(() => {
+                                    const morning = story.decisions.filter(d => ["breakfast", "commute", "lunch"].includes(d.moment));
+                                    const evening = story.decisions.filter(d => ["shopping", "dinner", "wind-down"].includes(d.moment));
+                                    
+                                    const renderDecisions = (title: string, decs: typeof story.decisions) => {
+                                      if (decs.length === 0) return null;
+                                      return (
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                          <div style={{ fontSize: 12, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase" }}>{title}</div>
+                                          {decs.map((d, di) => {
+                                            const emoji = d.moment === "breakfast" ? "🌅" : d.moment === "commute" ? "🌆" : d.moment === "lunch" ? "🌞" : d.moment === "shopping" ? "🌇" : d.moment === "dinner" ? "🌙" : d.moment === "wind-down" ? "😴" : "✨";
+                                            return (
+                                              <div key={di} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
+                                                <span>{emoji}</span>
+                                                <span style={{ fontSize: 12, fontWeight: 600, color: "#6B8F5E", width: 64, textTransform: "capitalize" }}>{d.moment}</span>
+                                                <span style={{ flex: 1, color: "#2D5016", fontWeight: 500 }}>{d.choice}</span>
+                                                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: d.impactType === "eco" ? "rgba(74,124,47,0.1)" : d.impactType === "moderate" ? "rgba(244,168,50,0.15)" : "rgba(160,64,26,0.1)", color: d.impactType === "eco" ? "#4A7C2F" : d.impactType === "moderate" ? "#A06000" : "#A0401A" }}>
+                                                  {d.impactType.toUpperCase()}
+                                                </span>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      );
+                                    };
+                                    
                                     return (
-                                      <div key={di} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
-                                        <span>{emoji}</span>
-                                        <span style={{ fontSize: 12, fontWeight: 600, color: "#6B8F5E", width: 64, textTransform: "capitalize" }}>{d.moment}</span>
-                                        <span style={{ flex: 1, color: "#2D5016", fontWeight: 500 }}>{d.choice}</span>
-                                        <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: d.impactType === "eco" ? "rgba(74,124,47,0.1)" : d.impactType === "moderate" ? "rgba(244,168,50,0.15)" : "rgba(160,64,26,0.1)", color: d.impactType === "eco" ? "#4A7C2F" : d.impactType === "moderate" ? "#A06000" : "#A0401A" }}>
-                                          {d.impactType.toUpperCase()}
-                                        </span>
-                                      </div>
+                                      <>
+                                        {renderDecisions("Chapter 1 — Morning", morning)}
+                                        {renderDecisions("Chapter 2 — Evening", evening)}
+                                      </>
                                     );
-                                  })}
+                                  })()}
                                 </div>
                               </motion.div>
                             )}
@@ -196,52 +224,87 @@ export default function MemoryBook() {
 
         {activeTab === "receipts" && (
           <motion.div key="receipts" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+            <div style={{ marginBottom: 24, textAlign: "center" }}>
+              <button
+                onClick={() => router.push("/detective")}
+                style={{ background: "linear-gradient(135deg, #4A7C2F 0%, #7BC67E 100%)", color: "white", padding: "12px 24px", borderRadius: 12, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 16, boxShadow: "0 4px 12px rgba(74,124,47,0.25)", width: "100%" }}
+              >
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  🧾 Analyze New Receipt
+                </motion.div>
+              </button>
+            </div>
             {memoryBook.receipts.length === 0 ? (
-              <div style={{ textAlign: "center", padding: 40 }}>
-                <p style={{ color: "#4A7C2F", marginBottom: 24 }}>No receipts analyzed yet.</p>
-                <button
-                  onClick={() => router.push("/detective")}
-                  style={{ background: "#4A7C2F", color: "white", padding: "10px 20px", borderRadius: 12, border: "none", cursor: "pointer", fontWeight: 600 }}
-                >
-                  Open Detective
-                </button>
+              <div style={{ textAlign: "center", padding: 20 }}>
+                <p style={{ color: "#4A7C2F", marginBottom: 8 }}>No receipts analyzed yet.</p>
+                <p style={{ color: "#6B8F5E", fontSize: 13, fontStyle: "italic" }}>Upload your first receipt to start tracking.</p>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {[...memoryBook.receipts].reverse().map((r, i) => (
-                  <motion.div
-                    key={r.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", borderRadius: 16, padding: 20 }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                      <div>
-                        <div style={{ fontSize: 12, textTransform: "uppercase", fontWeight: 700, color: "#6B8F5E", marginBottom: 4 }}>
-                          {r.receiptType} Receipt
+                {[...memoryBook.receipts].reverse().map((r, i) => {
+                  const isExpanded = expandedReceiptId === r.id;
+                  return (
+                    <motion.div
+                      layout
+                      whileHover={{ scale: 1.01 }}
+                      onClick={() => setExpandedReceiptId(isExpanded ? null : r.id)}
+                      key={r.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", borderRadius: 16, padding: 20, cursor: "pointer", border: "1px solid rgba(184,212,168,0.5)" }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div>
+                          <div style={{ fontSize: 12, textTransform: "uppercase", fontWeight: 700, color: "#6B8F5E", marginBottom: 4 }}>
+                            {r.receiptType} Receipt
+                          </div>
+                          <div style={{ fontWeight: 600, color: "#2D5016", fontSize: 16 }}>{r.merchantName}</div>
+                          <div style={{ fontSize: 13, color: "#8B6914", marginTop: 2 }}>{formatDate(r.date)}</div>
                         </div>
-                        <div style={{ fontWeight: 600, color: "#2D5016", fontSize: 16 }}>{r.merchantName}</div>
-                        <div style={{ fontSize: 13, color: "#8B6914", marginTop: 2 }}>{formatDate(r.date)}</div>
+                        <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 24, fontWeight: 700, color: r.totalCO2 > 20 ? "#A0401A" : "#4A7C2F" }}>
+                              {r.totalCO2} kg
+                            </div>
+                            <div style={{ fontSize: 12, color: "#6B8F5E" }}>CO₂ impact</div>
+                          </div>
+                          <div style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                            {isExpanded ? "Hide Details" : "View Details"}
+                            <motion.span animate={{ rotate: isExpanded ? 180 : 0 }} style={{ display: "inline-block" }}>▼</motion.span>
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: 24, fontWeight: 700, color: r.totalCO2 > 20 ? "#A0401A" : "#4A7C2F" }}>
-                          {r.totalCO2} kg
-                        </div>
-                        <div style={{ fontSize: 12, color: "#6B8F5E" }}>CO₂ impact</div>
-                      </div>
-                    </div>
-                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,0.05)" }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#6B8F5E", marginBottom: 8 }}>Top Items:</div>
-                      {r.items.slice(0, 3).map((item, ii) => (
-                        <div key={ii} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#2D5016", marginBottom: 4 }}>
-                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "80%" }}>{item.name}</span>
-                          <span style={{ fontWeight: 500 }}>{item.estimatedCO2}kg</span>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                ))}
+                      
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            style={{ overflow: "hidden", marginTop: 12 }}
+                          >
+                            <div style={{ paddingTop: 12, borderTop: "1px solid rgba(184,212,168,0.3)" }}>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: "#6B8F5E", marginBottom: 8 }}>Detected Items:</div>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                {r.items.map((item, ii) => (
+                                  <div key={ii} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#2D5016" }}>
+                                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "75%", fontWeight: 500 }}>
+                                      {item.name}
+                                    </span>
+                                    <span style={{ fontWeight: 700, color: item.estimatedCO2 > 5 ? "#A0401A" : "#4A7C2F" }}>
+                                      {item.estimatedCO2} kg
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </motion.div>

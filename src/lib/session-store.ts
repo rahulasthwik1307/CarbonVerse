@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 interface UserProfile {
   city: string;
@@ -202,17 +203,19 @@ const defaultState = {
 
 const clamp = (val: number) => Math.max(0, Math.min(100, val));
 
-export const useSessionStore = create<SessionState>((set) => ({
-  ...defaultState,
+export const useSessionStore = create<SessionState>()(
+  persist(
+    (set) => ({
+      ...defaultState,
 
-  setCity: (city) => set((state) => ({ profile: { ...state.profile, city } })),
-  setTransport: (transport) => set((state) => ({ profile: { ...state.profile, transport } })),
-  setDiet: (diet) => set((state) => ({ profile: { ...state.profile, diet } })),
-  setFlights: (flights) => set((state) => ({ profile: { ...state.profile, flights } })),
-  
-  completeOnboarding: () => set({ isOnboarded: true }),
-  
-  advanceChapter: () => set((state) => ({ currentChapter: state.currentChapter + 1 })),
+      setCity: (city) => set((state) => ({ profile: { ...state.profile, city } })),
+      setTransport: (transport) => set((state) => ({ profile: { ...state.profile, transport } })),
+      setDiet: (diet) => set((state) => ({ profile: { ...state.profile, diet } })),
+      setFlights: (flights) => set((state) => ({ profile: { ...state.profile, flights } })),
+      
+      completeOnboarding: () => set({ isOnboarded: true }),
+      
+      advanceChapter: () => set((state) => ({ currentChapter: state.currentChapter + 1 })),
 
   applyDecision: (choice, impactType, carbonDelta) => set((state) => {
     let { skyQuality, treeDensity, trafficLevel, birdCount, greenCoverage } = state.worldState;
@@ -467,4 +470,14 @@ export const useSessionStore = create<SessionState>((set) => ({
       ]
     };
   })
-}));
+    }),
+    {
+      name: "carbonverse-session-storage",
+      partialize: (state) => ({
+        memoryBook: state.memoryBook,
+        achievements: state.achievements,
+        activeMissions: state.activeMissions,
+      }),
+    }
+  )
+);

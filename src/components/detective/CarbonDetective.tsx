@@ -9,7 +9,7 @@ import ReceiptUpload from "./ReceiptUpload";
 import DetectiveResults from "./DetectiveResults";
 import VerdOrb from "@/components/ui/VerdOrb";
 
-type DetectiveStep = "upload" | "analyzing" | "results" | "error";
+type DetectiveStep = "upload" | "analyzing" | "duplicate_warning" | "results" | "error";
 
 export default function CarbonDetective() {
   const router = useRouter();
@@ -67,29 +67,45 @@ export default function CarbonDetective() {
       }
       
       setResult(data);
-      
-      const { addReceiptToMemoryBook, updateMissionProgress, checkAndUnlockAchievements } = useSessionStore.getState();
-      
-      addReceiptToMemoryBook({
-        receiptType: data.receiptType,
-        merchantName: data.merchantName || "Unknown",
-        totalCO2: data.totalCO2,
-        impactLevel: data.impactLevel,
-        items: data.items.map((i: any) => ({
-          name: i.name,
-          estimatedCO2: i.estimatedCO2
-        }))
-      });
 
-      updateMissionProgress("receipt_upload");
-      checkAndUnlockAchievements();
+      const { memoryBook } = useSessionStore.getState();
+      const isDuplicate = memoryBook.receipts.some(r => 
+        r.merchantName === data.merchantName &&
+        r.receiptType === data.receiptType &&
+        Math.abs(r.totalCO2 - data.totalCO2) < 0.5
+      );
 
-      setStep("results");
+      if (isDuplicate) {
+        setStep("duplicate_warning");
+        return;
+      }
+      
+      proceedWithResult(data);
       
     } catch {
       setErrorMessage("Connection failed. Please check your internet and try again.");
       setStep("error");
     }
+  };
+
+  const proceedWithResult = (dataToSave: any) => {
+    const { addReceiptToMemoryBook, updateMissionProgress, checkAndUnlockAchievements } = useSessionStore.getState();
+    
+    addReceiptToMemoryBook({
+      receiptType: dataToSave.receiptType,
+      merchantName: dataToSave.merchantName || "Unknown",
+      totalCO2: dataToSave.totalCO2,
+      impactLevel: dataToSave.impactLevel,
+      items: dataToSave.items.map((i: any) => ({
+        name: i.name,
+        estimatedCO2: i.estimatedCO2
+      }))
+    });
+
+    updateMissionProgress("receipt_upload");
+    checkAndUnlockAchievements();
+
+    setStep("results");
   };
 
   const handleReset = () => {
@@ -249,6 +265,54 @@ export default function CarbonDetective() {
               >
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   Start Story Instead
+                </motion.div>
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* DUPLICATE WARNING STEP */}
+        {step === "duplicate_warning" && result && (
+          <motion.div
+            key="duplicate_warning"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="w-full max-w-md p-6 rounded-3xl flex flex-col items-center text-center gap-5"
+            style={{
+              background: "rgba(255,248,230,0.9)",
+              border: "2px solid rgba(244,168,50,0.4)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+            }}
+          >
+            <div className="text-[40px]">⚠️</div>
+            <h2 className="text-xl font-bold" style={{ color: "#8B6914" }}>Similar Receipt Detected</h2>
+            <p className="font-medium text-[15px] leading-relaxed" style={{ color: "#A06000" }}>
+              This receipt appears similar to one already analyzed.
+            </p>
+            
+            <div className="flex flex-col w-full gap-3 mt-2">
+              <button
+                onClick={() => proceedWithResult(result)}
+                className="w-full py-3 rounded-2xl font-semibold text-white"
+                style={{ background: "#F4A832", boxShadow: "0 4px 12px rgba(244,168,50,0.3)" }}
+              >
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  Analyze Again
+                </motion.div>
+              </button>
+              <button
+                onClick={handleReset}
+                className="w-full py-3 rounded-2xl font-medium"
+                style={{ 
+                  background: "rgba(255,255,255,0.5)", 
+                  border: "1px solid rgba(244,168,50,0.4)",
+                  color: "#8B6914"
+                }}
+              >
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  Cancel
                 </motion.div>
               </button>
             </div>
