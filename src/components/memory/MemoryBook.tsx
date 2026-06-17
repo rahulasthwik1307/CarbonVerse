@@ -374,245 +374,97 @@ export default function MemoryBook() {
         {activeTab === "totals" && (
           <motion.div key="totals" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             
-            {/* Hero Carbon Story Card */}
-            <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6))", borderRadius: 24, padding: 32, textAlign: "center", border: "1px solid rgba(184,212,168,0.5)", boxShadow: "0 12px 40px rgba(45,80,22,0.1)" }}>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#2D5016", marginBottom: 24 }}>🌍 Your Carbon Story</div>
+            {/* SECTION 1: HERO CARD (Total Impact + Planet Mood) */}
+            <div style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 100%)", 
+              borderRadius: 28, 
+              padding: 32, 
+              textAlign: "center", 
+              border: "1px solid rgba(184,212,168,0.5)", 
+              boxShadow: "0 12px 40px rgba(45,80,22,0.08)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 24
+            }}>
+              {/* Total Impact */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.15em" }}>Total Impact</span>
+                <span style={{ fontSize: 48, fontWeight: 800, color: (memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) <= 0 ? "#2D7A1F" : "#A0401A", marginTop: 6, letterSpacing: "-0.02em" }}>
+                  {(memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) <= 0 
+                    ? `Saved ${Math.abs(Math.round((memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) * 10) / 10)} kg CO₂` 
+                    : `${Math.round((memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) * 10) / 10} kg CO₂`}
+                </span>
+              </div>
+              
+              {/* Planet Mood */}
               {(() => {
-                const totalStory = Math.round(memoryBook.totalStoryCO2 * 10) / 10;
-                const totalReceipt = Math.round(memoryBook.totalReceiptCO2 * 10) / 10;
-                const absTotalStory = Math.abs(totalStory);
-                const absTotalReceipt = Math.abs(totalReceipt);
-                const grandTotalAbs = absTotalStory + absTotalReceipt || 1;
-
-                const storyPct = ((absTotalStory / grandTotalAbs) * 100).toFixed(1);
-                const receiptPct = ((absTotalReceipt / grandTotalAbs) * 100).toFixed(1);
-
-                let largestContributorLabel = "";
-                let largestContributorValue = "";
-                let largestContributorEmoji = "";
-                let largestContributorPct = "";
-
-                if (absTotalStory > 0 || absTotalReceipt > 0) {
-                  const sortedCategories = [
-                    { label: "Transport", emoji: "🚗", pct: cats.transport.pct, val: cats.transport.value },
-                    { label: "Food", emoji: "🍔", pct: cats.food.pct, val: cats.food.value },
-                    { label: "Shopping", emoji: "🛍️", pct: cats.shopping.pct, val: cats.shopping.value },
-                    { label: "Energy", emoji: "⚡", pct: cats.electricity.pct, val: cats.electricity.value }
-                  ].sort((a, b) => b.val - a.val);
-                  
-                  const largestCategory = sortedCategories[0];
-
-                  if (absTotalReceipt > absTotalStory && (absTotalReceipt / grandTotalAbs) > 0.8) {
-                    largestContributorLabel = "Receipt Analysis";
-                    largestContributorValue = `${Math.round(absTotalReceipt * 10) / 10} kg CO₂`;
-                    largestContributorEmoji = "🧾";
-                    largestContributorPct = `${receiptPct}%`;
-                  } else if (absTotalStory > absTotalReceipt && (absTotalStory / grandTotalAbs) > 0.8) {
-                    largestContributorLabel = "Story Choices";
-                    largestContributorValue = `${Math.round(absTotalStory * 10) / 10} kg CO₂`;
-                    largestContributorEmoji = "📖";
-                    largestContributorPct = `${storyPct}%`;
-                  } else if (largestCategory && largestCategory.val > 0) {
-                    largestContributorLabel = `${largestCategory.label} Receipts`;
-                    largestContributorValue = `${Math.round(largestCategory.val * 10) / 10} kg CO₂`;
-                    largestContributorEmoji = largestCategory.emoji;
-                    largestContributorPct = `${largestCategory.pct}%`;
-                  } else {
-                    largestContributorLabel = "Receipt Analysis";
-                    largestContributorValue = `${Math.round(absTotalReceipt * 10) / 10} kg CO₂`;
-                    largestContributorEmoji = "🧾";
-                    largestContributorPct = `${receiptPct}%`;
+                const planetMood = useSessionStore.getState().worldState.planetMood;
+                const getMoodTheme = (mood: string) => {
+                  switch (mood) {
+                    case "Thriving": return { emoji: "🌸", color: "#2D7A1F", bg: "rgba(240, 250, 240, 0.95)", border: "1px solid rgba(76, 175, 80, 0.3)" };
+                    case "Recovering": return { emoji: "🌱", color: "#F4A832", bg: "rgba(255, 248, 230, 0.95)", border: "1px solid rgba(244, 168, 50, 0.3)" };
+                    case "Under Stress": return { emoji: "⚠️", color: "#FF6B6B", bg: "rgba(255, 107, 107, 0.05)", border: "1px solid rgba(255, 107, 107, 0.2)" };
+                    default: return { emoji: "🌿", color: "#4A7C2F", bg: "rgba(240, 250, 240, 0.8)", border: "1px solid rgba(184, 212, 168, 0.5)" };
                   }
-                }
-
-                const totalCO2 = memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2;
-
+                };
+                const moodTheme = getMoodTheme(planetMood);
                 return (
-                  <>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-                      <div>
-                        <div style={{ fontSize: 13, color: "#6B8F5E", fontWeight: 700, marginBottom: 4 }}>📖 Story Choices</div>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: memoryBook.totalStoryCO2 <= 0 ? "#2D7A1F" : "#A0401A" }}>
-                          {memoryBook.totalStoryCO2 <= 0 
-                            ? `Saved ${Math.abs(totalStory)} kg` 
-                            : `+${totalStory} kg`}
-                        </div>
-                        <div style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 650, marginTop: 4 }}>
-                          {storyPct}% of total
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 13, color: "#6B8F5E", fontWeight: 700, marginBottom: 4 }}>🧾 Receipt Analysis</div>
-                        <div style={{ fontSize: 18, fontWeight: 800, color: memoryBook.totalReceiptCO2 <= 0 ? "#2D7A1F" : "#A0401A" }}>
-                          {memoryBook.totalReceiptCO2 <= 0 
-                            ? `Saved ${Math.abs(totalReceipt)} kg` 
-                            : `+${totalReceipt} kg`}
-                        </div>
-                        <div style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 650, marginTop: 4 }}>
-                          {receiptPct}% of total
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ background: "rgba(255,255,255,0.8)", borderRadius: 16, padding: 16 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: 1 }}>Total Impact</div>
-                      <div style={{ fontSize: 48, fontWeight: 800, color: totalCO2 <= 0 ? "#2D7A1F" : "#A0401A", margin: "8px 0" }}>
-                        {totalCO2 <= 0 
-                          ? `Saved ${Math.abs(Math.round(totalCO2 * 10) / 10)} kg` 
-                          : `+${Math.round(totalCO2 * 10) / 10} kg`}
-                      </div>
-
-                      {largestContributorLabel && (
-                        <div style={{
-                          marginTop: 12,
-                          paddingTop: 12,
-                          borderTop: "1px dashed rgba(74, 124, 47, 0.2)",
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          fontSize: 13,
-                          color: "#4A7C2F",
-                          marginBottom: 8
-                        }}>
-                          <span style={{ fontWeight: 600 }}>Largest Contributor:</span>
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 800 }}>
-                            <span>{largestContributorEmoji}</span>
-                            <span>{largestContributorLabel}</span>
-                            <span style={{ color: "#F4A832" }}>({largestContributorPct})</span>
-                          </span>
-                        </div>
-                      )}
-
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(74, 124, 47, 0.1)", color: "#4A7C2F", padding: "6px 12px", borderRadius: 12, fontSize: 14, fontWeight: 700, marginTop: 4 }}>
-                        <span>{totalCarbonDelta > 50 ? "🔴" : totalCarbonDelta < -10 ? "🟢" : "🟡"}</span>
-                        Planet Mood: {useSessionStore.getState().worldState.planetMood}
-                      </div>
-                    </div>
-                  </>
+                  <div style={{ background: moodTheme.bg, borderRadius: 20, padding: "16px 24px", border: moodTheme.border, boxShadow: "0 6px 20px rgba(45, 80, 22, 0.04)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%", maxWidth: 360 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.05em" }}>🌎 Planet Mood</span>
+                    <span style={{ fontSize: 20, fontWeight: 800, color: moodTheme.color, display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                      <span>{moodTheme.emoji}</span>
+                      <span>{planetMood}</span>
+                    </span>
+                  </div>
                 );
               })()}
             </div>
 
-            {/* Story Impact Section */}
-            <motion.div layout style={{ background: "rgba(255,255,255,0.7)", borderRadius: 20, padding: 20 }}>
-              <div onClick={() => setExpandedStoryImpact(!expandedStoryImpact)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#2D5016" }}>📖 Story Impact</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontWeight: 800, fontSize: 18, color: storyData.impact <= 0 ? "#2D7A1F" : "#A0401A" }}>
-                    {storyData.impact <= 0 
-                      ? `Saved ${Math.abs(Math.round(storyData.impact * 10) / 10)} kg CO₂` 
-                      : `+${Math.round(storyData.impact * 10) / 10} kg CO₂`}
-                  </span>
-                  <motion.span animate={{ rotate: expandedStoryImpact ? 180 : 0 }} style={{ display: "inline-block" }}>▼</motion.span>
-                </div>
+            {/* SECTION 2: CARBON BREAKDOWN (Side by side cards) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {/* Story Choices Card */}
+              <div style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", borderRadius: 20, padding: 20, border: "1px solid rgba(184,212,168,0.5)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, boxShadow: "0 4px 16px rgba(45,80,22,0.04)" }}>
+                <span style={{ fontSize: 32 }}>📖</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase" }}>Story Choices</span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: memoryBook.totalStoryCO2 <= 0 ? "#2D7A1F" : "#A0401A" }}>
+                  {memoryBook.totalStoryCO2 <= 0 ? `Saved ${Math.abs(Math.round(memoryBook.totalStoryCO2 * 10) / 10)}` : `+${Math.round(memoryBook.totalStoryCO2 * 10) / 10}`} <span style={{ fontSize: 16 }}>kg</span>
+                </span>
               </div>
-              <AnimatePresence>
-                {expandedStoryImpact && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
-                    <div style={{ paddingTop: 16, marginTop: 16, borderTop: "1px solid rgba(184,212,168,0.3)", display: "flex", flexDirection: "column", gap: 8 }}>
-                      {Object.entries(storyData.breakdown).map(([moment, val]) => (
-                        <div key={moment} style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 600, color: "#4A7C2F", padding: "8px 12px", background: "rgba(255,255,255,0.5)", borderRadius: 8 }}>
-                          <span style={{ textTransform: "capitalize" }}>{moment}</span>
-                          <span style={{ color: val > 0 ? "#A0401A" : "#2D7A1F" }}>
-                            {val <= 0 
-                              ? `Saved ${Math.abs(Math.round(val * 10) / 10)} kg` 
-                              : `+${Math.round(val * 10) / 10} kg`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* Receipt Impact Section */}
-            <motion.div layout style={{ background: "rgba(255,255,255,0.7)", borderRadius: 20, padding: 20 }}>
-              <div onClick={() => setExpandedReceiptImpact(!expandedReceiptImpact)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#2D5016" }}>🧾 Receipt Impact</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontWeight: 800, fontSize: 18, color: memoryBook.totalReceiptCO2 <= 0 ? "#2D7A1F" : "#A0401A" }}>
-                    {memoryBook.totalReceiptCO2 <= 0 
-                      ? `Saved ${Math.abs(Math.round(memoryBook.totalReceiptCO2 * 10) / 10)} kg CO₂` 
-                      : `+${Math.round(memoryBook.totalReceiptCO2 * 10) / 10} kg CO₂`}
-                  </span>
-                  <motion.span animate={{ rotate: expandedReceiptImpact ? 180 : 0 }} style={{ display: "inline-block" }}>▼</motion.span>
-                </div>
+              {/* Receipt Analysis Card */}
+              <div style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", borderRadius: 20, padding: 20, border: "1px solid rgba(184,212,168,0.5)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, boxShadow: "0 4px 16px rgba(45,80,22,0.04)" }}>
+                <span style={{ fontSize: 32 }}>🧾</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase" }}>Receipt Analysis</span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: memoryBook.totalReceiptCO2 <= 0 ? "#2D7A1F" : "#A0401A" }}>
+                  {memoryBook.totalReceiptCO2 <= 0 ? `Saved ${Math.abs(Math.round(memoryBook.totalReceiptCO2 * 10) / 10)}` : `+${Math.round(memoryBook.totalReceiptCO2 * 10) / 10}`} <span style={{ fontSize: 16 }}>kg</span>
+                </span>
               </div>
-              <AnimatePresence>
-                {expandedReceiptImpact && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
-                    <div style={{ paddingTop: 16, marginTop: 16, borderTop: "1px solid rgba(184,212,168,0.3)", display: "flex", flexDirection: "column", gap: 12 }}>
-                      {memoryBook.receipts.length === 0 ? (
-                        <div style={{ fontSize: 14, color: "#6B8F5E", fontStyle: "italic", textAlign: "center" }}>No receipts added yet.</div>
-                      ) : (
-                        [...memoryBook.receipts].reverse().map(r => (
-                          <div key={r.id} style={{ background: "rgba(255,255,255,0.5)", borderRadius: 12, padding: 12 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                              <div style={{ fontWeight: 700, color: "#2D5016" }}>{r.merchantName}</div>
-                              <div style={{ fontWeight: 700, color: r.totalCO2 > 0 ? "#A0401A" : "#2D7A1F" }}>
-                                {r.totalCO2 <= 0 ? `Saved ${Math.abs(r.totalCO2)} kg` : `+${r.totalCO2} kg`}
-                              </div>
-                            </div>
-                            <div style={{ fontSize: 13, color: "#6B8F5E", display: "flex", flexDirection: "column", gap: 4 }}>
-                              {r.items.map((item, idx) => (
-                                <div key={idx} style={{ display: "flex", justifyContent: "space-between" }}>
-                                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "75%" }}>{item.name}</span>
-                                  <span>{item.estimatedCO2 <= 0 ? `Saved ${Math.abs(item.estimatedCO2)} kg` : `+${item.estimatedCO2} kg`}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* Category Breakdown */}
-            <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: 20, padding: 20 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#2D5016", marginBottom: 16 }}>Where Your Carbon Comes From 📊</div>
-              
-              {cats.transport.value === 0 && cats.food.value === 0 && cats.shopping.value === 0 && cats.electricity.value === 0 ? (
-                <div style={{ textAlign: "center", color: "#6B8F5E", fontStyle: "italic", fontSize: 14, padding: "10px 0" }}>
-                  Play a story or add a receipt to see your breakdown! 🌱
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {[
-                    { id: "transport", emoji: "🚗", label: "Transport", data: cats.transport, color: "#4A9B8E" },
-                    { id: "food", emoji: "🍔", label: "Food", data: cats.food, color: "#4A7C2F" },
-                    { id: "shopping", emoji: "🛍️", label: "Shopping", data: cats.shopping, color: "#F4A832" },
-                    { id: "electricity", emoji: "⚡", label: "Energy", data: cats.electricity, color: "#D4845A" }
-                  ].map((c, i) => (
-                    <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 80, fontSize: 13, fontWeight: 700, color: "#2D5016", display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>{c.emoji}</span>
-                        <span>{c.label}</span>
-                      </div>
-                      
-                      <div style={{ flex: 1, height: 16, borderRadius: 8, background: "rgba(184,212,168,0.2)", overflow: "hidden" }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${c.data.pct}%` }}
-                          transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }}
-                          style={{ height: "100%", borderRadius: 8, background: c.color }}
-                        />
-                      </div>
-
-                      <div style={{ width: 60, textAlign: "right", display: "flex", flexDirection: "column" }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: c.color }}>{c.data.pct}%</span>
-                        <span style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 600 }}>{Math.round(c.data.value * 10) / 10} kg</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Verd Insight Card */}
+            {/* SECTION 3: BIGGEST CONTRIBUTOR CARD */}
+            {(() => {
+              const sorted = Object.entries(cats).sort((a, b) => b[1].value - a[1].value);
+              const highestCat = sorted[0];
+              if (!highestCat || highestCat[1].value === 0) return null;
+              
+              const emojis: Record<string, string> = { transport: "🚗", food: "🍔", shopping: "🛍️", electricity: "⚡" };
+
+              return (
+                <div style={{ background: "rgba(255, 248, 230, 0.75)", backdropFilter: "blur(12px)", borderRadius: 20, padding: "20px 24px", border: "1px solid rgba(244, 168, 50, 0.35)", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, boxShadow: "0 8px 24px rgba(45, 80, 22, 0.05)" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#8B6914", display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <span>{emojis[highestCat[0]] || "📊"}</span> Biggest Impact
+                  </span>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: "#2D5016", marginTop: 2, textTransform: "capitalize" }}>
+                    {highestCat[0]}
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#6B8F5E" }}>
+                    {highestCat[1].pct}% of footprint
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* SECTION 4: VERD INSIGHT CARD */}
             {(() => {
               const sorted = Object.entries(cats).sort((a, b) => b[1].value - a[1].value);
               const highestId = sorted[0]?.[0];
@@ -629,22 +481,10 @@ export default function MemoryBook() {
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }} 
                   animate={{ opacity: 1, y: 0 }} 
-                  style={{ 
-                    background: "#FFF", 
-                    borderRadius: 24, 
-                    padding: 24, 
-                    display: "flex", 
-                    gap: 20, 
-                    alignItems: "center", 
-                    boxShadow: "0 8px 32px rgba(45, 80, 22, 0.05)" 
-                  }}
+                  style={{ background: "#FFF", borderRadius: 24, padding: 24, display: "flex", gap: 20, alignItems: "center", boxShadow: "0 8px 32px rgba(45, 80, 22, 0.05)" }}
                 >
-                  <motion.div 
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    style={{ flexShrink: 0 }}
-                  >
-                    <VerdOrb size={64} />
+                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} style={{ flexShrink: 0 }}>
+                    <VerdOrb size={64} mood="eco" />
                   </motion.div>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -652,7 +492,7 @@ export default function MemoryBook() {
                       <span style={{ background: "rgba(74, 124, 47, 0.1)", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700, color: "#4A7C2F" }}>AI COACH</span>
                     </div>
                     <div style={{ fontSize: 14, color: "#4A7C2F", lineHeight: 1.6 }}>
-                      Most of your impact came from <strong>{highestId}</strong>. {suggestions[highestId]}
+                      Most of your impact came from <strong style={{textTransform: "capitalize"}}>{highestId}</strong>. {suggestions[highestId]}
                     </div>
                   </div>
                 </motion.div>

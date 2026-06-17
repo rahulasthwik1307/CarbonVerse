@@ -596,65 +596,19 @@ export default function ChapterView() {
 
         {/* Story Journey Progress Component */}
         <div style={{ marginTop: 24 }}>
-          {/* Chapter Title */}
-          <div style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: "#4A7C2F",
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
-            textAlign: "center",
-            marginBottom: 8
-          }}>
-            {chapter === 1 ? "Chapter 1 — Morning Journey" : "Chapter 2 — Evening Journey"}
-          </div>
-          
-          {/* Milestone Progress Bar */}
           <div style={{
             display: "flex",
+            alignItems: "flex-start",
             justifyContent: "space-between",
-            alignItems: "center",
             width: "100%",
-            padding: "12px 16px",
+            padding: "20px 16px",
             background: "rgba(255, 255, 255, 0.4)",
             borderRadius: 20,
             border: "1px solid rgba(184, 212, 168, 0.3)",
-            position: "relative"
           }}>
-            {/* Connecting Line background */}
-            <div style={{
-              position: "absolute",
-              left: "15%",
-              right: "15%",
-              top: "35%",
-              transform: "translateY(-50%)",
-              height: 2,
-              background: "rgba(74, 124, 47, 0.15)",
-              zIndex: 0
-            }} />
-            
-            {/* Animated Connecting Line progress */}
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ 
-                width: currentDecision === 0 && selectedChoice === null ? "0%" :
-                       currentDecision === 0 ? "25%" :
-                       currentDecision === 1 && selectedChoice === null ? "50%" :
-                       currentDecision === 1 ? "75%" : "100%"
-              }}
-              transition={{ type: "spring", stiffness: 80, damping: 15 }}
-              style={{
-                position: "absolute",
-                left: "15%",
-                top: "35%",
-                transform: "translateY(-50%)",
-                height: 2,
-                background: "linear-gradient(90deg, #7BC67E 0%, #4CAF50 100%)",
-                zIndex: 0
-              }}
-            />
-
-            {(chapter === 1 
+            {(() => {
+              const nodes: any[] = [];
+              const steps = chapter === 1 
               ? [
                   { key: "breakfast", emoji: "🍳", label: "Breakfast" },
                   { key: "commute", emoji: "🚇", label: "Commute" },
@@ -664,99 +618,94 @@ export default function ChapterView() {
                   { key: "shopping", emoji: "🛍️", label: "Shopping" },
                   { key: "dinner", emoji: "🍳", label: "Dinner" },
                   { key: "wind-down", emoji: "🌙", label: "Wind Down" }
-                ]
-            ).map((ms, idx) => {
-              const isChapterFullyCompleted = currentDecision === 2 && selectedChoice !== null;
-              const isMilestoneCompleted = isChapterFullyCompleted || idx < currentDecision || (idx === currentDecision && selectedChoice !== null);
-              
-              const statusEmoji = isChapterFullyCompleted 
-                ? "🌳" 
-                : isMilestoneCompleted 
-                  ? "🌿" 
-                  : "🌱";
-                  
-              const color = isChapterFullyCompleted
-                ? "#1D3E0C"
-                : isMilestoneCompleted
-                  ? "#2D5016"
-                  : "#6B8F5E";
+                ];
+                
+              steps.forEach((ms, idx, arr) => {
+                const isChapterFullyCompleted = currentDecision === 2 && selectedChoice !== null;
+                const isMilestoneCompleted = isChapterFullyCompleted || idx < currentDecision || (idx === currentDecision && selectedChoice !== null);
+                const color = isChapterFullyCompleted ? "#1D3E0C" : isMilestoneCompleted ? "#2D5016" : "#6B8F5E";
+                
+                let lineProgress = 0;
+                if (idx < arr.length - 1) {
+                  if (currentDecision > idx) lineProgress = 1;
+                  else if (currentDecision === idx && selectedChoice !== null) lineProgress = 1;
+                }
 
-              return (
-                <div 
-                  key={ms.key} 
-                  style={{ 
-                    display: "flex", 
-                    flexDirection: "column", 
-                    alignItems: "center", 
-                    gap: 6,
-                    flex: 1,
-                    zIndex: 1
-                  }}
-                >
-                  <motion.div
-                    key={statusEmoji}
-                    initial={{ scale: 0.7, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                    style={{
-                      fontSize: 18,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      background: isMilestoneCompleted ? "#E8F5E3" : "#FFF8E7",
-                      border: isMilestoneCompleted ? "2px solid #4CAF50" : "2px solid #B8D4A8",
-                      boxShadow: isChapterFullyCompleted 
-                        ? "0 0 12px rgba(76, 175, 80, 0.4)"
-                        : isMilestoneCompleted 
-                          ? "0 0 8px rgba(74, 124, 47, 0.2)"
-                          : "none",
-                      position: "relative"
-                    }}
-                  >
-                    {statusEmoji}
-                    
-                    {/* Sparkle effects on milestone completion */}
-                    {isMilestoneCompleted && (
-                      <>
-                        {[0, 1, 2, 3].map(i => (
-                          <motion.div
-                            key={i}
-                            initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
-                            animate={{ 
-                              scale: [0, 1, 0], 
-                              x: Math.cos((i * 90 * Math.PI) / 180) * 14, 
-                              y: Math.sin((i * 90 * Math.PI) / 180) * 14,
-                              opacity: 0
-                            }}
-                            transition={{ duration: 0.6, ease: "easeOut" }}
-                            style={{ 
-                              position: "absolute", 
-                              width: 3, 
-                              height: 3, 
-                              borderRadius: "50%", 
-                              background: "#F4A832" 
-                            }}
-                          />
-                        ))}
-                      </>
-                    )}
-                  </motion.div>
-                  
-                  <span style={{ 
-                    fontSize: 11, 
-                    fontWeight: isMilestoneCompleted ? 700 : 500, 
-                    color,
-                    textAlign: "center",
-                    whiteSpace: "nowrap"
-                  }}>
-                    {ms.emoji} {ms.label}
-                  </span>
-                </div>
-              );
-            })}
+                nodes.push(
+                  <div key={ms.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, width: 64, zIndex: 1 }}>
+                    <motion.div
+                      animate={{ scale: isMilestoneCompleted ? 1 : 0.9 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                      style={{
+                        fontSize: 20,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 44,
+                        height: 44,
+                        borderRadius: "50%",
+                        background: isMilestoneCompleted ? "rgba(244, 168, 50, 0.08)" : "#FFF8E7",
+                        border: isMilestoneCompleted ? "2px solid #F4A832" : "2px solid #B8D4A8",
+                        boxShadow: isMilestoneCompleted ? "0 0 16px rgba(244, 168, 50, 0.3)" : "none",
+                        position: "relative"
+                      }}
+                    >
+                      {ms.emoji}
+                      {isMilestoneCompleted && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.1 }}
+                          style={{ position: "absolute", top: -6, right: -6, fontSize: 12, pointerEvents: "none" }}
+                        >✨</motion.div>
+                      )}
+                      {isMilestoneCompleted && (
+                        <>
+                          {[0, 1, 2, 3].map(i => (
+                            <motion.div
+                              key={i}
+                              initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                              animate={{ scale: [0, 1, 0], x: Math.cos((i * 90 * Math.PI) / 180) * 14, y: Math.sin((i * 90 * Math.PI) / 180) * 14, opacity: 0 }}
+                              transition={{ duration: 0.6, ease: "easeOut" }}
+                              style={{ position: "absolute", width: 3, height: 3, borderRadius: "50%", background: "#F4A832" }}
+                            />
+                          ))}
+                        </>
+                      )}
+                    </motion.div>
+                    <span style={{ fontSize: 12, fontWeight: isMilestoneCompleted ? 700 : 500, color, textAlign: "center", whiteSpace: "nowrap" }}>
+                      {ms.label}
+                    </span>
+                  </div>
+                );
+
+                if (idx < arr.length - 1) {
+                  nodes.push(
+                    <div key={`line-${idx}`} style={{ flex: 1, height: 24, marginTop: 10, marginLeft: 8, marginRight: 8, position: "relative" }}>
+                      <svg width="100%" height="100%" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+                        <path 
+                          d={idx === 0 ? "M 0,12 Q 50%,-4 100%,12" : "M 0,12 Q 50%,28 100%,12"} 
+                          stroke="rgba(74, 124, 47, 0.15)" 
+                          strokeWidth="2" 
+                          strokeDasharray="4 4"
+                          fill="none" 
+                        />
+                        <motion.path 
+                          d={idx === 0 ? "M 0,12 Q 50%,-4 100%,12" : "M 0,12 Q 50%,28 100%,12"} 
+                          stroke="#4CAF50" 
+                          strokeWidth="3" 
+                          fill="none" 
+                          initial={{ pathLength: 0 }}
+                          animate={{ pathLength: lineProgress }}
+                          transition={{ type: "spring", stiffness: 80, damping: 15 }}
+                        />
+                      </svg>
+                    </div>
+                  );
+                }
+              });
+              return nodes;
+            })()}
           </div>
         </div>
       </motion.div>
