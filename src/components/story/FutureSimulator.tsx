@@ -336,7 +336,11 @@ export default function FutureSimulator() {
               <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 600, color: leftHeaderColor }}>
                   <span>Carbon Delta:</span>
-                  <span>{totalCarbonDelta > 0 ? "+" : ""}{totalCarbonDelta} kg CO₂</span>
+                  <span>
+                    {totalCarbonDelta <= 0 
+                      ? `Saved ${Math.abs(totalCarbonDelta)} kg CO₂` 
+                      : `+${totalCarbonDelta} kg CO₂`}
+                  </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: leftHeaderColor }}>
                   <span>Sky Quality:</span>
@@ -430,7 +434,9 @@ export default function FutureSimulator() {
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.8 }}
                 style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(8px)", padding: 16, borderRadius: 16, borderLeft: "4px solid #A0401A" }}>
                 <div style={{ fontSize: 13, color: "#6B8F5E", marginBottom: 4 }}>Your biggest impact:</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#A0401A" }}>{highestImpact.choice} (+{highestImpact.carbonDelta} kg CO₂)</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#A0401A" }}>
+                  {highestImpact.choice} ({highestImpact.carbonDelta <= 0 ? `Saved ${Math.abs(highestImpact.carbonDelta)} kg CO₂` : `+${highestImpact.carbonDelta} kg CO₂`})
+                </div>
               </motion.div>
             )}
 
@@ -438,7 +444,9 @@ export default function FutureSimulator() {
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.0 }}
                 style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(8px)", padding: 16, borderRadius: 16, borderLeft: "4px solid #4CAF50" }}>
                 <div style={{ fontSize: 13, color: "#6B8F5E", marginBottom: 4 }}>Your best choice:</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#2D7A1F" }}>{lowestImpact.choice} ({lowestImpact.carbonDelta} kg CO₂)</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#2D7A1F" }}>
+                  {lowestImpact.choice} ({lowestImpact.carbonDelta <= 0 ? `Saved ${Math.abs(lowestImpact.carbonDelta)} kg CO₂` : `+${lowestImpact.carbonDelta} kg CO₂`})
+                </div>
               </motion.div>
             )}
 

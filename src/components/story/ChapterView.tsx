@@ -585,44 +585,179 @@ export default function ChapterView() {
                 cursor: "pointer",
               }}
             >
-              {currentDecision < 2 ? "Next →" : "See Your Impact ✨"}
+              {currentDecision < 2 
+                ? "Next →" 
+                : chapter === 1 
+                  ? "🌇 Continue to Evening →" 
+                  : "📖 See My Story →"}
             </motion.button>
           )}
         </AnimatePresence>
 
-        {/* Premium Progress bar */}
-        <div style={{ 
-          marginTop: 20, 
-          height: 8, 
-          width: "100%", 
-          background: "rgba(74, 124, 47, 0.08)", 
-          borderRadius: 999, 
-          overflow: "hidden",
-          position: "relative",
-          boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)"
-        }}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${((currentDecision + 1) / chapterMoments.length) * 100}%` }}
-            transition={{ type: "spring", stiffness: 60, damping: 15 }}
-            style={{ 
-              height: "100%", 
-              background: "linear-gradient(90deg, #7BC67E 0%, #4CAF50 100%)", 
-              borderRadius: 999,
-              position: "relative",
-              overflow: "hidden"
-            }}
-          >
-            <motion.div
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{ duration: 2, ease: "linear", repeat: Infinity, repeatDelay: 1 }}
+        {/* Story Journey Progress Component */}
+        <div style={{ marginTop: 24 }}>
+          {/* Chapter Title */}
+          <div style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: "#4A7C2F",
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+            textAlign: "center",
+            marginBottom: 8
+          }}>
+            {chapter === 1 ? "Chapter 1 — Morning Journey" : "Chapter 2 — Evening Journey"}
+          </div>
+          
+          {/* Milestone Progress Bar */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+            padding: "12px 16px",
+            background: "rgba(255, 255, 255, 0.4)",
+            borderRadius: 20,
+            border: "1px solid rgba(184, 212, 168, 0.3)",
+            position: "relative"
+          }}>
+            {/* Connecting Line background */}
+            <div style={{
+              position: "absolute",
+              left: "15%",
+              right: "15%",
+              top: "35%",
+              transform: "translateY(-50%)",
+              height: 2,
+              background: "rgba(74, 124, 47, 0.15)",
+              zIndex: 0
+            }} />
+            
+            {/* Animated Connecting Line progress */}
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ 
+                width: currentDecision === 0 && selectedChoice === null ? "0%" :
+                       currentDecision === 0 ? "25%" :
+                       currentDecision === 1 && selectedChoice === null ? "50%" :
+                       currentDecision === 1 ? "75%" : "100%"
+              }}
+              transition={{ type: "spring", stiffness: 80, damping: 15 }}
               style={{
                 position: "absolute",
-                inset: 0,
-                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)",
+                left: "15%",
+                top: "35%",
+                transform: "translateY(-50%)",
+                height: 2,
+                background: "linear-gradient(90deg, #7BC67E 0%, #4CAF50 100%)",
+                zIndex: 0
               }}
             />
-          </motion.div>
+
+            {(chapter === 1 
+              ? [
+                  { key: "breakfast", emoji: "🍳", label: "Breakfast" },
+                  { key: "commute", emoji: "🚇", label: "Commute" },
+                  { key: "lunch", emoji: "🍱", label: "Lunch" }
+                ]
+              : [
+                  { key: "shopping", emoji: "🛍️", label: "Shopping" },
+                  { key: "dinner", emoji: "🍳", label: "Dinner" },
+                  { key: "wind-down", emoji: "🌙", label: "Wind Down" }
+                ]
+            ).map((ms, idx) => {
+              const isChapterFullyCompleted = currentDecision === 2 && selectedChoice !== null;
+              const isMilestoneCompleted = isChapterFullyCompleted || idx < currentDecision || (idx === currentDecision && selectedChoice !== null);
+              
+              const statusEmoji = isChapterFullyCompleted 
+                ? "🌳" 
+                : isMilestoneCompleted 
+                  ? "🌿" 
+                  : "🌱";
+                  
+              const color = isChapterFullyCompleted
+                ? "#1D3E0C"
+                : isMilestoneCompleted
+                  ? "#2D5016"
+                  : "#6B8F5E";
+
+              return (
+                <div 
+                  key={ms.key} 
+                  style={{ 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    alignItems: "center", 
+                    gap: 6,
+                    flex: 1,
+                    zIndex: 1
+                  }}
+                >
+                  <motion.div
+                    key={statusEmoji}
+                    initial={{ scale: 0.7, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    style={{
+                      fontSize: 18,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background: isMilestoneCompleted ? "#E8F5E3" : "#FFF8E7",
+                      border: isMilestoneCompleted ? "2px solid #4CAF50" : "2px solid #B8D4A8",
+                      boxShadow: isChapterFullyCompleted 
+                        ? "0 0 12px rgba(76, 175, 80, 0.4)"
+                        : isMilestoneCompleted 
+                          ? "0 0 8px rgba(74, 124, 47, 0.2)"
+                          : "none",
+                      position: "relative"
+                    }}
+                  >
+                    {statusEmoji}
+                    
+                    {/* Sparkle effects on milestone completion */}
+                    {isMilestoneCompleted && (
+                      <>
+                        {[0, 1, 2, 3].map(i => (
+                          <motion.div
+                            key={i}
+                            initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                            animate={{ 
+                              scale: [0, 1, 0], 
+                              x: Math.cos((i * 90 * Math.PI) / 180) * 14, 
+                              y: Math.sin((i * 90 * Math.PI) / 180) * 14,
+                              opacity: 0
+                            }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            style={{ 
+                              position: "absolute", 
+                              width: 3, 
+                              height: 3, 
+                              borderRadius: "50%", 
+                              background: "#F4A832" 
+                            }}
+                          />
+                        ))}
+                      </>
+                    )}
+                  </motion.div>
+                  
+                  <span style={{ 
+                    fontSize: 11, 
+                    fontWeight: isMilestoneCompleted ? 700 : 500, 
+                    color,
+                    textAlign: "center",
+                    whiteSpace: "nowrap"
+                  }}>
+                    {ms.emoji} {ms.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </motion.div>
         )}

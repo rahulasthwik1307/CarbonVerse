@@ -58,6 +58,26 @@ interface SessionState {
     ecoChoicesCount: number;
     highChoicesCount: number;
     streakDays: number;        // consecutive eco days
+    timelineEvents: Array<{
+      id: string;
+      date: string;
+      type: "story_completed" | "receipt_added" | "receipt_deleted" | "achievement_earned";
+      title: string;
+      carbonDelta?: number;
+    }>;
+  };
+
+  // Coach
+  coach: {
+    recommendations: Array<{
+      id: string;
+      title: string;
+      saving: string;
+      difficulty: string;
+      reason: string;
+      emoji: string;
+    }>;
+    isCompleted: boolean;
   };
 
   // Missions
@@ -71,6 +91,7 @@ interface SessionState {
     currentCount: number;
     completed: boolean;
     reward: string;
+    completedAt?: string;
   }>;
 
   // Achievements
@@ -87,6 +108,12 @@ interface SessionState {
     emoji: string;
     description: string;
     unlockedAt: string | null;
+  }>;
+  pendingMissions: Array<{
+    id: string;
+    title: string;
+    emoji: string;
+    description: string;
   }>;
   
   // Actions
@@ -105,7 +132,11 @@ interface SessionState {
   updateMissionProgress: (targetType: string) => void;
   checkAndUnlockAchievements: () => void;
   clearPendingAchievements: () => void;
+  clearPendingMissions: () => void;
   generateNewMissions: () => void;
+  deleteReceipt: (id: string) => void;
+  setCoachRecommendations: (actions: SessionState["coach"]["recommendations"]) => void;
+  acceptCoachPlan: (actionIds: string[]) => void;
 }
 
 const defaultState = {
@@ -136,6 +167,11 @@ const defaultState = {
     ecoChoicesCount: 0,
     highChoicesCount: 0,
     streakDays: 0,
+    timelineEvents: [],
+  },
+  coach: {
+    recommendations: [],
+    isCompleted: false,
   },
   activeMissions: [
     {
@@ -199,9 +235,42 @@ const defaultState = {
       unlockedAt: null },
   ],
   pendingAchievements: [],
+  pendingMissions: [],
 };
 
 const clamp = (val: number) => Math.max(0, Math.min(100, val));
+
+const isMissionCompletedByChoice = (emoji: string, title: string, choice: string): boolean => {
+  const normChoice = choice.toLowerCase();
+  const normTitle = title.toLowerCase();
+
+  // If emoji is transit/walk
+  if (emoji === "🚶" || emoji === "🚆" || emoji === "🚇") {
+    return normChoice.includes("metro") || normChoice.includes("walk") || normChoice.includes("cycle") || normChoice.includes("transit");
+  }
+
+  // If emoji is food/diet
+  if (emoji === "🥗" || emoji === "🥦" || emoji === "🍔" || emoji === "🥘") {
+    return normChoice.includes("plant") || normChoice.includes("tiffin") || normChoice.includes("canteen") || normChoice.includes("cook at home") || normChoice.includes("vegetarian") || normChoice.includes("dhaba");
+  }
+
+  // If shopping/local
+  if (emoji === "🛒" || emoji === "🛍️" || emoji === "♻️" || emoji === "🛠️" || emoji === "⏳") {
+    return normChoice.includes("kirana") || normChoice.includes("local") || normChoice.includes("market") || normChoice.includes("cook at home");
+  }
+
+  // If electricity/home/energy
+  if (emoji === "🔌" || emoji === "❄️" || emoji === "☀️" || emoji === "👕" || emoji === "📚") {
+    return normChoice.includes("read") || normChoice.includes("meditate") || normChoice.includes("stream");
+  }
+
+  // Fallback keyword matching
+  if (normTitle.includes("breakfast") && normChoice.includes("breakfast")) return true;
+  if (normTitle.includes("transit") && normChoice.includes("metro")) return true;
+  if (normTitle.includes("walk") && normChoice.includes("walk")) return true;
+  
+  return false;
+};
 
 export const useSessionStore = create<SessionState>()(
   persist(
@@ -259,6 +328,31 @@ export const useSessionStore = create<SessionState>()(
       }
     }
 
+    // Demo Mode Mission Completion logic
+    const nowStr = new Date().toISOString();
+    const newlyCompletedMissions: typeof state.activeMissions = [];
+
+    const newActiveMissions = state.activeMissions.map((mission) => {
+      if (!mission.completed && isMissionCompletedByChoice(mission.emoji, mission.title, choice)) {
+        const completedMission = {
+          ...mission,
+          completed: true,
+          completedAt: nowStr
+        };
+        newlyCompletedMissions.push(completedMission);
+        return completedMission;
+      }
+      return mission;
+    });
+
+    const missionTimelineEvents = newlyCompletedMissions.map(m => ({
+      id: crypto.randomUUID(),
+      date: nowStr,
+      type: "achievement_earned" as const,
+      title: `Completed Mission: ${m.title}`,
+      carbonDelta: 0
+    }));
+
     return {
       decisions: newDecisions,
       totalCarbonDelta: state.totalCarbonDelta + carbonDelta,
@@ -269,6 +363,23 @@ export const useSessionStore = create<SessionState>()(
         birdCount,
         greenCoverage,
         planetMood: newMood,
+      },
+      activeMissions: newActiveMissions,
+      pendingMissions: [
+        ...state.pendingMissions,
+        ...newlyCompletedMissions.map(m => ({
+          id: m.id,
+          title: m.title,
+          emoji: m.emoji,
+          description: m.description
+        }))
+      ],
+      memoryBook: {
+        ...state.memoryBook,
+        timelineEvents: [
+          ...state.memoryBook.timelineEvents,
+          ...missionTimelineEvents
+        ]
       }
     };
   }),
@@ -277,7 +388,8 @@ export const useSessionStore = create<SessionState>()(
     ...defaultState,
     memoryBook: state.memoryBook,
     activeMissions: state.activeMissions,
-    achievements: state.achievements
+    achievements: state.achievements,
+    coach: state.coach
   })),
 
   addStoryToMemoryBook: (story) => set((state) => {
@@ -294,6 +406,16 @@ export const useSessionStore = create<SessionState>()(
         story.decisions.filter(d => d.impactType === "eco").length,
       highChoicesCount: state.memoryBook.highChoicesCount + 
         story.decisions.filter(d => d.impactType === "high").length,
+      timelineEvents: [
+        ...state.memoryBook.timelineEvents,
+        {
+          id: crypto.randomUUID(),
+          date: newStory.date,
+          type: "story_completed" as const,
+          title: `Story Run #${state.memoryBook.stories.length + 1} Completed`,
+          carbonDelta: story.totalCarbonKg
+        }
+      ]
     };
     return { memoryBook: newMemoryBook };
   }),
@@ -307,23 +429,69 @@ export const useSessionStore = create<SessionState>()(
         date: new Date().toISOString(),
         ...receipt
       }],
-      totalReceiptCO2: state.memoryBook.totalReceiptCO2 + receipt.totalCO2
+      totalReceiptCO2: state.memoryBook.totalReceiptCO2 + receipt.totalCO2,
+      timelineEvents: [
+        ...state.memoryBook.timelineEvents,
+        {
+          id: crypto.randomUUID(),
+          date: new Date().toISOString(),
+          type: "receipt_added" as const,
+          title: `Added ${receipt.merchantName} Receipt`,
+          carbonDelta: receipt.totalCO2
+        }
+      ]
     }
   })),
 
   updateMissionProgress: (targetType) => set((state) => {
+    const nowStr = new Date().toISOString();
+    const newlyCompletedMissions: typeof state.activeMissions = [];
+
     const newMissions = state.activeMissions.map((mission) => {
       if (mission.targetType === targetType && !mission.completed) {
         const newCount = mission.currentCount + 1;
-        return {
+        const completed = newCount >= mission.targetCount;
+        const completedMission = {
           ...mission,
           currentCount: newCount,
-          completed: newCount >= mission.targetCount
+          completed,
+          completedAt: completed ? nowStr : undefined
         };
+        if (completed) {
+          newlyCompletedMissions.push(completedMission);
+        }
+        return completedMission;
       }
       return mission;
     });
-    return { activeMissions: newMissions };
+
+    const missionTimelineEvents = newlyCompletedMissions.map(m => ({
+      id: crypto.randomUUID(),
+      date: nowStr,
+      type: "achievement_earned" as const,
+      title: `Completed Mission: ${m.title}`,
+      carbonDelta: 0
+    }));
+
+    return {
+      activeMissions: newMissions,
+      pendingMissions: [
+        ...state.pendingMissions,
+        ...newlyCompletedMissions.map(m => ({
+          id: m.id,
+          title: m.title,
+          emoji: m.emoji,
+          description: m.description
+        }))
+      ],
+      memoryBook: {
+        ...state.memoryBook,
+        timelineEvents: [
+          ...state.memoryBook.timelineEvents,
+          ...missionTimelineEvents
+        ]
+      }
+    };
   }),
 
   checkAndUnlockAchievements: () => set((state) => {
@@ -381,11 +549,50 @@ export const useSessionStore = create<SessionState>()(
     
     return { 
       achievements: newAchievements,
-      pendingAchievements: [...state.pendingAchievements, ...newlyUnlocked]
+      pendingAchievements: [...state.pendingAchievements, ...newlyUnlocked],
+      memoryBook: {
+        ...state.memoryBook,
+        timelineEvents: [
+          ...state.memoryBook.timelineEvents,
+          ...newlyUnlocked.map(ach => ({
+            id: crypto.randomUUID(),
+            date: now,
+            type: "achievement_earned" as const,
+            title: `Earned ${ach.title} Badge`,
+            carbonDelta: 0
+          }))
+        ]
+      }
     };
   }),
 
   clearPendingAchievements: () => set({ pendingAchievements: [] }),
+  clearPendingMissions: () => set({ pendingMissions: [] }),
+
+  deleteReceipt: (id) => set((state) => {
+    const receipt = state.memoryBook.receipts.find(r => r.id === id);
+    if (!receipt) return state;
+
+    const newReceipts = state.memoryBook.receipts.filter(r => r.id !== id);
+    return {
+      totalCarbonDelta: state.totalCarbonDelta - receipt.totalCO2,
+      memoryBook: {
+        ...state.memoryBook,
+        receipts: newReceipts,
+        totalReceiptCO2: state.memoryBook.totalReceiptCO2 - receipt.totalCO2,
+        timelineEvents: [
+          ...state.memoryBook.timelineEvents,
+          {
+            id: crypto.randomUUID(),
+            date: new Date().toISOString(),
+            type: "receipt_deleted" as const,
+            title: `Deleted ${receipt.merchantName} Receipt`,
+            carbonDelta: -receipt.totalCO2
+          }
+        ]
+      }
+    };
+  }),
 
   generateNewMissions: () => set((state) => {
     const decisions = state.memoryBook.stories.flatMap(s => s.decisions);
@@ -469,7 +676,36 @@ export const useSessionStore = create<SessionState>()(
         ...newMissions.slice(0, 3),
       ]
     };
-  })
+  }),
+
+  setCoachRecommendations: (actions) => set(() => ({
+    coach: { recommendations: actions, isCompleted: false }
+  })),
+
+  acceptCoachPlan: (actionIds) => set((state) => {
+    const acceptedActions = state.coach.recommendations.filter(r => actionIds.includes(r.id));
+    const remainingActions = state.coach.recommendations.filter(r => !actionIds.includes(r.id));
+    
+    const newMissions = acceptedActions.map((act) => ({
+      id: act.id,
+      title: act.title,
+      description: act.reason,
+      emoji: act.emoji,
+      targetType: "eco_choices" as const,
+      targetCount: 1,
+      currentCount: 0,
+      completed: false,
+      reward: `Save ${act.saving}`,
+    }));
+
+    return { 
+      activeMissions: [...state.activeMissions, ...newMissions],
+      coach: {
+        recommendations: remainingActions,
+        isCompleted: remainingActions.length === 0 && actionIds.length > 0
+      }
+    };
+  }),
     }),
     {
       name: "carbonverse-session-storage",
@@ -477,6 +713,7 @@ export const useSessionStore = create<SessionState>()(
         memoryBook: state.memoryBook,
         achievements: state.achievements,
         activeMissions: state.activeMissions,
+        coach: state.coach,
       }),
     }
   )

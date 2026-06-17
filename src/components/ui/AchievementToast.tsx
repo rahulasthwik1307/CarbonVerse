@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AchievementToastProps {
-  achievement: { emoji: string; title: string; description: string };
+  achievement: { emoji: string; title: string; description: string; type?: "achievement" | "mission" };
   onClose: () => void;
 }
 
@@ -30,11 +30,11 @@ export default function AchievementToast({ achievement, onClose }: AchievementTo
           zIndex: 200,
           background: "rgba(255,255,255,0.85)",
           backdropFilter: "blur(12px)",
-          border: "2px solid #F4A832",
+          border: achievement.type === "mission" ? "2px solid #4CAF50" : "2px solid #F4A832",
           width: 280,
           padding: "16px 20px",
           borderRadius: 20,
-          boxShadow: "0 12px 32px rgba(244,168,50,0.15)",
+          boxShadow: achievement.type === "mission" ? "0 12px 32px rgba(74,124,47,0.15)" : "0 12px 32px rgba(244,168,50,0.15)",
           display: "flex",
           flexDirection: "column",
           gap: 8,
@@ -56,12 +56,12 @@ export default function AchievementToast({ achievement, onClose }: AchievementTo
                   opacity: 0
                 }}
                 transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }}
-                style={{ position: "absolute", width: 4, height: 4, borderRadius: 2, background: "#F4A832" }}
+                style={{ position: "absolute", width: 4, height: 4, borderRadius: 2, background: achievement.type === "mission" ? "#4CAF50" : "#F4A832" }}
               />
             ))}
           </div>
-          <div style={{ fontSize: 11, textTransform: "uppercase", color: "#F4A832", fontWeight: 700, letterSpacing: 0.5 }}>
-            Achievement Unlocked!
+          <div style={{ fontSize: 11, textTransform: "uppercase", color: achievement.type === "mission" ? "#4CAF50" : "#F4A832", fontWeight: 700, letterSpacing: 0.5 }}>
+            {achievement.type === "mission" ? "Mission Completed!" : "Achievement Unlocked!"}
           </div>
         </div>
         <div>

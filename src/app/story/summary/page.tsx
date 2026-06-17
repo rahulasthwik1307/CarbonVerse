@@ -174,7 +174,7 @@ export default function SummaryPage() {
               fontSize: 24, fontWeight: 800,
               color: isPositive ? "#2D7A1F" : "#A0401A"
             }}>
-              {isPositive ? "▼" : "▲"} {Math.abs(totalCarbon)} kg CO₂
+              {isPositive ? `Saved ${Math.abs(totalCarbon)} kg CO₂` : `+${Math.abs(totalCarbon)} kg CO₂`}
             </div>
             <div style={{fontSize:12, color:"#6B8F5E", marginTop:4}}>
               {isPositive 
