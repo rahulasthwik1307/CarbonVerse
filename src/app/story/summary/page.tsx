@@ -267,7 +267,24 @@ export default function SummaryPage() {
                 boxShadow: "0 4px 24px rgba(45, 80, 22, 0.08)",
               }}
             >
-              <div>
+              {/* Premium Watermark to fill dead space */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, rotate: -15, x: "-50%", y: "-50%" }}
+                animate={{ opacity: isEco ? 0.15 : 0.08, scale: 1, rotate: -5, x: "-50%", y: "-50%" }}
+                transition={{ delay: 0.4, duration: 1.2, ease: "easeOut" }}
+                style={{
+                  position: "absolute",
+                  top: "52%", left: "50%",
+                  fontSize: 160,
+                  lineHeight: 1,
+                  pointerEvents: "none",
+                  zIndex: 0,
+                }}
+              >
+                {isEco ? "🍃" : "🚗"}
+              </motion.div>
+
+              <div style={{ position: "relative", zIndex: 1 }}>
                 <div style={{
                   fontSize: 10, fontWeight: 700, letterSpacing: "0.13em",
                   textTransform: "uppercase",
@@ -301,7 +318,7 @@ export default function SummaryPage() {
               </div>
 
               {/* 3 Insight Rows */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 18 }}>
+              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 14, marginTop: 18 }}>
                 {/* Row 1: Average comparison bar */}
                 <div>
                   <div style={{
@@ -364,33 +381,33 @@ export default function SummaryPage() {
                 📖 Story Snapshot
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {ecoCount > 0 && (
                   <div style={{
-                    padding: "6px 14px", borderRadius: 20,
+                    padding: "5px 10px", borderRadius: 20,
                     background: "rgba(126,200,106,0.14)",
                     border: "1px solid rgba(126,200,106,0.38)",
-                    fontSize: 13, fontWeight: 700, color: "#2D5016",
+                    fontSize: 12, fontWeight: 700, color: "#2D5016",
                   }}>
                     🌱 Eco ×{ecoCount}
                   </div>
                 )}
                 {highCount > 0 && (
                   <div style={{
-                    padding: "6px 14px", borderRadius: 20,
+                    padding: "5px 10px", borderRadius: 20,
                     background: "rgba(255,107,107,0.10)",
                     border: "1px solid rgba(255,107,107,0.28)",
-                    fontSize: 13, fontWeight: 700, color: "#A0401A",
+                    fontSize: 12, fontWeight: 700, color: "#A0401A",
                   }}>
                     ⚠️ High ×{highCount}
                   </div>
                 )}
                 {moderateCount > 0 && (
                   <div style={{
-                    padding: "6px 14px", borderRadius: 20,
+                    padding: "5px 10px", borderRadius: 20,
                     background: "rgba(255,213,128,0.18)",
                     border: "1px solid rgba(244,168,50,0.36)",
-                    fontSize: 13, fontWeight: 700, color: "#5A4000",
+                    fontSize: 12, fontWeight: 700, color: "#5A4000",
                   }}>
                     🟡 Moderate ×{moderateCount}
                   </div>
