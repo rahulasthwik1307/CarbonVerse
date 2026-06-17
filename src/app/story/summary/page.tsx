@@ -46,31 +46,55 @@ export default function SummaryPage() {
   // ── Derived categories ─────────────────────────────────────────
   const getCategory = (choice: string) => {
     const lower = choice.toLowerCase();
-    if (lower.match(/cab|car|drive|bus|train|walk|cycle|flight|metro/i)) return { name: "Transport", emoji: "🚗" };
-    if (lower.match(/burger|meat|food|vegan|vegetarian|salad|meal|dhaba|tiffin/i)) return { name: "Food", emoji: "🍔" };
-    if (lower.match(/game|stream|light|ac|heater|electricity|read/i)) return { name: "Electricity", emoji: "⚡" };
-    return { name: "Other", emoji: "🛍️" };
+    if (lower.match(/cab|car|drive|bus|train|walk|cycle|flight|metro/i)) return { name: "Transport", emoji: "🚗", color: "#22C55E" };
+    if (lower.match(/burger|meat|food|vegan|vegetarian|salad|meal|dhaba|tiffin/i)) return { name: "Food", emoji: "🍔", color: "#F59E0B" };
+    if (lower.match(/game|stream|light|ac|heater|electricity|read/i)) return { name: "Electricity", emoji: "⚡", color: "#3B82F6" };
+    return { name: "Other", emoji: "🛍️", color: "#9CA3AF" };
   };
 
-  const categoryTotals = new Map<string, { impact: number, emoji: string }>();
+  const categoryTotals = new Map<string, { impact: number, emoji: string, color: string }>();
   decisions.forEach(d => {
     const cat = getCategory(d.choice);
     const impact = Math.abs(d.carbonDelta);
     if (!categoryTotals.has(cat.name)) {
-      categoryTotals.set(cat.name, { impact: 0, emoji: cat.emoji });
+      categoryTotals.set(cat.name, { impact: 0, emoji: cat.emoji, color: cat.color });
     }
     categoryTotals.get(cat.name)!.impact += impact;
   });
 
   const totalAbs = Array.from(categoryTotals.values()).reduce((sum, c) => sum + c.impact, 0) || 1;
-  const breakdown = Array.from(categoryTotals.entries()).map(([name, data]) => ({
-    name,
-    emoji: data.emoji,
-    impact: data.impact,
-    pct: Math.round((data.impact / totalAbs) * 100)
-  })).sort((a, b) => b.pct - a.pct).filter(b => b.pct > 0);
+  
+  const radius = 52;
+  const circ = 2 * Math.PI * radius;
+  let currentOffset = 0;
+
+  const breakdown = Array.from(categoryTotals.entries()).map(([name, data]) => {
+    const pct = Math.round((data.impact / totalAbs) * 100);
+    const strokeDasharray = `${(pct / 100) * circ} ${circ}`;
+    const strokeDashoffset = -currentOffset;
+    currentOffset += (pct / 100) * circ;
+    
+    return {
+      name,
+      emoji: data.emoji,
+      color: data.color,
+      impact: data.impact,
+      pct,
+      strokeDasharray,
+      strokeDashoffset,
+    };
+  }).sort((a, b) => b.pct - a.pct).filter(b => b.pct > 0);
 
   const biggestContributor = breakdown.length > 0 ? breakdown[0] : null;
+
+  const getBadgeSubtitle = (title: string) => {
+    const lower = title.toLowerCase();
+    if (lower.match(/commute|transport|walk|bus|train|metro/)) return "Transport Hero Badge";
+    if (lower.match(/green plate|food|vegan|vegetarian|meal/)) return "Eco Food Hero Badge";
+    if (lower.match(/local|buy|shop|market/)) return "Community Hero Badge";
+    if (lower.match(/power|light|energy|ac|heater/)) return "Energy Hero Badge";
+    return "Eco Hero Badge";
+  };
 
   // ── Fetch action plan ──────────────────────────────────────────
   useEffect(() => {
@@ -139,11 +163,12 @@ export default function SummaryPage() {
       <div
         style={{
           position: "absolute", inset: 0, zIndex: 20,
-          overflowY: "auto", scrollbarWidth: "none", msOverflowStyle: "none",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "16px",
+          overflowY: showDecisions ? "auto" : "hidden", overscrollBehavior: "none", scrollbarWidth: "none", msOverflowStyle: "none",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: showDecisions ? "flex-start" : "center",
+          padding: showDecisions ? "32px 16px" : "16px",
         }}
       >
+
         <style>{`
           ::-webkit-scrollbar { display: none; }
 
@@ -151,8 +176,8 @@ export default function SummaryPage() {
             .bento-grid {
               grid-template-columns: 1fr !important;
             }
-            .impact-card {
-              grid-row: span 1 !important;
+            .story-decisions-grid {
+              grid-template-columns: 1fr !important;
             }
           }
         `}</style>
@@ -162,14 +187,15 @@ export default function SummaryPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
           style={{
-            width: "calc(100% - 48px)", maxWidth: 900,
-            display: "flex", flexDirection: "column", gap: 10,
+            width: "100%", maxWidth: 900,
+            display: "flex", flexDirection: "column", 
+            gap: showDecisions ? 12 : 8,
             background: "rgba(255, 255, 255, 0.72)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(184, 212, 168, 0.5)",
             borderRadius: 32,
-            padding: 24,
+            padding: showDecisions ? 24 : 16,
             boxShadow: "0 8px 40px rgba(45, 80, 22, 0.10)",
           }}
         >
@@ -189,11 +215,11 @@ export default function SummaryPage() {
                 border: "1px solid rgba(184, 212, 168, 0.6)",
                 boxShadow: "0 4px 24px rgba(45, 80, 22, 0.08)",
                 borderRadius: 24,
-                padding: "24px 28px",
+                padding: showDecisions ? "24px 28px" : "16px 20px",
                 overflow: "hidden",
                 display: "flex",
                 alignItems: "center",
-                gap: 20,
+                gap: showDecisions ? 20 : 16,
               }}
             >
             {/* Ambient glow blob */}
@@ -210,7 +236,7 @@ export default function SummaryPage() {
               transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
               style={{ flexShrink: 0 }}
             >
-              <VerdOrb size={70} />
+              <VerdOrb size={showDecisions ? 70 : 54} />
             </motion.div>
 
             {/* Headline block */}
@@ -270,23 +296,22 @@ export default function SummaryPage() {
             style={{
               display: "grid",
               gridTemplateColumns: "1.3fr 1fr",
-              gridTemplateRows: "auto auto",
               gap: 10,
+              alignItems: "stretch",
             }}
           >
-            {/* ── IMPACT CARD (tall, spans 2 rows) ────────────── */}
+            {/* ── IMPACT CARD ────────────── */}
             <motion.div
               className="impact-card"
               initial={{ opacity: 0, y: 16, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0 }}
               style={{
-                gridRow: "span 2",
                 background: isEco ? "rgba(240, 250, 240, 0.95)" : "rgba(255, 248, 231, 0.95)",
                 backdropFilter: "blur(16px)",
                 WebkitBackdropFilter: "blur(16px)",
                 borderRadius: 24,
-                padding: "26px 22px",
+                padding: showDecisions ? "20px 18px" : "14px 16px",
                 border: `1.5px solid ${isEco ? "rgba(76,175,80,0.3)" : "rgba(244,168,50,0.35)"}`,
                 display: "flex",
                 flexDirection: "column",
@@ -295,122 +320,177 @@ export default function SummaryPage() {
                 boxShadow: "0 4px 24px rgba(45, 80, 22, 0.08)",
               }}
             >
-              {/* Premium Watermark to fill dead space */}
+              {/* Decorative Animated Car watermark */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.8, rotate: -15, x: 20, y: 20 }}
-                animate={{ opacity: isEco ? 0.12 : 0.08, scale: 1, rotate: -5, x: 0, y: 0 }}
-                transition={{ delay: 0.4, duration: 1.2, ease: "easeOut" }}
+                initial={{ opacity: 0, x: 60 }}
+                animate={{ opacity: isEco ? 0.2 : 0.15, x: 0 }}
+                transition={{ duration: 1.8, ease: "easeOut", delay: 0.5 }}
                 style={{
                   position: "absolute",
-                  bottom: -15, right: -15,
-                  fontSize: 110,
+                  bottom: -5,
+                  right: -10,
+                  fontSize: 70,
                   lineHeight: 1,
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
               >
-                {isEco ? "🍃" : "🚗"}
+                🚗
               </motion.div>
 
-              <div style={{ position: "relative", zIndex: 1, marginBottom: 20 }}>
+              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 16 }}>
                 <div style={{
                   fontSize: 10, fontWeight: 700, letterSpacing: "0.13em",
                   textTransform: "uppercase",
                   color: isEco ? "rgba(126,200,106,0.75)" : "rgba(255,168,80,0.75)",
-                  marginBottom: 8,
+                  marginBottom: showDecisions ? 10 : 4, alignSelf: "flex-start"
                 }}>
                   TOTAL IMPACT
                 </div>
 
-                <motion.div
-                  initial={{ scale: 0.75, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.55, duration: 0.55, ease: "backOut" }}
-                  style={{
-                    fontSize: 48, fontWeight: 900, lineHeight: 1.1,
-                    color: isEco ? "#2D7A1F" : "#A0401A",
-                    textShadow: isEco ? "0 0 32px rgba(76,175,80,0.25)" : "0 0 32px rgba(255,107,107,0.2)",
-                  }}
-                >
-                  {isEco ? `−${Math.abs(totalCarbon)}` : `+${Math.abs(totalCarbon)}`}
-                  <span style={{ fontSize: 16, fontWeight: 600, marginLeft: 6 }}>kg CO₂ today</span>
-                </motion.div>
+                {/* Donut Chart Container */}
+                <div style={{ position: "relative", width: 124, height: 124, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="124" height="124" viewBox="0 0 124 124" style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
+                    {/* Background Ring */}
+                    <circle cx="62" cy="62" r="52" fill="none" stroke="rgba(184,212,168,0.2)" strokeWidth="12" />
+                    
+                    {/* Data Rings */}
+                    {breakdown.map((b, i) => (
+                      <motion.circle
+                        key={i}
+                        cx="62" cy="62" r="52"
+                        fill="none"
+                        stroke={b.color}
+                        strokeWidth="12"
+                        strokeLinecap="round"
+                        initial={{ strokeDasharray: `0 ${circ}` }}
+                        animate={{ strokeDasharray: b.strokeDasharray }}
+                        transition={{ duration: 1.2, delay: 0.4 + i * 0.1, ease: "easeOut" }}
+                        style={{ strokeDashoffset: b.strokeDashoffset }}
+                      />
+                    ))}
+                  </svg>
 
-                <div style={{ fontSize: 12, color: "#6B8F5E", fontWeight: 600, marginTop: 4 }}>
-                  vs. avg Indian footprint
+                  {/* Center Text */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", zIndex: 2 }}>
+                    <motion.div
+                      initial={{ scale: 0.75, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.55, duration: 0.55, ease: "backOut" }}
+                      style={{
+                        fontSize: 28, fontWeight: 900, lineHeight: 1.1,
+                        color: isEco ? "#2D7A1F" : "#A0401A",
+                        textShadow: isEco ? "0 0 24px rgba(76,175,80,0.3)" : "0 0 24px rgba(255,107,107,0.2)",
+                      }}
+                    >
+                      {isEco ? `−${Math.abs(totalCarbon)}` : `+${Math.abs(totalCarbon)}`}
+                    </motion.div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", marginTop: 2 }}>
+                      kg CO₂ today
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Contributor Stats */}
-              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
+              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: showDecisions ? 14 : 10 }}>
                 
                 {biggestContributor && (
                   <div style={{ 
-                    padding: "12px 14px", background: "rgba(255,255,255,0.6)", 
-                    borderRadius: 16, border: "1px solid rgba(184,212,168,0.3)" 
+                    padding: showDecisions ? "10px 14px" : "8px 12px", background: "rgba(255,255,255,0.7)", 
+                    borderRadius: 18, border: "1px solid rgba(255,255,255,0.5)",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+                    backdropFilter: "blur(8px)",
                   }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", marginBottom: 4 }}>
                       🏆 Biggest Contributor
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: "#2D5016" }}>
-                      {biggestContributor.emoji} {biggestContributor.name} • {biggestContributor.pct}%
+                    <div style={{ fontSize: 14, fontWeight: 800, color: "#2D5016", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 16 }}>{biggestContributor.emoji}</span>
+                      {biggestContributor.name} <span style={{ opacity: 0.5, fontWeight: 400 }}>•</span> {biggestContributor.pct}%
                     </div>
                   </div>
                 )}
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", marginBottom: 2 }}>
-                    Impact Breakdown
-                  </div>
-                  
+                {/* Mini Cards Breakdown */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: showDecisions ? 6 : 4 }}>
                   {breakdown.map((b, i) => (
-                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#2D5016" }}>
-                        <span>{b.emoji} {b.name}</span>
-                        <span>{b.pct}%</span>
+                    <motion.div 
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.6 + i * 0.1 }}
+                      style={{
+                        background: "rgba(255,255,255,0.6)",
+                        borderRadius: 14, padding: showDecisions ? "8px 12px" : "6px 10px",
+                        border: "1px solid rgba(255,255,255,0.4)",
+                        display: "flex", alignItems: "center", gap: 10,
+                        boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
+                      }}
+                    >
+                      {/* Circular Progress Ring */}
+                      <div style={{ position: "relative", width: 28, height: 28, flexShrink: 0 }}>
+                        <svg width="28" height="28" viewBox="0 0 28 28" style={{ transform: "rotate(-90deg)" }}>
+                          <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="3" />
+                          <motion.circle
+                            cx="14" cy="14" r="11" fill="none"
+                            stroke={b.color} strokeWidth="3" strokeLinecap="round"
+                            initial={{ strokeDasharray: `0 69` }}
+                            animate={{ strokeDasharray: `${(b.pct / 100) * 69} 69` }}
+                            transition={{ duration: 1, delay: 0.8 }}
+                          />
+                        </svg>
+                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
+                          {b.emoji}
+                        </div>
                       </div>
-                      <div style={{ height: 6, borderRadius: 999, background: "rgba(184,212,168,0.2)", overflow: "hidden" }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${b.pct}%` }}
-                          transition={{ duration: 1, delay: 0.6 + i * 0.1, ease: "easeOut" }}
-                          style={{ height: "100%", borderRadius: 999, background: isEco ? "#7EC86A" : "#F4A832" }}
-                        />
+                      {/* Content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#2D5016" }}>{b.name}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: b.color }}>{b.pct}%</span>
+                        </div>
+                        {/* Progress Bar */}
+                        <div style={{ height: 4, borderRadius: 999, background: "rgba(0,0,0,0.05)", overflow: "hidden" }}>
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${b.pct}%` }}
+                            transition={{ duration: 1, delay: 0.8 }}
+                            style={{ height: "100%", background: b.color, borderRadius: 999 }}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-
-                <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "1px dashed rgba(184,212,168,0.4)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                   <div style={{ fontSize: 12, fontWeight: 700, color: "#6B8F5E" }}>🌍 Planet Mood</div>
-                   <div style={{ fontSize: 13, fontWeight: 700, color: isEco ? "#2D7A1F" : "#A0401A" }}>{worldState.planetMood}</div>
-                </div>
-
               </div>
             </motion.div>
 
-            {/* ── STORY SNAPSHOT ──────────────────────────────── */}
-            <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0.08 }}
-              style={{
-                background: "rgba(240, 250, 240, 0.85)",
-                backdropFilter: "blur(14px)",
-                WebkitBackdropFilter: "blur(14px)",
-                borderRadius: 24,
-                padding: "18px 20px",
-                border: "1px solid rgba(184,212,168,0.5)",
-              }}
-            >
+            {/* ── RIGHT COLUMN ──────────────────────────────── */}
+            <div style={{ display: "flex", flexDirection: "column", gap: showDecisions ? 10 : 8, height: "100%" }}>
+              {/* ── STORY SNAPSHOT ──────────────────────────────── */}
+              <motion.div
+                initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0.08 }}
+                style={{
+                  background: "rgba(240, 250, 240, 0.85)",
+                  backdropFilter: "blur(14px)",
+                  WebkitBackdropFilter: "blur(14px)",
+                  borderRadius: 20,
+                  padding: showDecisions ? "16px 18px" : "12px 14px",
+                  border: "1px solid rgba(184,212,168,0.5)",
+                  flexShrink: 0,
+                }}
+              >
               <div style={{
                 fontSize: 10, fontWeight: 700, letterSpacing: "0.11em",
-                textTransform: "uppercase", color: "#6B8F5E", marginBottom: 12,
+                textTransform: "uppercase", color: "#6B8F5E", marginBottom: showDecisions ? 8 : 4,
               }}>
                 📖 Story Snapshot
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
                 {ecoCount > 0 && (
                   <div style={{
                     padding: "4px 10px", borderRadius: 20,
@@ -446,7 +526,7 @@ export default function SummaryPage() {
               <button
                 onClick={() => setShowDecisions(v => !v)}
                 style={{
-                  marginTop: 14, fontSize: 12, color: "#4A7C2F",
+                  marginTop: showDecisions ? 8 : 4, fontSize: 12, color: "#4A7C2F",
                   fontWeight: 700, background: "none", border: "none",
                   cursor: "pointer", padding: 0,
                   display: "flex", alignItems: "center", gap: 4,
@@ -464,16 +544,25 @@ export default function SummaryPage() {
                     transition={{ duration: 0.28 }}
                     style={{ overflow: "hidden" }}
                   >
-                    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div className="story-decisions-grid" style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       {chapter1Decisions.length > 0 && (
-                        <div>
+                        <div style={{
+                          background: "rgba(255, 255, 255, 0.5)",
+                          backdropFilter: "blur(8px)",
+                          WebkitBackdropFilter: "blur(8px)",
+                          borderRadius: 14,
+                          padding: "10px 12px",
+                          border: "1px solid rgba(184,212,168,0.5)",
+                          display: "flex",
+                          flexDirection: "column",
+                        }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", marginBottom: 6 }}>
                             Morning 🌅
                           </div>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                             {chapter1Decisions.map((d, i) => (
-                              <div key={`m-${i}`} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 500, color: "#2D5016" }}>
-                                <span style={{ fontSize: 14 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
+                              <div key={`m-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 13, fontWeight: 500, color: "#2D5016", lineHeight: 1.2 }}>
+                                <span style={{ fontSize: 13, marginTop: 1 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
                                 <span>{d.choice}</span>
                               </div>
                             ))}
@@ -482,14 +571,23 @@ export default function SummaryPage() {
                       )}
                       
                       {chapter2Decisions.length > 0 && (
-                        <div>
+                        <div style={{
+                          background: "rgba(255, 255, 255, 0.5)",
+                          backdropFilter: "blur(8px)",
+                          WebkitBackdropFilter: "blur(8px)",
+                          borderRadius: 14,
+                          padding: "10px 12px",
+                          border: "1px solid rgba(184,212,168,0.5)",
+                          display: "flex",
+                          flexDirection: "column",
+                        }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", marginBottom: 6 }}>
                             Evening 🌙
                           </div>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                             {chapter2Decisions.map((d, i) => (
-                              <div key={`e-${i}`} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 500, color: "#2D5016" }}>
-                                <span style={{ fontSize: 14 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
+                              <div key={`e-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 13, fontWeight: 500, color: "#2D5016", lineHeight: 1.2 }}>
+                                <span style={{ fontSize: 13, marginTop: 1 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
                                 <span>{d.choice}</span>
                               </div>
                             ))}
@@ -503,35 +601,38 @@ export default function SummaryPage() {
             </motion.div>
 
 
-            {/* ── MISSIONS UNLOCKED ───────────────────────────── */}
-            <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0.16 }}
-              style={{
-                background: "rgba(240, 250, 240, 0.85)",
-                backdropFilter: "blur(14px)",
-                WebkitBackdropFilter: "blur(14px)",
-                borderRadius: 24,
-                padding: "18px 16px",
-                border: "1px solid rgba(184,212,168,0.5)",
-              }}
-            >
+              {/* ── MISSIONS UNLOCKED ───────────────────────────── */}
+              <motion.div
+                initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0.16 }}
+                style={{
+                  background: "rgba(240, 250, 240, 0.85)",
+                  backdropFilter: "blur(14px)",
+                  WebkitBackdropFilter: "blur(14px)",
+                  borderRadius: 24,
+                  padding: showDecisions ? "16px 18px" : "12px 14px",
+                  border: "1px solid rgba(184,212,168,0.5)",
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
               <div style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                marginBottom: 12,
+                marginBottom: showDecisions ? 12 : 8,
               }}>
                 <div style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: "0.11em",
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.11em",
                   textTransform: "uppercase", color: "#6B8F5E",
                 }}>
-                  🎯 Missions Unlocked
+                  🎯 Missions
                 </div>
                 {unlockedMissions.length > 3 && (
                   <button
                     onClick={() => setShowAllMissions(v => !v)}
                     style={{
-                      fontSize: 10, fontWeight: 700, color: "#4A7C2F",
+                      fontSize: 11, fontWeight: 700, color: "#4A7C2F",
                       background: "none", border: "none", cursor: "pointer", padding: 0,
                     }}
                   >
@@ -541,29 +642,35 @@ export default function SummaryPage() {
               </div>
 
               {unlockedMissions.length === 0 ? (
-                <div style={{ fontSize: 12, color: "#6B8F5E" }}>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#6B8F5E" }}>
                   Keep playing to unlock missions 🌱
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: showDecisions ? 12 : 8 }}>
                   {(showAllMissions ? unlockedMissions : unlockedMissions.slice(0, 3)).map(mission => (
                     <div key={mission.id} style={{
-                      display: "flex", alignItems: "center", gap: 9,
-                      padding: "7px 10px", borderRadius: 12,
+                      display: "flex", alignItems: "flex-start", gap: showDecisions ? 14 : 12,
+                      padding: showDecisions ? "14px 16px" : "10px 14px", borderRadius: 16,
                       background: "rgba(74,124,47,0.05)",
                       border: "1px dashed rgba(74,124,47,0.22)",
                     }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{mission.emoji}</span>
-                      <div style={{ minWidth: 0 }}>
+                      <span style={{ fontSize: 24, flexShrink: 0, marginTop: 2 }}>{mission.emoji}</span>
+                      <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
                         <div style={{
-                          fontSize: 12, fontWeight: 600, color: "#2D5016",
+                          fontSize: 13, fontWeight: 700, color: "#2D5016",
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         }}>
                           {mission.title}
                         </div>
                         <div style={{
-                          fontSize: 10, color: "#6B8F5E",
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          fontSize: 11, fontWeight: 600, color: "#4A7C2F",
+                          display: "flex", alignItems: "center", gap: 4
+                        }}>
+                          🏅 {getBadgeSubtitle(mission.title)}
+                        </div>
+                        <div style={{
+                          fontSize: 11, color: "#6B8F5E",
+                          lineHeight: 1.4,
                         }}>
                           {mission.description}
                         </div>
@@ -573,6 +680,7 @@ export default function SummaryPage() {
                 </div>
               )}
             </motion.div>
+            </div>
           </div>
 
 
@@ -588,7 +696,7 @@ export default function SummaryPage() {
               backdropFilter: "blur(14px)",
               WebkitBackdropFilter: "blur(14px)",
               borderRadius: 24,
-              padding: "13px 20px",
+              padding: showDecisions ? "13px 20px" : "10px 18px",
               border: "1px solid rgba(244, 168, 50, 0.25)",
               display: "flex",
               alignItems: "center",
@@ -645,7 +753,7 @@ export default function SummaryPage() {
               whileTap={{ scale: 0.97 }}
               onClick={() => router.push("/story/future")}
               style={{
-                flex: 1, padding: "13px 20px",
+                flex: 1, padding: showDecisions ? "13px 20px" : "11px 16px",
                 background: "linear-gradient(135deg, #4A7C2F, #2D5016)",
                 color: "white", borderRadius: 16,
                 fontWeight: 700, fontSize: 15, border: "none",
@@ -661,7 +769,7 @@ export default function SummaryPage() {
               whileTap={{ scale: 0.97 }}
               onClick={handlePlayAgain}
               style={{
-                padding: "13px 22px",
+                padding: showDecisions ? "13px 22px" : "11px 18px",
                 background: "rgba(255,255,255,0.8)",
                 backdropFilter: "blur(10px)",
                 WebkitBackdropFilter: "blur(10px)",
