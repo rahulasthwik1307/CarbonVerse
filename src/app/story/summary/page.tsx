@@ -43,6 +43,35 @@ export default function SummaryPage() {
 
   const dayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
 
+  // ── Derived categories ─────────────────────────────────────────
+  const getCategory = (choice: string) => {
+    const lower = choice.toLowerCase();
+    if (lower.match(/cab|car|drive|bus|train|walk|cycle|flight|metro/i)) return { name: "Transport", emoji: "🚗" };
+    if (lower.match(/burger|meat|food|vegan|vegetarian|salad|meal|dhaba|tiffin/i)) return { name: "Food", emoji: "🍔" };
+    if (lower.match(/game|stream|light|ac|heater|electricity|read/i)) return { name: "Electricity", emoji: "⚡" };
+    return { name: "Other", emoji: "🛍️" };
+  };
+
+  const categoryTotals = new Map<string, { impact: number, emoji: string }>();
+  decisions.forEach(d => {
+    const cat = getCategory(d.choice);
+    const impact = Math.abs(d.carbonDelta);
+    if (!categoryTotals.has(cat.name)) {
+      categoryTotals.set(cat.name, { impact: 0, emoji: cat.emoji });
+    }
+    categoryTotals.get(cat.name)!.impact += impact;
+  });
+
+  const totalAbs = Array.from(categoryTotals.values()).reduce((sum, c) => sum + c.impact, 0) || 1;
+  const breakdown = Array.from(categoryTotals.entries()).map(([name, data]) => ({
+    name,
+    emoji: data.emoji,
+    impact: data.impact,
+    pct: Math.round((data.impact / totalAbs) * 100)
+  })).sort((a, b) => b.pct - a.pct).filter(b => b.pct > 0);
+
+  const biggestContributor = breakdown.length > 0 ? breakdown[0] : null;
+
   // ── Fetch action plan ──────────────────────────────────────────
   useEffect(() => {
     const fetchActionPlan = async () => {
@@ -261,7 +290,6 @@ export default function SummaryPage() {
                 border: `1.5px solid ${isEco ? "rgba(76,175,80,0.3)" : "rgba(244,168,50,0.35)"}`,
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "space-between",
                 position: "relative",
                 overflow: "hidden",
                 boxShadow: "0 4px 24px rgba(45, 80, 22, 0.08)",
@@ -269,13 +297,13 @@ export default function SummaryPage() {
             >
               {/* Premium Watermark to fill dead space */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.8, rotate: -15, x: "-50%", y: "-50%" }}
-                animate={{ opacity: isEco ? 0.15 : 0.08, scale: 1, rotate: -5, x: "-50%", y: "-50%" }}
+                initial={{ opacity: 0, scale: 0.8, rotate: -15, x: 20, y: 20 }}
+                animate={{ opacity: isEco ? 0.12 : 0.08, scale: 1, rotate: -5, x: 0, y: 0 }}
                 transition={{ delay: 0.4, duration: 1.2, ease: "easeOut" }}
                 style={{
                   position: "absolute",
-                  top: "52%", left: "50%",
-                  fontSize: 160,
+                  bottom: -15, right: -15,
+                  fontSize: 110,
                   lineHeight: 1,
                   pointerEvents: "none",
                   zIndex: 0,
@@ -284,81 +312,82 @@ export default function SummaryPage() {
                 {isEco ? "🍃" : "🚗"}
               </motion.div>
 
-              <div style={{ position: "relative", zIndex: 1 }}>
+              <div style={{ position: "relative", zIndex: 1, marginBottom: 20 }}>
                 <div style={{
                   fontSize: 10, fontWeight: 700, letterSpacing: "0.13em",
                   textTransform: "uppercase",
                   color: isEco ? "rgba(126,200,106,0.75)" : "rgba(255,168,80,0.75)",
-                  marginBottom: 14,
+                  marginBottom: 8,
                 }}>
-                  Carbon Impact
+                  TOTAL IMPACT
                 </div>
 
-                {/* GAME STAT — big bold number */}
                 <motion.div
                   initial={{ scale: 0.75, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.55, duration: 0.55, ease: "backOut" }}
                   style={{
-                    fontSize: 58, fontWeight: 900, lineHeight: 1,
+                    fontSize: 48, fontWeight: 900, lineHeight: 1.1,
                     color: isEco ? "#2D7A1F" : "#A0401A",
                     textShadow: isEco ? "0 0 32px rgba(76,175,80,0.25)" : "0 0 32px rgba(255,107,107,0.2)",
-                    marginBottom: 2,
                   }}
                 >
                   {isEco ? `−${Math.abs(totalCarbon)}` : `+${Math.abs(totalCarbon)}`}
+                  <span style={{ fontSize: 16, fontWeight: 600, marginLeft: 6 }}>kg CO₂ today</span>
                 </motion.div>
 
-                <div style={{
-                  fontSize: 15, fontWeight: 600,
-                  color: isEco ? "#4A7C2F" : "#A0401A", marginBottom: 14,
-                }}>
-                  kg CO₂ today
+                <div style={{ fontSize: 12, color: "#6B8F5E", fontWeight: 600, marginTop: 4 }}>
+                  vs. avg Indian footprint
                 </div>
               </div>
 
-              {/* 3 Insight Rows */}
-              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 14, marginTop: 18 }}>
-                {/* Row 1: Average comparison bar */}
-                <div>
-                  <div style={{
-                    display: "flex", justifyContent: "space-between",
-                    fontSize: 12, color: "#6B8F5E", fontWeight: 600, marginBottom: 5,
+              {/* Contributor Stats */}
+              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
+                
+                {biggestContributor && (
+                  <div style={{ 
+                    padding: "12px 14px", background: "rgba(255,255,255,0.6)", 
+                    borderRadius: 16, border: "1px solid rgba(184,212,168,0.3)" 
                   }}>
-                    <span>vs. avg Indian (8 kg/day)</span>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", marginBottom: 4 }}>
+                      🏆 Biggest Contributor
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#2D5016" }}>
+                      {biggestContributor.emoji} {biggestContributor.name} • {biggestContributor.pct}%
+                    </div>
                   </div>
-                  <div style={{
-                    height: 6, borderRadius: 999,
-                    background: "rgba(184,212,168,0.3)", overflow: "hidden",
-                  }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min((Math.abs(totalCarbon) / 8) * 100, 100)}%` }}
-                      transition={{ duration: 1, ease: [0.23,1,0.32,1] }}
-                      style={{
-                        height: "100%", borderRadius: 999,
-                        background: isEco ? "#4CAF50" : "#FF6B6B",
-                      }}
-                    />
+                )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", marginBottom: 2 }}>
+                    Impact Breakdown
                   </div>
+                  
+                  {breakdown.map((b, i) => (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#2D5016" }}>
+                        <span>{b.emoji} {b.name}</span>
+                        <span>{b.pct}%</span>
+                      </div>
+                      <div style={{ height: 6, borderRadius: 999, background: "rgba(184,212,168,0.2)", overflow: "hidden" }}>
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${b.pct}%` }}
+                          transition={{ duration: 1, delay: 0.6 + i * 0.1, ease: "easeOut" }}
+                          style={{ height: "100%", borderRadius: 999, background: isEco ? "#7EC86A" : "#F4A832" }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Row 2: Equivalent insight */}
-                <div style={{ fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
-                  {isEco 
-                    ? `= 🌳 ${(Math.abs(totalCarbon)/21).toFixed(1)} trees absorbing CO₂ today` 
-                    : `= 🚗 ${(Math.abs(totalCarbon)/0.21).toFixed(0)} km driven today`}
+                <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "1px dashed rgba(184,212,168,0.4)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                   <div style={{ fontSize: 12, fontWeight: 700, color: "#6B8F5E" }}>🌍 Planet Mood</div>
+                   <div style={{ fontSize: 13, fontWeight: 700, color: isEco ? "#2D7A1F" : "#A0401A" }}>{worldState.planetMood}</div>
                 </div>
 
-                {/* Row 3: Mood sentence */}
-                <div style={{ fontSize: 13, color: "#6B8F5E" }}>
-                  {isEco
-                    ? "Below average — you're rewriting the story. 🌱"
-                    : "Above average — but awareness is the first step. ☀️"}
-                </div>
               </div>
             </motion.div>
-
 
             {/* ── STORY SNAPSHOT ──────────────────────────────── */}
             <motion.div
@@ -370,7 +399,7 @@ export default function SummaryPage() {
                 backdropFilter: "blur(14px)",
                 WebkitBackdropFilter: "blur(14px)",
                 borderRadius: 24,
-                padding: "18px 16px",
+                padding: "18px 20px",
                 border: "1px solid rgba(184,212,168,0.5)",
               }}
             >
@@ -384,7 +413,7 @@ export default function SummaryPage() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {ecoCount > 0 && (
                   <div style={{
-                    padding: "5px 10px", borderRadius: 20,
+                    padding: "4px 10px", borderRadius: 20,
                     background: "rgba(126,200,106,0.14)",
                     border: "1px solid rgba(126,200,106,0.38)",
                     fontSize: 12, fontWeight: 700, color: "#2D5016",
@@ -394,7 +423,7 @@ export default function SummaryPage() {
                 )}
                 {highCount > 0 && (
                   <div style={{
-                    padding: "5px 10px", borderRadius: 20,
+                    padding: "4px 10px", borderRadius: 20,
                     background: "rgba(255,107,107,0.10)",
                     border: "1px solid rgba(255,107,107,0.28)",
                     fontSize: 12, fontWeight: 700, color: "#A0401A",
@@ -404,7 +433,7 @@ export default function SummaryPage() {
                 )}
                 {moderateCount > 0 && (
                   <div style={{
-                    padding: "5px 10px", borderRadius: 20,
+                    padding: "4px 10px", borderRadius: 20,
                     background: "rgba(255,213,128,0.18)",
                     border: "1px solid rgba(244,168,50,0.36)",
                     fontSize: 12, fontWeight: 700, color: "#5A4000",
@@ -417,7 +446,7 @@ export default function SummaryPage() {
               <button
                 onClick={() => setShowDecisions(v => !v)}
                 style={{
-                  marginTop: 12, fontSize: 11, color: "#4A7C2F",
+                  marginTop: 14, fontSize: 12, color: "#4A7C2F",
                   fontWeight: 700, background: "none", border: "none",
                   cursor: "pointer", padding: 0,
                   display: "flex", alignItems: "center", gap: 4,
@@ -435,30 +464,38 @@ export default function SummaryPage() {
                     transition={{ duration: 0.28 }}
                     style={{ overflow: "hidden" }}
                   >
-                    <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 5 }}>
-                      {[...chapter1Decisions, ...chapter2Decisions].map((d, i) => (
-                        <div key={i} style={{
-                          display: "flex", justifyContent: "space-between",
-                          alignItems: "center", padding: "6px 9px",
-                          background: "#F0FAF0", borderRadius: 10,
-                          border: "1px solid #B8D4A8",
-                        }}>
-                          <span style={{
-                            color: "#2D5016", fontSize: 11, fontWeight: 500,
-                            flex: 1, marginRight: 8, lineHeight: 1.4,
-                          }}>
-                            {d.choice}
-                          </span>
-                          <span style={{
-                            fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 5,
-                            background: d.impactType === "eco" ? "#A8D878" : d.impactType === "moderate" ? "#FFD580" : "rgba(255,107,107,0.15)",
-                            color: d.impactType === "eco" ? "#2D5016" : d.impactType === "moderate" ? "#5A4000" : "#A0401A",
-                            whiteSpace: "nowrap",
-                          }}>
-                            {d.impactType.toUpperCase()}
-                          </span>
+                    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+                      {chapter1Decisions.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", marginBottom: 6 }}>
+                            Morning 🌅
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            {chapter1Decisions.map((d, i) => (
+                              <div key={`m-${i}`} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 500, color: "#2D5016" }}>
+                                <span style={{ fontSize: 14 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
+                                <span>{d.choice}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
+                      )}
+                      
+                      {chapter2Decisions.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", marginBottom: 6 }}>
+                            Evening 🌙
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            {chapter2Decisions.map((d, i) => (
+                              <div key={`e-${i}`} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 500, color: "#2D5016" }}>
+                                <span style={{ fontSize: 14 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
+                                <span>{d.choice}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
