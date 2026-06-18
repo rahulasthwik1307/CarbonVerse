@@ -34,18 +34,11 @@ export default function FutureEarth() {
   const greenTreesNeeded = Math.round(Math.abs(yearlyGreenTonnes) * 50);
   const greenHomeDays = Math.round(Math.abs(yearlyGreenTonnes) * 30);
 
-  // Styling logic for Left Panel (Current Rate)
-  let currentBg = "rgba(76,175,80,0.08)";
-  let currentBorder = "2px solid rgba(76,175,80,0.08)";
+  // Styling logic for Left Column (Current Rate)
   let currentColor = "#2D7A1F";
-
   if (yearlyTonnes > 2) {
-    currentBg = "rgba(255,107,107,0.08)";
-    currentBorder = "2px solid rgba(255,107,107,0.08)";
     currentColor = "#A0401A";
   } else if (yearlyTonnes > 0) {
-    currentBg = "rgba(255,200,50,0.08)";
-    currentBorder = "2px solid rgba(255,200,50,0.08)";
     currentColor = "#8B6914";
   }
 
@@ -56,7 +49,7 @@ export default function FutureEarth() {
   const avgPosPct = (indiaAvg / maxScale) * 100;
   const isBelowAvg = yearlyTonnes < indiaAvg;
 
-  // Verd's Message
+  // Verd's Message Wording
   let verdMessage = "";
   if (yearlyTonnes < 0) {
     verdMessage = "Amazing! Your lifestyle would actually help the planet! You're a true eco hero! 🌟";
@@ -70,167 +63,176 @@ export default function FutureEarth() {
 
   return (
     <div style={{
-      maxWidth: 680,
-      width: "100%",
-      margin: "0 auto",
-      background: "rgba(255,255,255,0.85)",
-      backdropFilter: "blur(12px)",
-      WebkitBackdropFilter: "blur(12px)",
-      borderRadius: 24,
-      padding: 28,
-      border: "1px solid rgba(184,212,168,0.5)",
-      boxShadow: "0 8px 32px rgba(45,80,22,0.08)",
-      display: "flex",
-      flexDirection: "column",
-      gap: 24,
+      background: "rgba(45,80,22,0.02)",
+      padding: "8px",
+      borderRadius: 28,
+      border: "1px solid rgba(184,212,168,0.35)",
+      width: "100%"
     }}>
-      {/* Header */}
-      <div style={{ textAlign: "center" }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#2D5016", margin: "0 0 4px 0" }}>
-          🌍 Your Earth in 1 Year
-        </h2>
-        <p style={{ fontSize: 13, color: "#6B8F5E", margin: 0 }}>
-          If you repeat today&apos;s habits every day...
-        </p>
-      </div>
-
-      {/* Two Scenarios */}
       <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-        gap: 16,
+        background: "#FCFCF7", // Warm parchment paper
+        border: "1px solid #B8D4A8",
+        borderRadius: 24,
+        padding: "24px 28px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 24,
       }}>
-        {/* LEFT: Current Rate */}
-        <div style={{
-          background: currentBg,
-          border: currentBorder,
-          borderRadius: 16,
-          padding: 20,
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#2D5016" }}>📊 Your Story</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: currentColor }}>
-            {yearlyTonnes.toFixed(1)} <span style={{ fontSize: 14, fontWeight: 600 }}>tonnes CO₂/year</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#2D5016" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>🚗</span> Like driving {carKm.toLocaleString()} km
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>🌳</span> Needs {treesNeeded} trees to absorb
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>🏠</span> Powers a home for {homeDays} days
-            </div>
-          </div>
+        {/* Header */}
+        <div style={{ textAlign: "center" }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#2D5016", margin: "0 0 4px 0", fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+            📖 Indian Lifestyle Projection
+          </h2>
+          <p style={{ fontSize: 13, color: "#6B8F5E", fontStyle: "italic", margin: 0 }}>
+            If you repeated these daily choices for a year...
+          </p>
         </div>
 
-        {/* RIGHT: Greener Path */}
+        {/* Two Scenarios (Double Column / Diary open-book layout) */}
         <div style={{
-          background: "rgba(76,175,80,0.1)",
-          border: "2px solid rgba(76,175,80,0.4)",
-          borderRadius: 16,
-          padding: 20,
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 28,
+          position: "relative"
         }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#2D5016" }}>🌱 Greener Story</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#2D7A1F" }}>
-            {yearlyGreenTonnes.toFixed(1)} <span style={{ fontSize: 14, fontWeight: 600 }}>tonnes CO₂/year</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#2D5016" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>🚗</span> Like driving {greenCarKm.toLocaleString()} km
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>🌳</span> Needs {greenTreesNeeded} trees to absorb
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span>🏠</span> Powers a home for {greenHomeDays} days
-            </div>
-          </div>
-          
-          {savedTonnes > 0 && (
-            <div style={{
-              background: "#4CAF50",
-              color: "white",
-              borderRadius: 12,
-              padding: "8px 16px",
-              fontSize: 13,
-              fontWeight: 700,
-              textAlign: "center",
-              marginTop: 4,
-            }}>
-              You&apos;d save {savedTonnes.toFixed(1)} tonnes CO₂!
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Progress Meter */}
-      <div style={{ marginTop: 8 }}>
-        <div style={{ fontSize: 13, color: "#2D5016", fontWeight: 600, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
-          <span>Your Habits vs Average</span>
-        </div>
-        <div style={{ position: "relative", width: "100%", height: 12, background: "rgba(184,212,168,0.3)", borderRadius: 6 }}>
-          {/* India Avg Marker */}
+          {/* Vertical dashed divider for book page look */}
           <div style={{
             position: "absolute",
-            left: `${avgPosPct}%`,
-            top: -4,
-            bottom: -4,
-            width: 2,
-            background: "#6B8F5E",
-            zIndex: 1,
+            top: 8,
+            bottom: 8,
+            left: "50%",
+            width: 1,
+            borderLeft: "1px dashed rgba(184,212,168,0.6)",
+            transform: "translateX(-50%)",
+            pointerEvents: "none"
+          }} />
+
+          {/* LEFT: Current Rate Column */}
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            paddingRight: 10
           }}>
-            <div style={{ position: "absolute", top: -18, left: "50%", transform: "translateX(-50%)", fontSize: 10, color: "#6B8F5E", whiteSpace: "nowrap" }}>
-              India avg
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              🌍 Today's Choice Path
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: currentColor, lineHeight: 1.1 }}>
+              {yearlyTonnes.toFixed(1)} <span style={{ fontSize: 13, fontWeight: 600, color: "#6B8F5E" }}>tonnes CO₂</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#2D5016", marginTop: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🚗</span> Like driving {carKm.toLocaleString()} km
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🌳</span> Needs {treesNeeded} trees to absorb
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🏠</span> Powers a home for {homeDays} days
+              </div>
             </div>
           </div>
-          
-          {/* User Marker */}
-          <motion.div
-            initial={{ left: 0 }}
-            animate={{ left: `${userPosPct}%` }}
-            transition={{ duration: 1, type: "spring", bounce: 0.2 }}
-            style={{
+
+          {/* RIGHT: Greener Path Column */}
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            paddingLeft: 10
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#2D7A1F", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              🌱 Greener Swapped Path
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#2D7A1F", lineHeight: 1.1 }}>
+              {yearlyGreenTonnes.toFixed(1)} <span style={{ fontSize: 13, fontWeight: 600, color: "#6B8F5E" }}>tonnes CO₂</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13, color: "#2D5016", marginTop: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🚗</span> Like driving {greenCarKm.toLocaleString()} km
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🌳</span> Needs {greenTreesNeeded} trees to absorb
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🏠</span> Powers a home for {greenHomeDays} days
+              </div>
+            </div>
+            
+            {savedTonnes > 0 && (
+              <div style={{
+                background: "rgba(76,175,80,0.12)",
+                color: "#2D7A1F",
+                border: "1px solid rgba(76,175,80,0.25)",
+                borderRadius: 12,
+                padding: "6px 12px",
+                fontSize: 12,
+                fontWeight: 700,
+                textAlign: "center",
+                marginTop: 6,
+              }}>
+                ✦ Savings of {savedTonnes.toFixed(1)} tonnes CO₂!
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Progress Meter */}
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontSize: 13, color: "#2D5016", fontWeight: 600, marginBottom: 8, display: "flex", justifyContent: "space-between" }}>
+            <span>Yearly Footprint Comparison</span>
+          </div>
+          <div style={{ position: "relative", width: "100%", height: 8, background: "rgba(184,212,168,0.2)", borderRadius: 4 }}>
+            {/* India Avg Marker line */}
+            <div style={{
               position: "absolute",
+              left: `${avgPosPct}%`,
               top: -6,
-              width: 24,
-              height: 24,
-              borderRadius: "50%",
-              background: isBelowAvg ? "#4CAF50" : "#F4A832",
-              border: "3px solid white",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-              transform: "translateX(-50%)",
-              zIndex: 2,
-            }}
-          />
+              bottom: -6,
+              width: 2,
+              background: "#6B8F5E",
+              zIndex: 1,
+            }}>
+              <div style={{ position: "absolute", top: -16, left: "50%", transform: "translateX(-50%)", fontSize: 10, color: "#6B8F5E", fontWeight: 700, whiteSpace: "nowrap" }}>
+                India Avg
+              </div>
+            </div>
+            
+            {/* User Marker Dot */}
+            <motion.div
+              initial={{ left: 0 }}
+              animate={{ left: `${userPosPct}%` }}
+              transition={{ duration: 1.2, type: "spring", bounce: 0.2 }}
+              style={{
+                position: "absolute",
+                top: -5,
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
+                background: isBelowAvg ? "#4CAF50" : "#F4A832",
+                border: "3px solid #FCFCF7",
+                boxShadow: "0 2px 6px rgba(45,80,22,0.15)",
+                transform: "translateX(-50%)",
+                zIndex: 2,
+              }}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Verd's Message */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 16,
-        background: "rgba(255,255,255,0.7)",
-        borderRadius: 16,
-        padding: "16px 20px",
-        border: "1px solid rgba(184,212,168,0.3)",
-      }}>
-        <VerdOrb size={36} mood={yearlyTonnes < 0 ? "eco" : yearlyTonnes > 2 ? "high" : "moderate"} />
-        <div style={{ fontSize: 13, color: "#2D5016", fontWeight: 500, lineHeight: 1.4, flex: 1 }}>
-          {verdMessage}
+        {/* Verd's Message Quote */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          background: "rgba(255,255,255,0.4)",
+          borderRadius: 16,
+          padding: "12px 18px",
+          borderLeft: `3px solid ${yearlyTonnes > 2 ? "#A0401A" : "#F4A832"}`,
+        }}>
+          <VerdOrb size={32} mood={yearlyTonnes < 0 ? "eco" : yearlyTonnes > 2 ? "high" : "moderate"} />
+          <div style={{ fontSize: 13, color: "#2D5016", fontWeight: 500, fontStyle: "italic", lineHeight: 1.4, flex: 1 }}>
+            "{verdMessage}"
+          </div>
         </div>
-      </div>
-
-      {/* Bottom Note */}
-      <div style={{ fontSize: 10, color: "#A8BEA9", fontStyle: "italic", textAlign: "center" }}>
-        *Estimates based on average Indian lifestyle data. Actual emissions vary by location and habits.
       </div>
     </div>
   );
