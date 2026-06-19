@@ -25,11 +25,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakartaSans.variable} h-full antialiased`}
-      style={{ overflow: "hidden", height: "100%" }}
+      className={`${plusJakartaSans.variable} h-full antialiased overflow-x-hidden`}
     >
       <body
-        className="h-full overflow-hidden"
+        className="h-full overflow-x-hidden overflow-y-auto"
         style={{ background: "var(--cv-cream)" }}
       >
         <TooltipProvider>

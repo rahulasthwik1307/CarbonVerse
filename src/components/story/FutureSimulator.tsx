@@ -2,14 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/lib/session-store";
 import VerdOrb from "@/components/ui/VerdOrb";
-import FutureEarth from "./FutureEarth";
+import FutureStoryBento from "./FutureStoryBento";
 
 export default function FutureSimulator() {
-  const router = useRouter();
-  const { decisions, totalCarbonDelta, resetSession } = useSessionStore();
+  const { decisions, totalCarbonDelta } = useSessionStore();
   
   // Video loading and synchronization states
   const [userVideoReady, setUserVideoReady] = useState(false);
@@ -212,34 +210,39 @@ export default function FutureSimulator() {
     setIsDragging(false);
   };
 
-  // Outcome text based on choices
-  let outcomeTitle = "";
-  let outcomeDesc = "";
-  let outcomeTheme = { bg: "#F0FAF0", border: "#B8D4A8", text: "#2D5016" }; // Eco Default
+  // ── Bento Data Computation ──
+  const avgDailyCarbon = totalCarbonDelta;
+  const yearlyCarbon = avgDailyCarbon * 365;
+  const yearlyTonnes = yearlyCarbon / 1000;
 
-  if (storyState === "thriving") {
-    outcomeTitle = "A Thriving Chapter Written";
-    outcomeDesc = `Your choices today saved ${Math.abs(totalCarbonDelta)} kg of CO₂. The path you are writing leads to clean air, vibrant forests, and a flourishing planet.`;
-  } else if (storyState === "stable") {
-    outcomeTitle = "A Balanced Ecosystem";
-    outcomeDesc = `A steady day, but your choices have left a trace. Small adjustments in your routine could shift the planet toward a greener path.`;
-    outcomeTheme = { bg: "rgba(255,248,230,0.85)", border: "rgba(244,168,50,0.35)", text: "#8B6914" };
-  } else if (storyState === "stressed") {
-    outcomeTitle = "Under Visible Strain";
-    outcomeDesc = `Today's choices left a heavy footprint (+${totalCarbonDelta} kg CO₂). It is a reminder that each step we take shapes the weather, the trees, and the air our loved ones breathe.`;
-    outcomeTheme = { bg: "rgba(255,225,180,0.85)", border: "rgba(244,168,50,0.35)", text: "#A05A1A" };
-  } else {
-    outcomeTitle = "A Damaged Landscape";
-    outcomeDesc = `With a very high carbon footprint (+${totalCarbonDelta} kg CO₂), the visual story tells it all: bare branches, dry brown soil, and a hazy sky under heavy pressure. Small daily changes could help this world heal.`;
-    outcomeTheme = { bg: "rgba(255,240,240,0.85)", border: "rgba(255,107,107,0.35)", text: "#A0401A" };
-  }
+  const avgDailyGreen = decisions
+    .filter((d) => d.impactType !== "high")
+    .reduce((sum, d) => sum + d.carbonDelta, 0);
+  const yearlyGreenCarbon = avgDailyGreen * 365;
+  const yearlyGreenTonnes = yearlyGreenCarbon / 1000;
+  const savedTonnes = yearlyTonnes - yearlyGreenTonnes;
 
-  // Find biggest impact decisions for narrative details
+  const treesNeeded = Math.round(Math.abs(yearlyTonnes) * 50);
+  const carKm = Math.round(Math.abs(yearlyTonnes) * 4400);
+  const homeDays = Math.round(Math.abs(yearlyTonnes) * 30);
+
+  // Find biggest impact decisions
   const sortedByCarbon = [...decisions].sort((a, b) => b.carbonDelta - a.carbonDelta);
   const highestImpact = sortedByCarbon.find(d => d.carbonDelta > 0) || sortedByCarbon[0];
-  
   const sortedByEco = [...decisions].sort((a, b) => a.carbonDelta - b.carbonDelta);
   const lowestImpact = sortedByEco[0];
+
+  // Verd message
+  let verdMessage = "";
+  if (yearlyTonnes < 0) {
+    verdMessage = "Amazing! Your lifestyle would actually help the planet!";
+  } else if (yearlyTonnes <= 1) {
+    verdMessage = "You're close to carbon neutral! A few more eco swaps would make a huge difference!";
+  } else if (yearlyTonnes <= 3) {
+    verdMessage = "Room to grow! Try swapping your top carbon activities for eco alternatives.";
+  } else {
+    verdMessage = "Big impact, but big opportunity too! Small daily changes add up to tonnes saved.";
+  }
 
   return (
     <div style={{ position: "relative", minHeight: "85vh" }}>
@@ -308,7 +311,7 @@ export default function FutureSimulator() {
         animate={{ opacity: videosActive ? 1 : 0, y: videosActive ? 0 : 30 }}
         initial={{ opacity: 0, y: 30 }}
         transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-        style={{ display: "flex", flexDirection: "column", gap: 36, width: "100%" }}
+        style={{ display: "flex", flexDirection: "column", gap: 24, width: "100%" }}
       >
         {/* Page Header */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
@@ -356,7 +359,8 @@ export default function FutureSimulator() {
             onPointerLeave={handlePointerUp}
             style={{
               position: "relative",
-              height: "clamp(260px, 45vw, 460px)",
+              width: "100%",
+              aspectRatio: "16 / 9",
               borderRadius: 24,
               overflow: "hidden",
               cursor: "ew-resize",
@@ -518,154 +522,20 @@ export default function FutureSimulator() {
           </div>
         </div>
 
-        {/* Editorial Storybook Sections */}
-        <div style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 36,
-          maxWidth: 720,
-          margin: "0 auto",
-          width: "100%"
-        }}>
-          {/* Journal outcome narrative */}
-          <div style={{
-            background: outcomeTheme.bg,
-            border: `1px solid ${outcomeTheme.border}`,
-            borderRadius: 24,
-            padding: "28px",
-            boxShadow: "0 4px 20px rgba(45,80,22,0.04)"
-          }}>
-            <h3 style={{
-              fontSize: 20,
-              fontWeight: 700,
-              color: outcomeTheme.text,
-              margin: "0 0 10px 0",
-              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif"
-            }}>
-              {outcomeTitle}
-            </h3>
-            <p style={{
-              fontSize: 15,
-              lineHeight: 1.65,
-              color: "#2D5016",
-              margin: 0,
-              fontWeight: 450
-            }}>
-              {outcomeDesc}
-            </p>
-          </div>
-
-          {/* Personalised dialogue or Key Insights */}
-          <div style={{
-            background: "rgba(255,255,255,0.8)",
-            backdropFilter: "blur(12px)",
-            borderRadius: 24,
-            border: "1px solid rgba(184,212,168,0.5)",
-            padding: "28px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 16
-          }}>
-            <h4 style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: "#2D5016",
-              margin: "0 0 4px 0",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em"
-            }}>
-              📖 Storybook Insights
-            </h4>
-
-            {highestImpact && (
-              <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                <div style={{ fontSize: 24 }}>🧭</div>
-                <div>
-                  <div style={{ fontSize: 13, color: "#6B8F5E", fontWeight: 600 }}>Your heaviest footstep:</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#A0401A", marginTop: 2 }}>
-                    {highestImpact.choice} (+{highestImpact.carbonDelta} kg CO₂)
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {lowestImpact && (
-              <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginTop: 4 }}>
-                <div style={{ fontSize: 24 }}>🍃</div>
-                <div>
-                  <div style={{ fontSize: 13, color: "#6B8F5E", fontWeight: 600 }}>Your kindest choice:</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#2D7A1F", marginTop: 2 }}>
-                    {lowestImpact.choice} ({lowestImpact.carbonDelta <= 0 ? `Saved ${Math.abs(lowestImpact.carbonDelta)} kg CO₂` : `+${lowestImpact.carbonDelta} kg CO₂`})
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {highestImpact && highestImpact.impactType !== "eco" && (
-              <div style={{
-                marginTop: 8,
-                padding: "12px 16px",
-                background: "rgba(244,168,50,0.1)",
-                borderRadius: 16,
-                borderLeft: "4px solid #F4A832",
-                fontSize: 14,
-                color: "#8B6914",
-                fontWeight: 500,
-                lineHeight: 1.5
-              }}>
-                💡 If you had chosen an eco swap for <strong>{highestImpact.choice}</strong>, you would have saved {highestImpact.carbonDelta + 5} kg of CO₂. Small shifts rewrite our chapters.
-              </div>
-            )}
-          </div>
-
-          {/* Dynamic comparative dashboard */}
-          <FutureEarth />
-
-          {/* Navigation buttons at bottom */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12, alignItems: "center" }}>
-            <motion.button
-              whileHover={{ scale: 1.015 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => router.push("/story/garden")}
-              style={{
-                padding: "18px",
-                background: "linear-gradient(135deg, #4A7C2F 0%, #F4A832 100%)",
-                color: "white",
-                borderRadius: 16,
-                fontWeight: 700,
-                fontSize: 16,
-                border: "none",
-                cursor: "pointer",
-                boxShadow: "0 6px 20px rgba(74,124,47,0.25)",
-                width: "100%",
-                position: "relative",
-                overflow: "hidden"
-              }}
-            >
-              🌱 Let's Seed the Garden →
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.015 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => { resetSession(); router.push("/story/chapter"); }}
-              style={{
-                padding: "14px",
-                background: "rgba(255,255,255,0.6)",
-                backdropFilter: "blur(8px)",
-                color: "#2D5016",
-                borderRadius: 14,
-                fontWeight: 600,
-                fontSize: 14,
-                border: "1px solid #B8D4A8",
-                cursor: "pointer",
-                width: "100%"
-              }}
-            >
-              ↺ Rewind and Choose Differently
-            </motion.button>
-          </div>
-        </div>
+        {/* ── Future Story Bento Grid ── */}
+        <FutureStoryBento
+          storyState={storyState as "thriving" | "stable" | "stressed" | "damaged"}
+          yearlyTonnes={yearlyTonnes}
+          yearlyGreenTonnes={yearlyGreenTonnes}
+          savedTonnes={savedTonnes}
+          highestImpact={highestImpact}
+          lowestImpact={lowestImpact}
+          treesNeeded={treesNeeded}
+          carKm={carKm}
+          homeDays={homeDays}
+          verdMessage={verdMessage}
+          totalCarbonDelta={totalCarbonDelta}
+        />
       </motion.div>
     </div>
   );
