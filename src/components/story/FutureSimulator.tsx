@@ -30,27 +30,40 @@ export default function FutureSimulator() {
   const userVideoRef = useRef<HTMLVideoElement>(null);
   const greenerVideoRef = useRef<HTMLVideoElement>(null);
 
-  // 1. Video Sourcing Logic based on totalCarbonDelta
+  // Hybrid Scoring Models Choice Counts
+  const highCount = decisions.filter(d => d.impactType === "high").length;
+  const moderateCount = decisions.filter(d => d.impactType === "moderate").length;
+  const ecoCount = decisions.filter(d => d.impactType === "eco").length;
+
+  // 1. Video Sourcing Logic based on Final Story Engine
   const greenerVideoUrl = "https://res.cloudinary.com/dsdy81lwd/video/upload/v1781851014/Greener_Story_hrakq8.mp4";
   let userVideoUrl = "";
-  if (totalCarbonDelta > 35) {
+  let baseVideoType = "stable";
+
+  if (highCount >= 4) {
+    baseVideoType = "heavy";
     userVideoUrl = "https://res.cloudinary.com/dsdy81lwd/video/upload/v1781850923/Carbon_Heavy_yihssc.mp4";
-  } else if (totalCarbonDelta > 15) {
+  } else if (highCount >= 2) {
+    baseVideoType = "stressed";
     userVideoUrl = "https://res.cloudinary.com/dsdy81lwd/video/upload/v1781850863/Under_Stress_wf2cog.mp4";
   } else {
+    baseVideoType = "stable";
     userVideoUrl = "https://res.cloudinary.com/dsdy81lwd/video/upload/v1781850732/Stable_Future_qu6yw3.mp4";
   }
 
   // Determine user's footprint state (for outcome text below)
   let storyState = "stable";
-  if (totalCarbonDelta < 0) {
-    storyState = "thriving";
-  } else if (totalCarbonDelta <= 15) {
-    storyState = "stable";
-  } else if (totalCarbonDelta <= 35) {
+  if (baseVideoType === "heavy") {
+    storyState = "damaged";
+  } else if (baseVideoType === "stressed") {
     storyState = "stressed";
   } else {
-    storyState = "damaged";
+    // If stable, distinguish between exceptionally good (thriving) or just stable
+    if (totalCarbonDelta < 0) {
+      storyState = "thriving";
+    } else {
+      storyState = "stable";
+    }
   }
 
   const bothVideosReady = userVideoReady && greenerVideoReady;
