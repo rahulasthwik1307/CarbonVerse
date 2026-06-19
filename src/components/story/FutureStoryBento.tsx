@@ -2,8 +2,6 @@
 
 import { useRef } from "react";
 import { motion, useReducedMotion, useSpring, useInView } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { useSessionStore } from "@/lib/session-store";
 import VerdOrb from "@/components/ui/VerdOrb";
 
 /* ─────────────────────────────────────────────
@@ -124,26 +122,26 @@ function BentoCard({
 
   return (
     <motion.div
-      initial={shouldReduce ? { opacity: 1 } : { opacity: 0, y: 24 }}
+      initial={shouldReduce ? { opacity: 1 } : { opacity: 0, y: 18 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
+      viewport={{ once: true, margin: "-30px" }}
       transition={{
-        duration: 0.5,
+        duration: 0.45,
         delay: index * 0.06,
         ease: [0.23, 1, 0.32, 1],
       }}
       whileHover={{
-        y: -4,
-        boxShadow: "0 12px 40px rgba(45,80,22,0.15)",
+        y: -3,
+        boxShadow: "0 10px 32px rgba(45,80,22,0.14)",
         transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] },
       }}
       style={{
         gridArea,
         background: "#FFFFFF",
         border: "1px solid #B8D4A8",
-        borderRadius: 24,
-        padding: "16px 20px",
-        boxShadow: "0 4px 24px rgba(45,80,22,0.08)",
+        borderRadius: 20,
+        padding: "12px 14px",
+        boxShadow: "0 3px 18px rgba(45,80,22,0.07)",
         position: "relative",
         overflow: "hidden",
         cursor: "default",
@@ -163,22 +161,22 @@ function getStoryNarrative(storyState: string, totalCarbonDelta: number): { titl
     case "thriving":
       return {
         title: "One Year Later…",
-        prose: `The city breathes easy now.\n\nBirds returned to streets you walk every morning. The trees you pass have grown taller, their canopy a living roof of green. The river runs cleaner than anyone remembers.\n\nYour daily choices saved ${Math.abs(totalCarbonDelta)} kg of CO₂ — and the world noticed.`,
+        prose: `The city breathes easy now.\n\nBirds returned to streets you walk every morning. Your daily choices saved ${Math.abs(totalCarbonDelta)} kg of CO₂ — and the world noticed.`,
       };
     case "stable":
       return {
         title: "One Year Later…",
-        prose: "The seasons still turn in their ancient rhythm.\n\nThe parks hold their green, but the summers feel a shade longer than before. The monsoons arrive, but they carry less certainty.\n\nYour footprint is light — but even light steps leave a trail. The future is still yours to write.",
+        prose: "The seasons still turn in their ancient rhythm.\n\nThe parks hold their green, but the summers feel a shade longer. The future is still yours to write.",
       };
     case "stressed":
       return {
         title: "One Year Later…",
-        prose: "The city still stands green,\nbut summers arrive earlier now.\n\nThe trees that once cooled your streets struggle through longer dry spells. The air carries a faint haze that wasn't there before.\n\nThe future is still recoverable — but it's waiting for your next chapter.",
+        prose: "The city still stands green,\nbut summers arrive earlier now.\n\nThe future is still recoverable — but it's waiting for your next chapter.",
       };
     case "damaged":
       return {
         title: "One Year Later…",
-        prose: "The landscape has changed.\n\nDust settles where grass once grew. The river that wound through the city runs thin and grey. Birds are quieter now, their songs replaced by the hum of machines.\n\nBut even damaged worlds can heal. Every future chapter is a chance to rewrite the story.",
+        prose: "The landscape has changed.\n\nDust settles where grass once grew. But even damaged worlds can heal. Every chapter is a chance to rewrite.",
       };
     default:
       return { title: "One Year Later…", prose: "" };
@@ -191,7 +189,6 @@ function getStoryNarrative(storyState: string, totalCarbonDelta: number): { titl
 function getCategoryInsight(decisions: Array<{ carbonDelta: number; impactType: string; choice: string }>): string {
   if (decisions.length === 0) return "Every choice tells a story about your future.";
 
-  // Group by rough category from choice text
   const foodKeywords = ["burger", "delivery", "canteen", "tiffin", "cook", "restaurant", "dhaba", "biryani", "pizza", "meal", "breakfast", "lunch", "dinner", "food", "eat"];
   const transportKeywords = ["car", "cab", "auto", "metro", "walk", "cycle", "bus", "bike", "drive", "uber", "ola", "commute", "flight"];
   const energyKeywords = ["ac", "fan", "stream", "netflix", "gaming", "electricity", "power", "light", "charge"];
@@ -238,8 +235,7 @@ export default function FutureStoryBento({
   verdMessage,
   totalCarbonDelta,
 }: BentoProps) {
-  const router = useRouter();
-  const { decisions, resetSession } = useSessionStore();
+  const { decisions } = require("@/lib/session-store").useSessionStore();
   const shouldReduce = useReducedMotion();
 
   const narrative = getStoryNarrative(storyState, totalCarbonDelta);
@@ -269,42 +265,44 @@ export default function FutureStoryBento({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 16,
+        gap: 10,
         width: "100%",
-        maxWidth: 900,
-        margin: "0 auto",
       }}
     >
-      {/* ── Bento Grid ── */}
+      {/* ── Bento Grid — 2-col vertical layout for narrow sidebar ── */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gridTemplateRows: "auto auto auto",
+          gridTemplateColumns: "1fr 1fr",
           gridTemplateAreas: `
-            "story story story diff"
-            "ripple hero verd verd"
-            "snap snap snap snap"
+            "story story"
+            "diff ripple"
+            "hero verd"
+            "snap snap"
           `,
-          gap: 12,
+          gap: 10,
         }}
-        className="bento-grid"
+        className="bento-grid-sidebar"
       >
-        {/* ───── Card 1: One Year Later (largest) ───── */}
-        <BentoCard index={0} gridArea="story" style={{ background: "#FFF8E7", minHeight: 180 }}>
+        {/* ───── Card 1: One Year Later (largest — full width) ───── */}
+        <BentoCard index={0} gridArea="story" style={{
+          background: "#FFF8E7",
+          minHeight: 140,
+          padding: "16px 18px",
+        }}>
           {/* Floating leaves */}
-          <FloatingLeaf delay={0} x="82%" y="12%" size={22} rotation={-15} />
-          <FloatingLeaf delay={1.5} x="90%" y="55%" size={16} rotation={10} />
-          <FloatingLeaf delay={3} x="75%" y="80%" size={19} rotation={-8} />
+          <FloatingLeaf delay={0} x="80%" y="10%" size={18} rotation={-15} />
+          <FloatingLeaf delay={1.5} x="88%" y="50%" size={14} rotation={10} />
+          <FloatingLeaf delay={3} x="72%" y="78%" size={16} rotation={-8} />
 
           <div
             style={{
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 700,
               color: "#6B8F5E",
               textTransform: "uppercase",
               letterSpacing: "0.08em",
-              marginBottom: 8,
+              marginBottom: 6,
             }}
           >
             📖 Chapter Complete
@@ -312,11 +310,11 @@ export default function FutureStoryBento({
 
           <h3
             style={{
-              fontSize: "clamp(24px, 3vw, 32px)",
+              fontSize: "clamp(20px, 2.5vw, 26px)",
               fontWeight: 800,
               color: "#2D5016",
               letterSpacing: "-0.02em",
-              margin: "0 0 8px 0",
+              margin: "0 0 6px 0",
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
               lineHeight: 1.1,
             }}
@@ -326,13 +324,13 @@ export default function FutureStoryBento({
 
           <p
             style={{
-              fontSize: "clamp(15px, 1.8vw, 18px)",
+              fontSize: "clamp(13px, 1.4vw, 15px)",
               fontWeight: 300,
               fontStyle: "italic",
               color: "#2D5016",
-              lineHeight: 1.8,
+              lineHeight: 1.7,
               margin: 0,
-              maxWidth: 500,
+              maxWidth: "90%",
               whiteSpace: "pre-line",
               fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
             }}
@@ -342,8 +340,13 @@ export default function FutureStoryBento({
         </BentoCard>
 
         {/* ───── Card 2: Future Difference ───── */}
-        <BentoCard index={1} gridArea="diff" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        <BentoCard index={1} gridArea="diff" style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 8,
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             🌎 Future Difference
           </div>
 
@@ -352,23 +355,23 @@ export default function FutureStoryBento({
             <div
               style={{
                 display: "inline-block",
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 700,
                 color: userStateColor,
                 background: `${userStateColor}12`,
-                padding: "3px 10px",
+                padding: "2px 8px",
                 borderRadius: 999,
-                marginBottom: 6,
+                marginBottom: 4,
               }}
             >
               Your Future
             </div>
-            <div style={{ fontSize: 13, color: userStateColor, fontWeight: 600 }}>
+            <div style={{ fontSize: 11, color: userStateColor, fontWeight: 600 }}>
               {userStateLabel}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: userStateColor, lineHeight: 1.1, marginTop: 2 }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: userStateColor, lineHeight: 1.1, marginTop: 2 }}>
               {yearlyTonnes.toFixed(1)}{" "}
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#6B8F5E" }}>tonnes</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#6B8F5E" }}>t</span>
             </div>
           </div>
 
@@ -380,24 +383,49 @@ export default function FutureStoryBento({
             <div
               style={{
                 display: "inline-block",
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 700,
                 color: "#2D7A1F",
                 background: "rgba(76,175,80,0.1)",
-                padding: "3px 10px",
+                padding: "2px 8px",
                 borderRadius: 999,
-                marginBottom: 6,
+                marginBottom: 4,
               }}
             >
               Greener Future
             </div>
-            <div style={{ fontSize: 13, color: "#2D7A1F", fontWeight: 600 }}>
+            <div style={{ fontSize: 11, color: "#2D7A1F", fontWeight: 600 }}>
               Thriving Ecosystem
             </div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#2D7A1F", lineHeight: 1.1, marginTop: 2 }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#2D7A1F", lineHeight: 1.1, marginTop: 2 }}>
               {yearlyGreenTonnes.toFixed(1)}{" "}
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#6B8F5E" }}>tonnes</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "#6B8F5E" }}>t</span>
             </div>
+          </div>
+
+          {/* Visual comparison bar */}
+          <div style={{
+            marginTop: 6,
+            height: 6,
+            borderRadius: 3,
+            background: "rgba(184,212,168,0.2)",
+            overflow: "hidden",
+            position: "relative",
+          }}>
+            <motion.div
+              initial={{ width: 0 }}
+              whileInView={{ width: `${Math.min(95,
+                Math.abs(yearlyTonnes) /
+                (Math.abs(yearlyTonnes) +
+                 Math.abs(yearlyGreenTonnes)) * 100)}%` }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+              style={{
+                height: "100%",
+                background: userStateColor,
+                borderRadius: 3,
+              }}
+            />
           </div>
 
           {/* Savings badge */}
@@ -406,14 +434,14 @@ export default function FutureStoryBento({
               style={{
                 background: "rgba(244,168,50,0.12)",
                 color: "#8B6914",
-                borderRadius: 12,
-                padding: "6px 10px",
-                fontSize: 12,
+                borderRadius: 10,
+                padding: "4px 8px",
+                fontSize: 11,
                 fontWeight: 700,
                 textAlign: "center",
               }}
             >
-              {savedTonnes.toFixed(1)} tonnes difference
+              {savedTonnes.toFixed(1)}t difference
             </div>
           )}
         </BentoCard>
@@ -423,31 +451,31 @@ export default function FutureStoryBento({
           index={2}
           gridArea="ripple"
           style={{
-            borderLeft: "4px solid #FF6B6B",
+            borderLeft: "3px solid #FF6B6B",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            gap: 8,
+            gap: 6,
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             ⚠️ Biggest Ripple
           </div>
 
           {highestImpact ? (
             <>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#A0401A", lineHeight: 1.2 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#A0401A", lineHeight: 1.2 }}>
                 {highestImpact.choice}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#FF6B6B" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#FF6B6B" }}>
                 +{highestImpact.carbonDelta} kg CO₂
               </div>
-              <div style={{ fontSize: 12, color: "#6B8F5E", fontStyle: "italic", lineHeight: 1.4 }}>
+              <div style={{ fontSize: 11, color: "#6B8F5E", fontStyle: "italic", lineHeight: 1.4 }}>
                 The choice that changed your future most.
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 14, color: "#6B8F5E", fontStyle: "italic" }}>
+            <div style={{ fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
               No high-impact choices — well done!
             </div>
           )}
@@ -458,34 +486,34 @@ export default function FutureStoryBento({
           index={3}
           gridArea="hero"
           style={{
-            borderLeft: "4px solid #4CAF50",
+            borderLeft: "3px solid #4CAF50",
             background: "#F0FAF0",
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
-            gap: 8,
+            gap: 6,
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#2D7A1F", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#2D7A1F", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             🌱 Future Hero
           </div>
 
           {lowestImpact ? (
             <>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#2D7A1F", lineHeight: 1.2 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#2D7A1F", lineHeight: 1.2 }}>
                 {lowestImpact.choice}
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#4CAF50" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#4CAF50" }}>
                 {lowestImpact.carbonDelta <= 0
                   ? `Saved ${Math.abs(lowestImpact.carbonDelta)} kg CO₂`
                   : `+${lowestImpact.carbonDelta} kg CO₂`}
               </div>
-              <div style={{ fontSize: 12, color: "#4A7C2F", fontStyle: "italic", lineHeight: 1.4 }}>
+              <div style={{ fontSize: 11, color: "#4A7C2F", fontStyle: "italic", lineHeight: 1.4 }}>
                 This decision slowed future damage.
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 14, color: "#4A7C2F", fontStyle: "italic" }}>
+            <div style={{ fontSize: 13, color: "#4A7C2F", fontStyle: "italic" }}>
               Every choice shapes the story.
             </div>
           )}
@@ -498,41 +526,41 @@ export default function FutureStoryBento({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 18,
-            borderLeft: "4px solid #F4A832",
+            gap: 12,
+            borderLeft: "3px solid #F4A832",
           }}
         >
           <motion.div
-            animate={shouldReduce ? {} : { y: [0, -6, 0] }}
+            animate={shouldReduce ? {} : { y: [0, -5, 0] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             style={{ flexShrink: 0 }}
           >
-            <VerdOrb size={40} mood={totalCarbonDelta < 0 ? "eco" : totalCarbonDelta > 10 ? "high" : "moderate"} />
+            <VerdOrb size={32} mood={totalCarbonDelta < 0 ? "eco" : totalCarbonDelta > 10 ? "high" : "moderate"} />
           </motion.div>
 
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
               🌿 Verd's Observation
             </div>
             <p
               style={{
-                fontSize: 15,
+                fontSize: 13,
                 fontWeight: 400,
                 fontStyle: "italic",
                 color: "#2D5016",
-                lineHeight: 1.6,
+                lineHeight: 1.5,
                 margin: 0,
                 fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
               }}
             >
-              "{categoryInsight}"
+              &ldquo;{categoryInsight}&rdquo;
             </p>
           </div>
         </BentoCard>
 
         {/* ───── Card 6: Future Snapshot (full width) ───── */}
-        <BentoCard index={5} gridArea="snap" style={{ background: "#FFF8E7" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+        <BentoCard index={5} gridArea="snap" style={{ background: "#FFF8E7", padding: "14px 16px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
             🌳 Future Snapshot
           </div>
 
@@ -540,17 +568,17 @@ export default function FutureStoryBento({
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 16,
+              gap: 8,
               textAlign: "center",
             }}
-            className="snapshot-grid"
+            className="snapshot-grid-sidebar"
           >
             {/* Trees */}
             <div>
               <div
                 style={{
-                  fontSize: "clamp(32px, 5vw, 52px)",
-                  fontWeight: 800,
+                  fontSize: "clamp(28px, 3.5vw, 40px)",
+                  fontWeight: 900,
                   color: "#2D5016",
                   letterSpacing: "-0.03em",
                   lineHeight: 1,
@@ -559,21 +587,21 @@ export default function FutureStoryBento({
               >
                 <AnimatedNumber value={treesNeeded} />
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#6B8F5E", marginTop: 4 }}>
-                Trees Needed
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#6B8F5E", marginTop: 3 }}>
+                Trees
               </div>
-              <div style={{ fontSize: 11, color: "#6B8F5E", fontStyle: "italic", marginTop: 2 }}>
-                to absorb your yearly carbon
+              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 1 }}>
+                to absorb yearly carbon
               </div>
             </div>
 
             {/* Driving */}
-            <div style={{ borderLeft: "1px solid rgba(184,212,168,0.4)", borderRight: "1px solid rgba(184,212,168,0.4)", paddingLeft: 16, paddingRight: 16 }}>
+            <div style={{ borderLeft: "1px solid rgba(184,212,168,0.4)", borderRight: "1px solid rgba(184,212,168,0.4)", paddingLeft: 8, paddingRight: 8 }}>
               <div
                 style={{
-                  fontSize: "clamp(32px, 5vw, 52px)",
-                  fontWeight: 800,
-                  color: "#2D5016",
+                  fontSize: "clamp(28px, 3.5vw, 40px)",
+                  fontWeight: 900,
+                  color: "#4A9B8E",
                   letterSpacing: "-0.03em",
                   lineHeight: 1,
                   fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
@@ -581,11 +609,11 @@ export default function FutureStoryBento({
               >
                 <AnimatedNumber value={carKm} suffix="" />
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#6B8F5E", marginTop: 4 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#6B8F5E", marginTop: 3 }}>
                 km Driving
               </div>
-              <div style={{ fontSize: 11, color: "#6B8F5E", fontStyle: "italic", marginTop: 2 }}>
-                equivalent distance on the road
+              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 1 }}>
+                equivalent distance
               </div>
             </div>
 
@@ -593,9 +621,9 @@ export default function FutureStoryBento({
             <div>
               <div
                 style={{
-                  fontSize: "clamp(32px, 5vw, 52px)",
-                  fontWeight: 800,
-                  color: "#2D5016",
+                  fontSize: "clamp(28px, 3.5vw, 40px)",
+                  fontWeight: 900,
+                  color: "#F4A832",
                   letterSpacing: "-0.03em",
                   lineHeight: 1,
                   fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
@@ -603,68 +631,21 @@ export default function FutureStoryBento({
               >
                 <AnimatedNumber value={homeDays} />
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#6B8F5E", marginTop: 4 }}>
-                Days Home Energy
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#6B8F5E", marginTop: 3 }}>
+                Days Energy
               </div>
-              <div style={{ fontSize: 11, color: "#6B8F5E", fontStyle: "italic", marginTop: 2 }}>
-                powering an average household
+              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 1 }}>
+                powering a home
               </div>
             </div>
           </div>
         </BentoCard>
       </div>
 
-      {/* ── Navigation Buttons ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
-        <motion.button
-          whileHover={{ scale: 1.015 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => router.push("/story/garden")}
-          style={{
-            padding: "14px",
-            background: "linear-gradient(135deg, #4A7C2F 0%, #F4A832 100%)",
-            color: "white",
-            borderRadius: 16,
-            fontWeight: 700,
-            fontSize: 16,
-            border: "none",
-            cursor: "pointer",
-            boxShadow: "0 6px 20px rgba(74,124,47,0.25)",
-            width: "100%",
-            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-          }}
-        >
-          🌱 Let's Seed the Garden →
-        </motion.button>
-
-        <motion.button
-          whileHover={{ scale: 1.015 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            resetSession();
-            router.push("/story/chapter");
-          }}
-          style={{
-            padding: "12px",
-            background: "rgba(255,255,255,0.6)",
-            color: "#2D5016",
-            borderRadius: 14,
-            fontWeight: 600,
-            fontSize: 14,
-            border: "1px solid #B8D4A8",
-            cursor: "pointer",
-            width: "100%",
-            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-          }}
-        >
-          ↺ Rewind and Choose Differently
-        </motion.button>
-      </div>
-
       {/* ── Responsive Overrides ── */}
       <style>{`
         @media (max-width: 768px) {
-          .bento-grid {
+          .bento-grid-sidebar {
             grid-template-columns: 1fr 1fr !important;
             grid-template-areas:
               "story story"
@@ -673,26 +654,10 @@ export default function FutureStoryBento({
               "verd verd"
               "snap snap" !important;
           }
-          .snapshot-grid {
-            grid-template-columns: 1fr !important;
-            gap: 20px !important;
-          }
-          .snapshot-grid > div {
-            border-left: none !important;
-            border-right: none !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            border-bottom: 1px solid rgba(184,212,168,0.3);
-            padding-bottom: 16px;
-          }
-          .snapshot-grid > div:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-          }
         }
 
         @media (max-width: 480px) {
-          .bento-grid {
+          .bento-grid-sidebar {
             grid-template-columns: 1fr !important;
             grid-template-areas:
               "story"
@@ -701,6 +666,22 @@ export default function FutureStoryBento({
               "hero"
               "verd"
               "snap" !important;
+          }
+          .snapshot-grid-sidebar {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+          }
+          .snapshot-grid-sidebar > div {
+            border-left: none !important;
+            border-right: none !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            border-bottom: 1px solid rgba(184,212,168,0.3);
+            padding-bottom: 12px;
+          }
+          .snapshot-grid-sidebar > div:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
           }
         }
       `}</style>
