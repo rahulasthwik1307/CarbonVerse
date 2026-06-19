@@ -179,6 +179,8 @@ export default function FutureStoryBento({
         gap: 10,
         width: "100%",
         height: "100%",
+        paddingBottom: 14,
+        boxSizing: "border-box",
       }}
     >
       {/* ── Bento Grid — 2-col vertical layout for narrow sidebar ── */}

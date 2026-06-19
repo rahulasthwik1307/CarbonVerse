@@ -14,6 +14,8 @@ export default function FuturePage() {
       position: "relative",
       overflowY: "auto",
       overflowX: "hidden",
+      display: "flex",
+      flexDirection: "column",
     }}>
       
       {/* ── SUBTLE BACKGROUND TEXTURE ── */}
@@ -27,12 +29,20 @@ export default function FuturePage() {
 
       {/* ── MAIN CONTENT ── */}
       <motion.div
+        className="future-main-wrapper"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         style={{
-          padding: "16px 16px 20px",
+          padding: "24px 16px",
           position: "relative", zIndex: 2,
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          maxWidth: "1800px",
+          width: "100%",
+          margin: "0 auto",
         }}
       >
         <FutureSimulator />

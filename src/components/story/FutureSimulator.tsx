@@ -309,26 +309,45 @@ export default function FutureSimulator() {
           minHeight: "100vh",
         }}
       >
-        {/* ── The Editorial Split ── */}
         <div
-          className="future-editorial-split"
+          className="future-master-container"
           style={{
-            display: "grid",
-            gridTemplateColumns: "72fr 28fr",
-            gap: 16,
-            flex: 1,
-            minHeight: "calc(100vh - 120px)",
-            padding: "16px 20px 0",
-          }}
-        >
-          {/* ═══════ LEFT SIDE — 72% — Future Simulator ═══════ */}
-          <div className="future-left-column" style={{
+            background: "rgba(255, 255, 255, 0.72)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "1px solid rgba(184, 212, 168, 0.5)",
+            borderRadius: 32,
+            boxShadow: "0 8px 40px rgba(45, 80, 22, 0.10)",
+            padding: "20px",
             display: "flex",
             flexDirection: "column",
-            gap: 12,
-            minHeight: 0,
-            justifyContent: "center",
-          }}>
+            width: "100%",
+            maxWidth: "1400px",
+            margin: "0 auto",
+            boxSizing: "border-box",
+            flex: 1,
+          }}
+        >
+          {/* ── The Editorial Split ── */}
+          <div
+            className="future-editorial-split"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "72fr 28fr",
+              gap: 20,
+              flex: 1,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            {/* ═══════ LEFT SIDE — 72% — Future Simulator ═══════ */}
+            <div className="future-left-column" style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              minHeight: 0,
+              justifyContent: "space-between",
+            }}>
             {/* Compact Editorial Header (centered relative to Left column) */}
             <div style={{
               display: "flex",
@@ -336,7 +355,7 @@ export default function FutureSimulator() {
               justifyContent: "center",
               gap: 16,
               width: "100%",
-              marginBottom: 2,
+              marginBottom: 0,
             }}>
               <motion.div
                 animate={{ y: [0, -4, 0] }}
@@ -378,10 +397,12 @@ export default function FutureSimulator() {
               boxShadow: "0 6px 28px rgba(45,80,22,0.05)",
               width: "100%",
               aspectRatio: "16 / 9",
-              maxHeight: "calc(100vh - 195px)",
+              maxHeight: "calc(100vh - 180px)",
               margin: "0 auto",
               display: "flex",
               position: "relative",
+              flexShrink: 1,
+              minHeight: 0,
             }}>
               <div
                 ref={containerRef}
@@ -615,7 +636,7 @@ export default function FutureSimulator() {
               style={{
                 display: "flex",
                 gap: 12,
-                marginTop: 4,
+                marginTop: 0,
                 width: "100%",
               }}
             >
@@ -680,9 +701,7 @@ export default function FutureSimulator() {
               overflowY: "auto",
               overflowX: "hidden",
               minHeight: 0,
-              maxHeight: "calc(100vh - 48px)",
               paddingRight: 4,
-              paddingBottom: 16,
               /* Custom scrollbar styling */
             }}
           >
@@ -701,7 +720,8 @@ export default function FutureSimulator() {
             />
           </div>
         </div>
-      </motion.div>
+      </div>
+    </motion.div>
 
       {/* ── Responsive overrides ── */}
       <style>{`
@@ -726,39 +746,63 @@ export default function FutureSimulator() {
             height: 100vh !important;
             overflow: hidden !important;
           }
+          .future-main-wrapper {
+            height: 100% !important;
+            box-sizing: border-box !important;
+          }
+          .future-master-container {
+            height: auto !important;
+            max-height: calc(100vh - 48px) !important;
+            box-sizing: border-box !important;
+          }
           .future-editorial-split {
-            height: calc(100vh - 32px) !important;
+            height: auto !important;
+            max-height: 100% !important;
             min-height: 0 !important;
           }
           .future-left-column {
-            height: 100% !important;
+            height: auto !important;
+            max-height: 100% !important;
             min-height: 0 !important;
-            justify-content: center !important;
+            justify-content: flex-start !important;
+            gap: 12px !important;
           }
           .future-bento-sidebar {
-            height: 100% !important;
-            max-height: calc(100vh - 48px) !important;
+            height: auto !important;
+            max-height: 100% !important;
             overflow-y: auto !important;
+            padding-bottom: 0 !important;
           }
         }
 
         /* Tablet and below: collapse to single column */
         @media (max-width: 1024px) {
+          .future-master-container {
+            height: auto !important;
+            padding: 16px !important;
+            border-radius: 24px !important;
+          }
           .future-editorial-split {
             grid-template-columns: 1fr !important;
             min-height: auto !important;
             gap: 20px !important;
           }
+          .future-left-column {
+            height: auto !important;
+            justify-content: flex-start !important;
+            gap: 16px !important;
+          }
           .future-bento-sidebar {
             max-height: none !important;
             overflow-y: visible !important;
+            padding-bottom: 0 !important;
           }
         }
 
         /* Mobile */
         @media (max-width: 768px) {
           .future-editorial-split {
-            padding: 12px 12px 0 !important;
+            padding: 0 !important;
           }
         }
 
