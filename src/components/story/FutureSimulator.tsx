@@ -397,8 +397,7 @@ export default function FutureSimulator() {
               border: "1px solid rgba(184,212,168,0.4)",
               boxShadow: "0 6px 28px rgba(45,80,22,0.05)",
               width: "100%",
-              aspectRatio: "16 / 9",
-              maxHeight: "calc(100vh - 180px)",
+              maxWidth: "calc((100vh - 190px) * 16 / 9 + 10px)",
               margin: "0 auto",
               display: "flex",
               position: "relative",
@@ -414,7 +413,7 @@ export default function FutureSimulator() {
                 style={{
                   position: "relative",
                   width: "100%",
-                  height: "100%",
+                  aspectRatio: "16 / 9",
                   borderRadius: 22,
                   overflow: "hidden",
                   cursor: "ew-resize",
