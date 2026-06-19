@@ -322,27 +322,31 @@ export default function FutureSimulator() {
           }}
         >
           {/* ═══════ LEFT SIDE — 72% — Future Simulator ═══════ */}
-          <div style={{
+          <div className="future-left-column" style={{
             display: "flex",
             flexDirection: "column",
-            gap: 10,
+            gap: 12,
             minHeight: 0,
+            justifyContent: "center",
           }}>
-            {/* Compact Editorial Header (left-aligned) */}
+            {/* Compact Editorial Header (centered relative to Left column) */}
             <div style={{
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
-              gap: 12,
+              textAlign: "center",
+              gap: 6,
+              marginBottom: 4,
             }}>
               <motion.div
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <VerdOrb size={32} mood={totalCarbonDelta < 0 ? "eco" : "moderate"} />
+                <VerdOrb size={34} mood={totalCarbonDelta < 0 ? "eco" : "moderate"} />
               </motion.div>
               <div>
                 <h1 style={{
-                  fontSize: "clamp(22px, 3vw, 32px)",
+                  fontSize: "clamp(22px, 2.8vw, 30px)",
                   fontWeight: 800,
                   color: "#2D5016",
                   letterSpacing: "-0.02em",
@@ -371,9 +375,12 @@ export default function FutureSimulator() {
               borderRadius: 28,
               border: "1px solid rgba(184,212,168,0.4)",
               boxShadow: "0 6px 28px rgba(45,80,22,0.05)",
-              flex: 1,
+              width: "100%",
+              aspectRatio: "16 / 9",
+              maxHeight: "calc(100vh - 195px)",
+              margin: "0 auto",
               display: "flex",
-              minHeight: 0,
+              position: "relative",
             }}>
               <div
                 ref={containerRef}
@@ -384,21 +391,20 @@ export default function FutureSimulator() {
                 style={{
                   position: "relative",
                   width: "100%",
-                  flex: 1,
+                  height: "100%",
                   borderRadius: 22,
                   overflow: "hidden",
                   cursor: "ew-resize",
                   userSelect: "none",
                   touchAction: "none",
                   boxShadow: "inset 0 2px 8px rgba(0,0,0,0.08)",
-                  background: "#2D5016",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 {/* Left World: Your Story (Bottom Layer) */}
-                <div style={{ position: "absolute", inset: 0, zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
                   <video
                     ref={userVideoRef}
                     src={userVideoUrl}
@@ -411,7 +417,7 @@ export default function FutureSimulator() {
                     style={{
                       width: "100%",
                       height: "100%",
-                      objectFit: "contain",
+                      objectFit: "cover",
                       pointerEvents: "none"
                     }}
                   />
@@ -425,9 +431,6 @@ export default function FutureSimulator() {
                     inset: 0,
                     zIndex: 2,
                     clipPath: "inset(0 0 0 50%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                   }}
                 >
                   <video
@@ -442,7 +445,7 @@ export default function FutureSimulator() {
                     style={{
                       width: "100%",
                       height: "100%",
-                      objectFit: "contain",
+                      objectFit: "cover",
                       pointerEvents: "none"
                     }}
                   />
@@ -550,7 +553,120 @@ export default function FutureSimulator() {
                 }}>
                   <span>🌱</span> Greener Story
                 </div>
+
+                {/* Subtitle Overlay (Cinematic Story Caption) */}
+                <div style={{
+                  position: "absolute",
+                  bottom: 16,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: "calc(100% - 32px)",
+                  maxWidth: 580,
+                  backgroundColor: "rgba(255, 248, 231, 0.88)",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(184, 212, 168, 0.5)",
+                  borderRadius: 16,
+                  padding: "10px 16px",
+                  zIndex: 10,
+                  textAlign: "center",
+                  boxShadow: "0 6px 20px rgba(45, 80, 22, 0.12)",
+                  pointerEvents: "none",
+                }}>
+                  <div style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: "#6B8F5E",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    marginBottom: 2,
+                  }}>
+                    📖 One Year Later
+                  </div>
+                  <p style={{
+                    fontSize: 13,
+                    lineHeight: 1.4,
+                    color: "#2D5016",
+                    margin: 0,
+                    fontWeight: 500,
+                    fontStyle: "italic",
+                    fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                  }}>
+                    {sliderPct < 50 
+                      ? "In the greener timeline, the air is sweet and the city breathes easy. This is the garden we can grow together when we seed our tomorrow."
+                      : storyState === "thriving"
+                        ? "The city breathes easy now. Birds returned to streets you walk every morning. Your daily choices saved the garden."
+                        : storyState === "stable"
+                          ? "The seasons turn in their ancient rhythm. The parks hold their green, but tomorrow is still yours to write."
+                          : storyState === "stressed"
+                            ? "The city still stands green, but summers arrive earlier now. The future is recoverable — but it's waiting for your next chapter."
+                            : "The landscape has changed. Dust settles where grass once grew. But even damaged worlds can heal — every chapter is a chance to rewrite."
+                    }
+                  </p>
+                </div>
               </div>
+            </div>
+
+            {/* Primary Actions Grid */}
+            <div
+              className="actions-container"
+              style={{
+                display: "flex",
+                gap: 12,
+                marginTop: 4,
+                width: "100%",
+              }}
+            >
+              {/* Primary CTA (60%) */}
+              <motion.button
+                whileHover={{ scale: 1.015 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => router.push("/story/garden")}
+                style={{
+                  flex: "0 0 60%",
+                  padding: "14px 20px",
+                  background: "#F4A832",
+                  color: "#2D5016",
+                  borderRadius: 16,
+                  fontWeight: 800,
+                  fontSize: 14,
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                  boxShadow: "0 4px 14px rgba(244,168,50,0.35)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                <span>🌱 Let&apos;s Seed The Garden</span>
+                <span style={{ fontSize: 16 }}>→</span>
+              </motion.button>
+
+              {/* Secondary CTA (40%) */}
+              <motion.button
+                whileHover={{ scale: 1.015, backgroundColor: "rgba(255, 255, 255, 0.85)" }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => { resetSession(); router.push("/story/chapter"); }}
+                style={{
+                  flex: "0 0 40%",
+                  padding: "14px 16px",
+                  background: "rgba(255, 255, 255, 0.4)",
+                  color: "#2D5016",
+                  borderRadius: 16,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  border: "1px solid rgba(184,212,168,0.5)",
+                  cursor: "pointer",
+                  fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+              >
+                <span>↺ Rewrite</span>
+              </motion.button>
             </div>
           </div>
 
@@ -582,92 +698,6 @@ export default function FutureSimulator() {
             />
           </div>
         </div>
-
-        {/* ═══════ FULL-WIDTH CINEMATIC CTA ═══════ */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.6, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
-          style={{
-            padding: "24px 20px 32px",
-            maxWidth: 1400,
-            margin: "0 auto",
-            width: "100%",
-          }}
-        >
-          {/* Cinematic divider line */}
-          <div style={{
-            width: "100%",
-            height: 1,
-            background: "linear-gradient(90deg, transparent, rgba(184,212,168,0.5), rgba(244,168,50,0.3), rgba(184,212,168,0.5), transparent)",
-            marginBottom: 24,
-          }} />
-
-          {/* Primary CTA */}
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push("/story/garden")}
-            style={{
-              padding: "20px",
-              background: "linear-gradient(135deg, #2D5016 0%, #4A7C2F 40%, #F4A832 100%)",
-              color: "white",
-              borderRadius: 20,
-              fontWeight: 800,
-              fontSize: 18,
-              border: "none",
-              cursor: "pointer",
-              width: "100%",
-              fontFamily: "'Plus Jakarta Sans', system-ui",
-              position: "relative",
-              overflow: "hidden",
-              boxShadow: "0 8px 32px rgba(74,124,47,0.3)",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {/* Shimmer sweep */}
-            <motion.div
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{ 
-                duration: 2.5, 
-                repeat: Infinity, 
-                ease: "linear",
-                repeatDelay: 1,
-              }}
-              style={{
-                position: "absolute", inset: 0,
-                background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
-                pointerEvents: "none",
-              }}
-            />
-            <span style={{ position: "relative", zIndex: 1 }}>
-              🌱 Let&apos;s Seed the Garden →
-            </span>
-          </motion.button>
-
-          {/* Secondary CTA */}
-          <motion.button
-            whileHover={{ scale: 1.005 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={() => { resetSession(); router.push("/story/chapter"); }}
-            style={{
-              marginTop: 8,
-              padding: "12px",
-              background: "transparent",
-              color: "#6B8F5E",
-              borderRadius: 14,
-              fontWeight: 500,
-              fontSize: 13,
-              border: "1px solid rgba(184,212,168,0.4)",
-              cursor: "pointer",
-              width: "100%",
-              fontFamily: "'Plus Jakarta Sans', system-ui",
-            }}
-          >
-            ↺ Rewind and Choose Differently
-          </motion.button>
-        </motion.div>
       </motion.div>
 
       {/* ── Responsive overrides ── */}
@@ -687,6 +717,28 @@ export default function FutureSimulator() {
           background: rgba(184,212,168,0.6);
         }
 
+        /* Desktop specific layout */
+        @media (min-width: 1025px) {
+          .future-page-container {
+            height: 100vh !important;
+            overflow: hidden !important;
+          }
+          .future-editorial-split {
+            height: calc(100vh - 32px) !important;
+            min-height: 0 !important;
+          }
+          .future-left-column {
+            height: 100% !important;
+            min-height: 0 !important;
+            justify-content: center !important;
+          }
+          .future-bento-sidebar {
+            height: 100% !important;
+            max-height: calc(100vh - 48px) !important;
+            overflow-y: auto !important;
+          }
+        }
+
         /* Tablet and below: collapse to single column */
         @media (max-width: 1024px) {
           .future-editorial-split {
@@ -704,6 +756,17 @@ export default function FutureSimulator() {
         @media (max-width: 768px) {
           .future-editorial-split {
             padding: 12px 12px 0 !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .actions-container {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+          .actions-container > button {
+            flex: 1 1 auto !important;
+            width: 100% !important;
           }
         }
       `}</style>

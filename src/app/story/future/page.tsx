@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 
 export default function FuturePage() {
   return (
-    <main style={{
+    <main className="future-page-container" style={{
       minHeight: "100vh",
       background: "#FFF8E7",
       fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
