@@ -235,7 +235,7 @@ export default function FutureSimulator() {
   }
 
   return (
-    <div style={{ position: "relative", minHeight: "100vh" }}>
+    <div style={{ position: "relative", display: "flex", flexDirection: "column", flex: 1, justifyContent: "center", width: "100%" }}>
       {/* ── Loading Screen ── */}
       <AnimatePresence mode="wait">
         {!videosActive && (
@@ -306,7 +306,8 @@ export default function FutureSimulator() {
           display: "flex",
           flexDirection: "column",
           width: "100%",
-          minHeight: "100vh",
+          flex: 1,
+          justifyContent: "center",
         }}
       >
         <div
