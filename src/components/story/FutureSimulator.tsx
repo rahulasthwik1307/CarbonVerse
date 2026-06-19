@@ -439,7 +439,7 @@ export default function FutureSimulator() {
                     style={{
                       width: "100%",
                       height: "100%",
-                      objectFit: "cover",
+                      objectFit: "fill",
                       pointerEvents: "none"
                     }}
                   />
@@ -467,7 +467,7 @@ export default function FutureSimulator() {
                     style={{
                       width: "100%",
                       height: "100%",
-                      objectFit: "cover",
+                      objectFit: "fill",
                       pointerEvents: "none"
                     }}
                   />
