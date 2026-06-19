@@ -178,6 +178,7 @@ export default function FutureStoryBento({
         flexDirection: "column",
         gap: 10,
         width: "100%",
+        height: "100%",
       }}
     >
       {/* ── Bento Grid — 2-col vertical layout for narrow sidebar ── */}
@@ -191,7 +192,9 @@ export default function FutureStoryBento({
             "verd hero"
             "snap snap"
           `,
+          gridTemplateRows: "auto 1fr 1fr auto",
           gap: 10,
+          height: "100%",
         }}
         className="bento-grid-sidebar"
       >
@@ -506,9 +509,17 @@ export default function FutureStoryBento({
 
       {/* ── Responsive Overrides ── */}
       <style>{`
+        @media (max-width: 1024px) {
+          .bento-grid-sidebar {
+            height: auto !important;
+            grid-template-rows: auto !important;
+          }
+        }
+
         @media (max-width: 768px) {
           .bento-grid-sidebar {
             grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: auto !important;
             grid-template-areas:
               "diff diff"
               "ripple hero"
@@ -520,6 +531,7 @@ export default function FutureStoryBento({
         @media (max-width: 480px) {
           .bento-grid-sidebar {
             grid-template-columns: 1fr !important;
+            grid-template-rows: auto !important;
             grid-template-areas:
               "diff"
               "ripple"

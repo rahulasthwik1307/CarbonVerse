@@ -332,19 +332,20 @@ export default function FutureSimulator() {
             {/* Compact Editorial Header (centered relative to Left column) */}
             <div style={{
               display: "flex",
-              flexDirection: "column",
               alignItems: "center",
-              textAlign: "center",
-              gap: 6,
-              marginBottom: 4,
+              justifyContent: "center",
+              gap: 16,
+              width: "100%",
+              marginBottom: 2,
             }}>
               <motion.div
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                style={{ flexShrink: 0 }}
               >
-                <VerdOrb size={34} mood={totalCarbonDelta < 0 ? "eco" : "moderate"} />
+                <VerdOrb size={56} mood={totalCarbonDelta < 0 ? "eco" : "moderate"} />
               </motion.div>
-              <div>
+              <div style={{ textAlign: "left" }}>
                 <h1 style={{
                   fontSize: "clamp(22px, 2.8vw, 30px)",
                   fontWeight: 800,
@@ -562,14 +563,14 @@ export default function FutureSimulator() {
                   transform: "translateX(-50%)",
                   width: "calc(100% - 32px)",
                   maxWidth: 580,
-                  backgroundColor: "rgba(255, 248, 231, 0.88)",
-                  backdropFilter: "blur(8px)",
-                  border: "1px solid rgba(184, 212, 168, 0.5)",
+                  backgroundColor: "rgba(255, 248, 231, 0.45)",
+                  backdropFilter: "blur(6px)",
+                  border: "1px solid rgba(184, 212, 168, 0.35)",
                   borderRadius: 16,
                   padding: "10px 16px",
                   zIndex: 10,
                   textAlign: "center",
-                  boxShadow: "0 6px 20px rgba(45, 80, 22, 0.12)",
+                  boxShadow: "0 4px 16px rgba(45, 80, 22, 0.08)",
                   pointerEvents: "none",
                 }}>
                   <div style={{
@@ -579,6 +580,7 @@ export default function FutureSimulator() {
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                     marginBottom: 2,
+                    textShadow: "0 1px 1px rgba(255, 255, 255, 0.9)",
                   }}>
                     📖 One Year Later
                   </div>
@@ -590,6 +592,7 @@ export default function FutureSimulator() {
                     fontWeight: 500,
                     fontStyle: "italic",
                     fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                    textShadow: "0 1px 2px rgba(255, 255, 255, 0.85)",
                   }}>
                     {sliderPct < 50 
                       ? "In the greener timeline, the air is sweet and the city breathes easy. This is the garden we can grow together when we seed our tomorrow."

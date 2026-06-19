@@ -31,7 +31,7 @@ export default function FuturePage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         style={{
-          padding: "16px 16px 40px",
+          padding: "16px 16px 20px",
           position: "relative", zIndex: 2,
         }}
       >
