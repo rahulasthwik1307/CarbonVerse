@@ -25,6 +25,15 @@ export default function FutureSimulator() {
   
   const [isDragging, setIsDragging] = useState(false);
   const [sliderPct, setSliderPct] = useState(50);
+  const [isTransitioningToGarden, setIsTransitioningToGarden] = useState(false);
+  const [transitionMsgIdx, setTransitionMsgIdx] = useState(0);
+
+  const transitionMessages = [
+    "🌿 Verd is growing your Memory Garden...",
+    "🌱 Gathering the seeds from your journey...",
+    "🦋 Nature is responding to your choices...",
+    "🌳 Growing the world you helped create..."
+  ];
 
   // Video refs
   const userVideoRef = useRef<HTMLVideoElement>(null);
@@ -308,19 +317,138 @@ export default function FutureSimulator() {
         )}
       </AnimatePresence>
 
-      {/* ── Main Content: 72/28 Editorial Split ── */}
-      <motion.div
-        animate={{ opacity: videosActive ? 1 : 0, y: videosActive ? 0 : 30 }}
-        initial={{ opacity: 0, y: 30 }}
-        transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          width: "100%",
-          flex: 1,
-          justifyContent: "center",
-        }}
-      >
+      {/* ── Main Content OR Garden Transition ── */}
+      <AnimatePresence mode="wait">
+        {isTransitioningToGarden ? (
+          <motion.div
+            key="garden-transition"
+            initial={{ opacity: 0, x: "-50%", y: "calc(-50% + 20px)", scale: 0.95 }}
+            animate={{ opacity: 1, x: "-50%", y: "-50%", scale: 1 }}
+            exit={{ opacity: 0, x: "-50%", y: "calc(-50% - 20px)", scale: 0.95 }}
+            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              zIndex: 100,
+              width: "90%",
+              maxWidth: 380,
+              background: "rgba(255, 255, 255, 0.85)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(255, 255, 255, 0.6)",
+              boxShadow: "0 12px 40px rgba(45, 80, 22, 0.15)",
+              borderRadius: 32,
+              padding: "40px 24px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* Subtle floating particles/leaves effect behind content */}
+            <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 32, pointerEvents: "none", zIndex: -1 }}>
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={`leaf-${i}`}
+                  initial={{ 
+                    x: Math.random() * 300, 
+                    y: Math.random() * 200 + 100,
+                    opacity: 0,
+                    rotate: 0,
+                    scale: Math.random() * 0.5 + 0.5
+                  }}
+                  animate={{ 
+                    y: -50,
+                    opacity: [0, 0.6, 0],
+                    rotate: Math.random() * 360,
+                    x: `calc(${Math.random() * 100}% + ${Math.random() * 40 - 20}px)`
+                  }}
+                  transition={{ 
+                    duration: 2.5 + Math.random() * 1.5,
+                    repeat: Infinity,
+                    ease: "linear",
+                    delay: Math.random() * 2
+                  }}
+                  style={{
+                    position: "absolute",
+                    width: 12,
+                    height: 12,
+                    background: i % 2 === 0 ? "#4CAF50" : "#F4A832",
+                    borderRadius: i % 2 === 0 ? "12px 0 12px 0" : "50%",
+                    filter: "blur(1px)"
+                  }}
+                />
+              ))}
+            </div>
+
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <VerdOrb size={80} mood={totalCarbonDelta < 0 ? "eco" : "thinking"} />
+            </motion.div>
+            
+            <div style={{ height: "60px", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 28 }}>
+              <AnimatePresence mode="wait">
+                <motion.h1 
+                  key={transitionMsgIdx}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.3 }}
+                  style={{
+                    fontSize: "1.3rem",
+                    fontWeight: 700,
+                    color: "#2D5016",
+                    textAlign: "center",
+                    maxWidth: 500,
+                    lineHeight: 1.4,
+                    margin: 0,
+                    fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif"
+                  }}>
+                  {transitionMessages[transitionMsgIdx]}
+                </motion.h1>
+              </AnimatePresence>
+            </div>
+
+            <div style={{
+              width: "240px",
+              height: "6px",
+              backgroundColor: "#E8F5E3",
+              borderRadius: "3px",
+              marginTop: "20px",
+              overflow: "hidden",
+              position: "relative"
+            }}>
+              <motion.div
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 2.2, ease: "easeInOut" }}
+                style={{
+                  height: "100%",
+                  background: "linear-gradient(90deg, #F4A832 0%, #4CAF50 100%)",
+                  borderRadius: "3px",
+                  boxShadow: "0 0 8px rgba(76,175,80,0.5)",
+                }}
+              />
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="future-main-content"
+            animate={{ opacity: videosActive ? 1 : 0, y: videosActive ? 0 : 30 }}
+            initial={{ opacity: 0, y: 30 }}
+            exit={{ opacity: 0, scale: 0.96, filter: "blur(10px)" }}
+            transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              width: "100%",
+              flex: 1,
+              justifyContent: "center",
+            }}
+          >
         <div
           className="future-master-container"
           style={{
@@ -657,7 +785,20 @@ export default function FutureSimulator() {
               <motion.button
                 whileHover={{ scale: 1.015 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => router.push("/story/garden")}
+                onClick={() => {
+                  setIsTransitioningToGarden(true);
+                  let msgIdx = 0;
+                  const msgInterval = setInterval(() => {
+                    msgIdx++;
+                    if (msgIdx < transitionMessages.length) {
+                      setTransitionMsgIdx(msgIdx);
+                    }
+                  }, 700);
+                  setTimeout(() => {
+                    clearInterval(msgInterval);
+                    router.push("/story/garden");
+                  }, 2200);
+                }}
                 style={{
                   flex: 1.7,
                   padding: "14px 20px",
@@ -736,6 +877,8 @@ export default function FutureSimulator() {
         </div>
       </div>
     </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Responsive overrides ── */}
       <style>{`

@@ -331,8 +331,11 @@ ${shareUrl}
       `}</style>
 
       {/* HEADER */}
-      <div
+      <motion.div
         className="garden-header-container"
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 0, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         style={{
           display: "flex",
           alignItems: "center",
@@ -378,7 +381,7 @@ ${shareUrl}
         >
           Play Again ↺
         </motion.button>
-      </div>
+      </motion.div>
 
       {/* BENTO LAYOUT */}
       <div className="garden-layout-grid">
@@ -386,9 +389,9 @@ ${shareUrl}
         {/* LEFT COLUMN: Large Hero Video Card (70%) */}
         <motion.div
           className="video-card-bezel"
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 20, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.25, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
           style={{
             background: "rgba(184, 212, 168, 0.15)", // Outer shell
             border: "1.5px solid rgba(184, 212, 168, 0.4)",
@@ -471,9 +474,9 @@ ${shareUrl}
         >
           {/* Card 1: Future Outcome Card */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.4 }}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.45, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
             style={{ flex: 1 }}
           >
             <DoubleBezelCard style={{ height: "100%" }}>
@@ -493,9 +496,9 @@ ${shareUrl}
 
           {/* Card 2: Story Reflection Card */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.4 }}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.65, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
             style={{ flex: 1.8 }}
           >
             <DoubleBezelCard style={{ height: "100%" }}>
@@ -556,9 +559,9 @@ ${shareUrl}
 
           {/* Card 3: Share Garden Card */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.4 }}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.85, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
             style={{ flex: 1.4 }}
           >
             <DoubleBezelCard style={{ height: "100%" }}>
