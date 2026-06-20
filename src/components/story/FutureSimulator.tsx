@@ -241,17 +241,28 @@ export default function FutureSimulator() {
         {!videosActive && (
           <motion.div
             key="loading-screen"
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+            initial={{ opacity: 0, x: "-50%", y: "calc(-50% + 20px)", scale: 0.95 }}
+            animate={{ opacity: 1, x: "-50%", y: "-50%", scale: 1 }}
+            exit={{ opacity: 0, x: "-50%", y: "calc(-50% - 20px)", scale: 0.95 }}
+            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
             style={{
               position: "fixed",
-              inset: 0,
+              top: "50%",
+              left: "50%",
               zIndex: 100,
+              width: "90%",
+              maxWidth: 380,
+              background: "rgba(255, 255, 255, 0.85)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(255, 255, 255, 0.6)",
+              boxShadow: "0 12px 40px rgba(45, 80, 22, 0.15)",
+              borderRadius: 32,
+              padding: "40px 24px",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: "#FFF8E7",
             }}
           >
             <motion.div
