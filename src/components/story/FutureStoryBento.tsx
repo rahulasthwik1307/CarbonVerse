@@ -179,7 +179,8 @@ export default function FutureStoryBento({
         gap: 10,
         width: "100%",
         height: "100%",
-        paddingBottom: 14,
+        paddingTop: 12,
+        paddingBottom: 2,
         boxSizing: "border-box",
       }}
     >
