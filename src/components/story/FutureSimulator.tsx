@@ -335,7 +335,7 @@ export default function FutureSimulator() {
             style={{
               display: "grid",
               gridTemplateColumns: "72fr 28fr",
-              gap: 20,
+              gap: 12,
               flex: 1,
               width: "100%",
               boxSizing: "border-box",
@@ -398,7 +398,7 @@ export default function FutureSimulator() {
               boxShadow: "0 6px 28px rgba(45,80,22,0.05)",
               width: "100%",
               maxWidth: "calc((100vh - 190px) * 16 / 9 + 10px)",
-              margin: "0 auto",
+              margin: "0 auto 0 0",
               display: "flex",
               position: "relative",
               flexShrink: 1,
@@ -638,7 +638,7 @@ export default function FutureSimulator() {
                 gap: 12,
                 width: "100%",
                 maxWidth: "calc((100vh - 190px) * 16 / 9 + 10px)",
-                margin: "0 auto",
+                margin: "0 auto 0 0",
               }}
             >
               {/* Primary CTA (60%) */}
@@ -647,7 +647,7 @@ export default function FutureSimulator() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => router.push("/story/garden")}
                 style={{
-                  flex: 3,
+                  flex: 1.3,
                   padding: "14px 20px",
                   background: "#F4A832",
                   color: "#2D5016",
@@ -674,7 +674,7 @@ export default function FutureSimulator() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => { resetSession(); router.push("/story/chapter"); }}
                 style={{
-                  flex: 2,
+                  flex: 1,
                   padding: "14px 16px",
                   background: "rgba(255, 255, 255, 0.4)",
                   color: "#2D5016",

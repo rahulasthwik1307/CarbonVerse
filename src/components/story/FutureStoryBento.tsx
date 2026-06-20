@@ -428,11 +428,11 @@ export default function FutureStoryBento({
         {/* ───── Card 5: Future Snapshot (Left Column, Tall) ───── */}
         <BentoCard index={4} gridArea="snap" style={{ 
           background: "#FFF8E7", 
-          padding: "16px",
+          padding: "16px 16px 22px 16px",
           display: "flex",
           flexDirection: "column"
         }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>
             🌳 Future Snapshot
           </div>
 
@@ -462,12 +462,12 @@ export default function FutureStoryBento({
               <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", marginTop: 4 }}>
                 Trees
               </div>
-              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 1, lineHeight: 1.2 }}>
+              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 2, lineHeight: 1.2 }}>
                 absorbs yearly CO₂
               </div>
             </div>
 
-            <div style={{ height: 1, background: "rgba(184,212,168,0.4)", margin: "12px 0" }} className="snap-divider" />
+            <div style={{ height: 1, background: "rgba(184,212,168,0.4)", margin: "16px 0" }} className="snap-divider" />
 
             {/* Driving */}
             <div className="snap-item">
@@ -486,12 +486,12 @@ export default function FutureStoryBento({
               <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", marginTop: 4 }}>
                 km Driving
               </div>
-              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 1, lineHeight: 1.2 }}>
+              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 2, lineHeight: 1.2 }}>
                 equivalent distance
               </div>
             </div>
 
-            <div style={{ height: 1, background: "rgba(184,212,168,0.4)", margin: "12px 0" }} className="snap-divider" />
+            <div style={{ height: 1, background: "rgba(184,212,168,0.4)", margin: "16px 0" }} className="snap-divider" />
 
             {/* Home Energy */}
             <div className="snap-item">
@@ -510,7 +510,7 @@ export default function FutureStoryBento({
               <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", marginTop: 4 }}>
                 Days Energy
               </div>
-              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 1, lineHeight: 1.2 }}>
+              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 2, lineHeight: 1.2 }}>
                 powering a home
               </div>
             </div>
