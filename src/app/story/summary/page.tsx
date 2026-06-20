@@ -163,9 +163,9 @@ export default function SummaryPage() {
       <div
         style={{
           position: "absolute", inset: 0, zIndex: 20,
-          overflowY: showDecisions ? "auto" : "hidden", overscrollBehavior: "none", scrollbarWidth: "none", msOverflowStyle: "none",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: showDecisions ? "flex-start" : "center",
-          padding: showDecisions ? "32px 16px" : "16px",
+          overflowY: (showDecisions || showAllMissions) ? "auto" : "hidden", overscrollBehavior: "none", scrollbarWidth: "none", msOverflowStyle: "none",
+          display: "flex", flexDirection: "column", alignItems: "center",
+          padding: (showDecisions || showAllMissions) ? "32px 16px" : "12px 16px",
         }}
       >
 
@@ -188,14 +188,15 @@ export default function SummaryPage() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           style={{
             width: "100%", maxWidth: 900,
+            marginTop: "auto", marginBottom: "auto", flexShrink: 0,
             display: "flex", flexDirection: "column", 
-            gap: showDecisions ? 12 : 8,
+            gap: showDecisions ? 12 : 6,
             background: "rgba(255, 255, 255, 0.72)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(184, 212, 168, 0.5)",
             borderRadius: 32,
-            padding: showDecisions ? 24 : 16,
+            padding: showDecisions ? 24 : 12,
             boxShadow: "0 8px 40px rgba(45, 80, 22, 0.10)",
           }}
         >
@@ -215,7 +216,7 @@ export default function SummaryPage() {
                 border: "1px solid rgba(184, 212, 168, 0.6)",
                 boxShadow: "0 4px 24px rgba(45, 80, 22, 0.08)",
                 borderRadius: 24,
-                padding: showDecisions ? "24px 28px" : "16px 20px",
+                padding: showDecisions ? "24px 28px" : "12px 20px",
                 overflow: "hidden",
                 display: "flex",
                 alignItems: "center",
@@ -262,7 +263,7 @@ export default function SummaryPage() {
 
                 <p style={{
                   fontSize: 13, color: "#6B8F5E",
-                  margin: "7px 0 0", lineHeight: 1.5,
+                  margin: "4px 0 0", lineHeight: 1.4,
                 }}>
                   Your choices wrote today's story —{" "}
                   <span style={{ color: "#2D5016", fontWeight: 700 }}>
@@ -296,7 +297,7 @@ export default function SummaryPage() {
             style={{
               display: "grid",
               gridTemplateColumns: "1.3fr 1fr",
-              gap: 10,
+              gap: 8,
               alignItems: "stretch",
             }}
           >
@@ -311,7 +312,7 @@ export default function SummaryPage() {
                 backdropFilter: "blur(16px)",
                 WebkitBackdropFilter: "blur(16px)",
                 borderRadius: 24,
-                padding: showDecisions ? "20px 18px" : "14px 16px",
+                padding: showDecisions ? "20px 18px" : "12px 16px",
                 border: `1.5px solid ${isEco ? "rgba(76,175,80,0.3)" : "rgba(244,168,50,0.35)"}`,
                 display: "flex",
                 flexDirection: "column",
@@ -338,7 +339,7 @@ export default function SummaryPage() {
                 🚗
               </motion.div>
 
-              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 10 }}>
                 <div style={{
                   fontSize: 10, fontWeight: 700, letterSpacing: "0.13em",
                   textTransform: "uppercase",
@@ -393,7 +394,7 @@ export default function SummaryPage() {
               </div>
 
               {/* Contributor Stats */}
-              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: showDecisions ? 14 : 10 }}>
+              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: showDecisions ? 14 : 8 }}>
                 
                 {biggestContributor && (
                   <div style={{ 
@@ -467,7 +468,7 @@ export default function SummaryPage() {
             </motion.div>
 
             {/* ── RIGHT COLUMN ──────────────────────────────── */}
-            <div style={{ display: "flex", flexDirection: "column", gap: showDecisions ? 10 : 8, height: "100%" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: showDecisions ? 10 : 6, height: "100%" }}>
               {/* ── STORY SNAPSHOT ──────────────────────────────── */}
               <motion.div
                 initial={{ opacity: 0, y: 16, scale: 0.97 }}
@@ -478,7 +479,7 @@ export default function SummaryPage() {
                   backdropFilter: "blur(14px)",
                   WebkitBackdropFilter: "blur(14px)",
                   borderRadius: 20,
-                  padding: showDecisions ? "16px 18px" : "12px 14px",
+                  padding: showDecisions ? "16px 18px" : "10px 14px",
                   border: "1px solid rgba(184,212,168,0.5)",
                   flexShrink: 0,
                 }}
@@ -611,7 +612,7 @@ export default function SummaryPage() {
                   backdropFilter: "blur(14px)",
                   WebkitBackdropFilter: "blur(14px)",
                   borderRadius: 24,
-                  padding: showDecisions ? "16px 18px" : "12px 14px",
+                  padding: showDecisions ? "16px 18px" : "10px 14px",
                   border: "1px solid rgba(184,212,168,0.5)",
                   flex: 1,
                   display: "flex",
@@ -620,7 +621,7 @@ export default function SummaryPage() {
               >
               <div style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                marginBottom: showDecisions ? 12 : 8,
+                marginBottom: showDecisions ? 12 : 6,
               }}>
                 <div style={{
                   fontSize: 11, fontWeight: 700, letterSpacing: "0.11em",
@@ -646,11 +647,11 @@ export default function SummaryPage() {
                   Keep playing to unlock missions 🌱
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: showDecisions ? 12 : 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: showDecisions ? 12 : 6 }}>
                   {(showAllMissions ? unlockedMissions : unlockedMissions.slice(0, 3)).map(mission => (
                     <div key={mission.id} style={{
-                      display: "flex", alignItems: "flex-start", gap: showDecisions ? 14 : 12,
-                      padding: showDecisions ? "14px 16px" : "10px 14px", borderRadius: 16,
+                      display: "flex", alignItems: "flex-start", gap: showDecisions ? 14 : 10,
+                      padding: showDecisions ? "14px 16px" : "8px 12px", borderRadius: 16,
                       background: "rgba(74,124,47,0.05)",
                       border: "1px dashed rgba(74,124,47,0.22)",
                     }}>
@@ -696,7 +697,7 @@ export default function SummaryPage() {
               backdropFilter: "blur(14px)",
               WebkitBackdropFilter: "blur(14px)",
               borderRadius: 24,
-              padding: showDecisions ? "13px 20px" : "10px 18px",
+              padding: showDecisions ? "13px 20px" : "8px 16px",
               border: "1px solid rgba(244, 168, 50, 0.25)",
               display: "flex",
               alignItems: "center",
@@ -753,7 +754,7 @@ export default function SummaryPage() {
               whileTap={{ scale: 0.97 }}
               onClick={() => router.push("/story/future")}
               style={{
-                flex: 1, padding: showDecisions ? "13px 20px" : "11px 16px",
+                flex: 1, padding: showDecisions ? "13px 20px" : "10px 16px",
                 background: "linear-gradient(135deg, #4A7C2F, #2D5016)",
                 color: "white", borderRadius: 16,
                 fontWeight: 700, fontSize: 15, border: "none",
@@ -769,7 +770,7 @@ export default function SummaryPage() {
               whileTap={{ scale: 0.97 }}
               onClick={handlePlayAgain}
               style={{
-                padding: showDecisions ? "13px 22px" : "11px 18px",
+                padding: showDecisions ? "13px 22px" : "10px 18px",
                 background: "rgba(255,255,255,0.8)",
                 backdropFilter: "blur(10px)",
                 WebkitBackdropFilter: "blur(10px)",
