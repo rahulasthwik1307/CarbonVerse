@@ -641,13 +641,13 @@ export default function FutureSimulator() {
                 margin: "0 auto 0 0",
               }}
             >
-              {/* Primary CTA (55%) */}
+              {/* Primary CTA (70%) */}
               <motion.button
                 whileHover={{ scale: 1.015 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => router.push("/story/garden")}
                 style={{
-                  flex: 1.2,
+                  flex: 1.7,
                   padding: "14px 20px",
                   background: "#F4A832",
                   color: "#2D5016",
@@ -668,22 +668,23 @@ export default function FutureSimulator() {
                 <span style={{ fontSize: 16 }}>→</span>
               </motion.button>
 
-              {/* Secondary CTA (40%) */}
+              {/* Secondary CTA (30%) */}
               <motion.button
-                whileHover={{ scale: 1.015, backgroundColor: "rgba(255, 255, 255, 0.85)" }}
+                whileHover={{ scale: 1.015, backgroundColor: "#D7ECD1" }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => { resetSession(); router.push("/story/chapter"); }}
                 style={{
-                  flex: 1,
+                  flex: 0.7,
                   padding: "14px 16px",
-                  background: "rgba(255, 255, 255, 0.4)",
+                  background: "#E8F5E3",
                   color: "#2D5016",
                   borderRadius: 16,
                   fontWeight: 600,
                   fontSize: 14,
-                  border: "1px solid rgba(184,212,168,0.5)",
+                  border: "1px solid #B8D4A8",
                   cursor: "pointer",
                   fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                  boxShadow: "0 4px 12px rgba(45,80,22,0.06)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
