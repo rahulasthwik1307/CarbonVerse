@@ -397,7 +397,7 @@ export default function FutureSimulator() {
               border: "1px solid rgba(184,212,168,0.4)",
               boxShadow: "0 6px 28px rgba(45,80,22,0.05)",
               width: "100%",
-              maxWidth: "calc((100vh - 190px) * 16 / 9 + 10px)",
+              maxWidth: "100%",
               margin: "0 auto 0 0",
               display: "flex",
               position: "relative",
@@ -637,17 +637,17 @@ export default function FutureSimulator() {
                 display: "flex",
                 gap: 12,
                 width: "100%",
-                maxWidth: "calc((100vh - 190px) * 16 / 9 + 10px)",
+                maxWidth: "100%",
                 margin: "0 auto 0 0",
               }}
             >
-              {/* Primary CTA (60%) */}
+              {/* Primary CTA (55%) */}
               <motion.button
                 whileHover={{ scale: 1.015 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => router.push("/story/garden")}
                 style={{
-                  flex: 1.3,
+                  flex: 1.2,
                   padding: "14px 20px",
                   background: "#F4A832",
                   color: "#2D5016",
