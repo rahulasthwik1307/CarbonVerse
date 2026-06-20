@@ -345,7 +345,7 @@ export default function FutureSimulator() {
             <div className="future-left-column" style={{
               display: "flex",
               flexDirection: "column",
-              gap: 4,
+              gap: 12,
               minHeight: 0,
               justifyContent: "space-between",
             }}>
@@ -636,8 +636,9 @@ export default function FutureSimulator() {
               style={{
                 display: "flex",
                 gap: 12,
-                marginTop: 0,
                 width: "100%",
+                maxWidth: "calc((100vh - 190px) * 16 / 9 + 10px)",
+                margin: "0 auto",
               }}
             >
               {/* Primary CTA (60%) */}
@@ -646,7 +647,7 @@ export default function FutureSimulator() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => router.push("/story/garden")}
                 style={{
-                  flex: "0 0 60%",
+                  flex: 3,
                   padding: "14px 20px",
                   background: "#F4A832",
                   color: "#2D5016",
@@ -673,7 +674,7 @@ export default function FutureSimulator() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => { resetSession(); router.push("/story/chapter"); }}
                 style={{
-                  flex: "0 0 40%",
+                  flex: 2,
                   padding: "14px 16px",
                   background: "rgba(255, 255, 255, 0.4)",
                   color: "#2D5016",

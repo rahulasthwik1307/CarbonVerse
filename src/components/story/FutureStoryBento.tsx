@@ -176,7 +176,7 @@ export default function FutureStoryBento({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 10,
+        gap: 12,
         width: "100%",
         height: "100%",
         paddingTop: 12,
@@ -196,7 +196,7 @@ export default function FutureStoryBento({
             "verd verd"
           `,
           gridTemplateRows: "auto 1fr 1fr auto",
-          gap: 10,
+          gap: 12,
           height: "100%",
         }}
         className="bento-grid-sidebar"
