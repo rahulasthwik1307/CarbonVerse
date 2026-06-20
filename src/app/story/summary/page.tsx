@@ -163,9 +163,9 @@ export default function SummaryPage() {
       <div
         style={{
           position: "absolute", inset: 0, zIndex: 20,
-          overflowY: (showDecisions || showAllMissions) ? "auto" : "hidden", overscrollBehavior: "none", scrollbarWidth: "none", msOverflowStyle: "none",
-          display: "flex", flexDirection: "column", alignItems: "center",
-          padding: (showDecisions || showAllMissions) ? "32px 16px" : "12px 16px",
+          overflowY: "auto", overscrollBehavior: "none", scrollbarWidth: "none", msOverflowStyle: "none",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          padding: "16px 20px",
         }}
       >
 
@@ -187,8 +187,8 @@ export default function SummaryPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
           style={{
-            width: "100%", maxWidth: 900,
-            marginTop: "auto", marginBottom: "auto", flexShrink: 0,
+            width: "100%", maxWidth: 960,
+            flexShrink: 0,
             display: "flex", flexDirection: "column", 
             gap: showDecisions ? 12 : 6,
             background: "rgba(255, 255, 255, 0.72)",
@@ -196,7 +196,7 @@ export default function SummaryPage() {
             WebkitBackdropFilter: "blur(20px)",
             border: "1px solid rgba(184, 212, 168, 0.5)",
             borderRadius: 32,
-            padding: showDecisions ? 24 : 12,
+            padding: showDecisions ? "28px 32px" : "12px 24px",
             boxShadow: "0 8px 40px rgba(45, 80, 22, 0.10)",
           }}
         >
@@ -216,7 +216,7 @@ export default function SummaryPage() {
                 border: "1px solid rgba(184, 212, 168, 0.6)",
                 boxShadow: "0 4px 24px rgba(45, 80, 22, 0.08)",
                 borderRadius: 24,
-                padding: showDecisions ? "24px 28px" : "12px 20px",
+                padding: showDecisions ? "28px 36px" : "12px 24px",
                 overflow: "hidden",
                 display: "flex",
                 alignItems: "center",
@@ -237,7 +237,7 @@ export default function SummaryPage() {
               transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
               style={{ flexShrink: 0 }}
             >
-              <VerdOrb size={showDecisions ? 70 : 54} />
+              <VerdOrb size={showDecisions ? 76 : 58} />
             </motion.div>
 
             {/* Headline block */}
@@ -248,21 +248,21 @@ export default function SummaryPage() {
                 transition={{ delay: 0.3, duration: 0.6 }}
               >
                 <div style={{
-                  fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
+                  fontSize: 12, fontWeight: 700, letterSpacing: "0.12em",
                   textTransform: "uppercase", color: "#F4A832", marginBottom: 5,
                 }}>
                   Chapter Complete ✦
                 </div>
 
                 <h1 style={{
-                  fontSize: 24, fontWeight: 900, lineHeight: 1.2,
+                  fontSize: 26, fontWeight: 900, lineHeight: 1.2,
                   color: "#2D5016", margin: 0,
                 }}>
                   {dayName} Changed Your World
                 </h1>
 
                 <p style={{
-                  fontSize: 13, color: "#6B8F5E",
+                  fontSize: 14, color: "#6B8F5E",
                   margin: "4px 0 0", lineHeight: 1.4,
                 }}>
                   Your choices wrote today's story —{" "}
@@ -280,7 +280,7 @@ export default function SummaryPage() {
               background: "rgba(74,124,47,0.1)",
               border: "1px solid #B8D4A8",
               borderRadius: 30,
-              fontSize: 12, fontWeight: 600,
+              fontSize: 13, fontWeight: 600,
               color: "#4A7C2F",
               whiteSpace: "nowrap",
             }}>
@@ -312,7 +312,7 @@ export default function SummaryPage() {
                 backdropFilter: "blur(16px)",
                 WebkitBackdropFilter: "blur(16px)",
                 borderRadius: 24,
-                padding: showDecisions ? "20px 18px" : "12px 16px",
+                padding: showDecisions ? "24px 24px" : "12px 20px",
                 border: `1.5px solid ${isEco ? "rgba(76,175,80,0.3)" : "rgba(244,168,50,0.35)"}`,
                 display: "flex",
                 flexDirection: "column",
@@ -341,7 +341,7 @@ export default function SummaryPage() {
 
               <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 10 }}>
                 <div style={{
-                  fontSize: 10, fontWeight: 700, letterSpacing: "0.13em",
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.13em",
                   textTransform: "uppercase",
                   color: isEco ? "rgba(126,200,106,0.75)" : "rgba(255,168,80,0.75)",
                   marginBottom: showDecisions ? 10 : 4, alignSelf: "flex-start"
@@ -379,14 +379,14 @@ export default function SummaryPage() {
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: 0.55, duration: 0.55, ease: "backOut" }}
                       style={{
-                        fontSize: 28, fontWeight: 900, lineHeight: 1.1,
+                        fontSize: 32, fontWeight: 900, lineHeight: 1.1,
                         color: isEco ? "#2D7A1F" : "#A0401A",
                         textShadow: isEco ? "0 0 24px rgba(76,175,80,0.3)" : "0 0 24px rgba(255,107,107,0.2)",
                       }}
                     >
                       {isEco ? `−${Math.abs(totalCarbon)}` : `+${Math.abs(totalCarbon)}`}
                     </motion.div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", marginTop: 2 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", marginTop: 2 }}>
                       kg CO₂ today
                     </div>
                   </div>
@@ -403,11 +403,11 @@ export default function SummaryPage() {
                     boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
                     backdropFilter: "blur(8px)",
                   }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", marginBottom: 4 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", marginBottom: 4 }}>
                       🏆 Biggest Contributor
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#2D5016", display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 16 }}>{biggestContributor.emoji}</span>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#2D5016", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 18 }}>{biggestContributor.emoji}</span>
                       {biggestContributor.name} <span style={{ opacity: 0.5, fontWeight: 400 }}>•</span> {biggestContributor.pct}%
                     </div>
                   </div>
@@ -441,15 +441,15 @@ export default function SummaryPage() {
                             transition={{ duration: 1, delay: 0.8 }}
                           />
                         </svg>
-                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>
+                        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>
                           {b.emoji}
                         </div>
                       </div>
                       {/* Content */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: "#2D5016" }}>{b.name}</span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: b.color }}>{b.pct}%</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#2D5016" }}>{b.name}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: b.color }}>{b.pct}%</span>
                         </div>
                         {/* Progress Bar */}
                         <div style={{ height: 4, borderRadius: 999, background: "rgba(0,0,0,0.05)", overflow: "hidden" }}>
@@ -479,13 +479,13 @@ export default function SummaryPage() {
                   backdropFilter: "blur(14px)",
                   WebkitBackdropFilter: "blur(14px)",
                   borderRadius: 20,
-                  padding: showDecisions ? "16px 18px" : "10px 14px",
+                  padding: showDecisions ? "20px 24px" : "10px 18px",
                   border: "1px solid rgba(184,212,168,0.5)",
                   flexShrink: 0,
                 }}
               >
               <div style={{
-                fontSize: 10, fontWeight: 700, letterSpacing: "0.11em",
+                fontSize: 11, fontWeight: 700, letterSpacing: "0.11em",
                 textTransform: "uppercase", color: "#6B8F5E", marginBottom: showDecisions ? 8 : 4,
               }}>
                 📖 Story Snapshot
@@ -494,30 +494,30 @@ export default function SummaryPage() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
                 {ecoCount > 0 && (
                   <div style={{
-                    padding: "4px 10px", borderRadius: 20,
+                    padding: "4px 12px", borderRadius: 20,
                     background: "rgba(126,200,106,0.14)",
                     border: "1px solid rgba(126,200,106,0.38)",
-                    fontSize: 12, fontWeight: 700, color: "#2D5016",
+                    fontSize: 13, fontWeight: 700, color: "#2D5016",
                   }}>
                     🌱 Eco ×{ecoCount}
                   </div>
                 )}
                 {highCount > 0 && (
                   <div style={{
-                    padding: "4px 10px", borderRadius: 20,
+                    padding: "4px 12px", borderRadius: 20,
                     background: "rgba(255,107,107,0.10)",
                     border: "1px solid rgba(255,107,107,0.28)",
-                    fontSize: 12, fontWeight: 700, color: "#A0401A",
+                    fontSize: 13, fontWeight: 700, color: "#A0401A",
                   }}>
                     ⚠️ High ×{highCount}
                   </div>
                 )}
                 {moderateCount > 0 && (
                   <div style={{
-                    padding: "4px 10px", borderRadius: 20,
+                    padding: "4px 12px", borderRadius: 20,
                     background: "rgba(255,213,128,0.18)",
                     border: "1px solid rgba(244,168,50,0.36)",
-                    fontSize: 12, fontWeight: 700, color: "#5A4000",
+                    fontSize: 13, fontWeight: 700, color: "#5A4000",
                   }}>
                     🟡 Moderate ×{moderateCount}
                   </div>
@@ -527,7 +527,7 @@ export default function SummaryPage() {
               <button
                 onClick={() => setShowDecisions(v => !v)}
                 style={{
-                  marginTop: showDecisions ? 8 : 4, fontSize: 12, color: "#4A7C2F",
+                  marginTop: showDecisions ? 8 : 4, fontSize: 13, color: "#4A7C2F",
                   fontWeight: 700, background: "none", border: "none",
                   cursor: "pointer", padding: 0,
                   display: "flex", alignItems: "center", gap: 4,
@@ -557,13 +557,13 @@ export default function SummaryPage() {
                           display: "flex",
                           flexDirection: "column",
                         }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", marginBottom: 6 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#6B8F5E", marginBottom: 6 }}>
                             Morning 🌅
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                             {chapter1Decisions.map((d, i) => (
-                              <div key={`m-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 13, fontWeight: 500, color: "#2D5016", lineHeight: 1.2 }}>
-                                <span style={{ fontSize: 13, marginTop: 1 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
+                              <div key={`m-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 14, fontWeight: 500, color: "#2D5016", lineHeight: 1.2 }}>
+                                <span style={{ fontSize: 14, marginTop: 1 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
                                 <span>{d.choice}</span>
                               </div>
                             ))}
@@ -582,13 +582,13 @@ export default function SummaryPage() {
                           display: "flex",
                           flexDirection: "column",
                         }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", marginBottom: 6 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#6B8F5E", marginBottom: 6 }}>
                             Evening 🌙
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                             {chapter2Decisions.map((d, i) => (
-                              <div key={`e-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 13, fontWeight: 500, color: "#2D5016", lineHeight: 1.2 }}>
-                                <span style={{ fontSize: 13, marginTop: 1 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
+                              <div key={`e-${i}`} style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 14, fontWeight: 500, color: "#2D5016", lineHeight: 1.2 }}>
+                                <span style={{ fontSize: 14, marginTop: 1 }}>{d.impactType === 'eco' ? '🌱' : d.impactType === 'high' ? '⚠️' : '🟡'}</span>
                                 <span>{d.choice}</span>
                               </div>
                             ))}
@@ -612,7 +612,7 @@ export default function SummaryPage() {
                   backdropFilter: "blur(14px)",
                   WebkitBackdropFilter: "blur(14px)",
                   borderRadius: 24,
-                  padding: showDecisions ? "16px 18px" : "10px 14px",
+                  padding: showDecisions ? "20px 24px" : "10px 18px",
                   border: "1px solid rgba(184,212,168,0.5)",
                   flex: 1,
                   display: "flex",
@@ -624,7 +624,7 @@ export default function SummaryPage() {
                 marginBottom: showDecisions ? 12 : 6,
               }}>
                 <div style={{
-                  fontSize: 11, fontWeight: 700, letterSpacing: "0.11em",
+                  fontSize: 12, fontWeight: 700, letterSpacing: "0.11em",
                   textTransform: "uppercase", color: "#6B8F5E",
                 }}>
                   🎯 Missions
@@ -633,7 +633,7 @@ export default function SummaryPage() {
                   <button
                     onClick={() => setShowAllMissions(v => !v)}
                     style={{
-                      fontSize: 11, fontWeight: 700, color: "#4A7C2F",
+                      fontSize: 12, fontWeight: 700, color: "#4A7C2F",
                       background: "none", border: "none", cursor: "pointer", padding: 0,
                     }}
                   >
@@ -643,7 +643,7 @@ export default function SummaryPage() {
               </div>
 
               {unlockedMissions.length === 0 ? (
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#6B8F5E" }}>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#6B8F5E" }}>
                   Keep playing to unlock missions 🌱
                 </div>
               ) : (
@@ -655,22 +655,22 @@ export default function SummaryPage() {
                       background: "rgba(74,124,47,0.05)",
                       border: "1px dashed rgba(74,124,47,0.22)",
                     }}>
-                      <span style={{ fontSize: 24, flexShrink: 0, marginTop: 2 }}>{mission.emoji}</span>
+                      <span style={{ fontSize: 26, flexShrink: 0, marginTop: 2 }}>{mission.emoji}</span>
                       <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
                         <div style={{
-                          fontSize: 13, fontWeight: 700, color: "#2D5016",
+                          fontSize: 14, fontWeight: 700, color: "#2D5016",
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                         }}>
                           {mission.title}
                         </div>
                         <div style={{
-                          fontSize: 11, fontWeight: 600, color: "#4A7C2F",
+                          fontSize: 12, fontWeight: 600, color: "#4A7C2F",
                           display: "flex", alignItems: "center", gap: 4
                         }}>
                           🏅 {getBadgeSubtitle(mission.title)}
                         </div>
                         <div style={{
-                          fontSize: 11, color: "#6B8F5E",
+                          fontSize: 12, color: "#6B8F5E",
                           lineHeight: 1.4,
                         }}>
                           {mission.description}
@@ -697,7 +697,7 @@ export default function SummaryPage() {
               backdropFilter: "blur(14px)",
               WebkitBackdropFilter: "blur(14px)",
               borderRadius: 24,
-              padding: showDecisions ? "13px 20px" : "8px 16px",
+              padding: showDecisions ? "16px 24px" : "8px 20px",
               border: "1px solid rgba(244, 168, 50, 0.25)",
               display: "flex",
               alignItems: "center",
@@ -710,13 +710,13 @@ export default function SummaryPage() {
                 animate={{ rotate: [0, 12, -12, 0] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
               >
-                <VerdOrb size={34} />
+                <VerdOrb size={38} />
               </motion.div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#2D5016" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#2D5016" }}>
                   Verd prepared {loadingPlan ? "..." : actionPlan.length} actions for tomorrow 🌟
                 </div>
-                <div style={{ fontSize: 11, color: "#6B8F5E" }}>
+                <div style={{ fontSize: 12, color: "#6B8F5E" }}>
                   Your personalised eco-plan is ready
                 </div>
               </div>
@@ -727,10 +727,10 @@ export default function SummaryPage() {
               whileTap={{ scale: 0.96 }}
               onClick={() => router.push("/story/future")}
               style={{
-                padding: "8px 18px",
+                padding: "8px 20px",
                 background: "#F4A832",
                 color: "white", borderRadius: 16, fontWeight: 700,
-                fontSize: 13, border: "none", cursor: "pointer",
+                fontSize: 14, border: "none", cursor: "pointer",
                 whiteSpace: "nowrap",
                 boxShadow: "0 2px 10px rgba(244,168,50,0.38)",
               }}
@@ -754,10 +754,10 @@ export default function SummaryPage() {
               whileTap={{ scale: 0.97 }}
               onClick={() => router.push("/story/future")}
               style={{
-                flex: 1, padding: showDecisions ? "13px 20px" : "10px 16px",
+                flex: 1, padding: showDecisions ? "14px 28px" : "10px 20px",
                 background: "linear-gradient(135deg, #4A7C2F, #2D5016)",
                 color: "white", borderRadius: 16,
-                fontWeight: 700, fontSize: 15, border: "none",
+                fontWeight: 700, fontSize: 16, border: "none",
                 cursor: "pointer",
                 boxShadow: "0 4px 18px rgba(45,80,22,0.30)",
               }}
@@ -770,12 +770,12 @@ export default function SummaryPage() {
               whileTap={{ scale: 0.97 }}
               onClick={handlePlayAgain}
               style={{
-                padding: showDecisions ? "13px 22px" : "10px 18px",
+                padding: showDecisions ? "14px 30px" : "10px 22px",
                 background: "rgba(255,255,255,0.8)",
                 backdropFilter: "blur(10px)",
                 WebkitBackdropFilter: "blur(10px)",
                 color: "#2D5016", borderRadius: 16,
-                fontWeight: 600, fontSize: 15,
+                fontWeight: 600, fontSize: 16,
                 border: "1.5px solid #B8D4A8",
                 cursor: "pointer",
               }}
