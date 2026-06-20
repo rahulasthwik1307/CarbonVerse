@@ -190,9 +190,9 @@ export default function FutureStoryBento({
           gridTemplateColumns: "1fr 1fr",
           gridTemplateAreas: `
             "diff diff"
-            "verd ripple"
-            "verd hero"
-            "snap snap"
+            "snap ripple"
+            "snap hero"
+            "verd verd"
           `,
           gridTemplateRows: "auto 1fr 1fr auto",
           gap: 10,
@@ -310,16 +310,15 @@ export default function FutureStoryBento({
           )}
         </BentoCard>
 
-        {/* ───── Card 2: Verd's Observation (Spans 2 rows vertically) ───── */}
+        {/* ───── Card 2: Verd's Observation (Full Width Bottom) ───── */}
         <BentoCard
           index={1}
           gridArea="verd"
           style={{
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "flex-start",
-            gap: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 16,
             borderLeft: "3px solid #F4A832",
             background: "rgba(255, 248, 231, 0.3)",
           }}
@@ -332,17 +331,17 @@ export default function FutureStoryBento({
             <VerdOrb size={36} mood={totalCarbonDelta < 0 ? "eco" : totalCarbonDelta > 10 ? "high" : "moderate"} />
           </motion.div>
 
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>
               🌿 Verd&apos;s Observation
             </div>
             <p
               style={{
-                fontSize: 12,
-                fontWeight: 400,
+                fontSize: 13,
+                fontWeight: 500,
                 fontStyle: "italic",
                 color: "#2D5016",
-                lineHeight: 1.5,
+                lineHeight: 1.4,
                 margin: 0,
                 fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
               }}
@@ -425,23 +424,28 @@ export default function FutureStoryBento({
           )}
         </BentoCard>
 
-        {/* ───── Card 5: Future Snapshot (Full Width) ───── */}
-        <BentoCard index={4} gridArea="snap" style={{ background: "#FFF8E7", padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
+        {/* ───── Card 5: Future Snapshot (Left Column, Tall) ───── */}
+        <BentoCard index={4} gridArea="snap" style={{ 
+          background: "#FFF8E7", 
+          padding: "16px",
+          display: "flex",
+          flexDirection: "column"
+        }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
             🌳 Future Snapshot
           </div>
 
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 8,
-              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              flex: 1,
             }}
             className="snapshot-grid-sidebar"
           >
             {/* Trees */}
-            <div>
+            <div className="snap-item">
               <div
                 style={{
                   fontSize: "clamp(26px, 3.2vw, 36px)",
@@ -454,16 +458,18 @@ export default function FutureStoryBento({
               >
                 <AnimatedNumber value={treesNeeded} />
               </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#6B8F5E", marginTop: 3 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", marginTop: 4 }}>
                 Trees
               </div>
-              <div style={{ fontSize: 9, color: "#6B8F5E", fontStyle: "italic", marginTop: 1, lineHeight: 1.2 }}>
+              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 1, lineHeight: 1.2 }}>
                 absorbs yearly CO₂
               </div>
             </div>
 
+            <div style={{ height: 1, background: "rgba(184,212,168,0.4)", margin: "12px 0" }} className="snap-divider" />
+
             {/* Driving */}
-            <div style={{ borderLeft: "1px solid rgba(184,212,168,0.4)", borderRight: "1px solid rgba(184,212,168,0.4)", paddingLeft: 4, paddingRight: 4 }}>
+            <div className="snap-item">
               <div
                 style={{
                   fontSize: "clamp(26px, 3.2vw, 36px)",
@@ -476,16 +482,18 @@ export default function FutureStoryBento({
               >
                 <AnimatedNumber value={carKm} suffix="" />
               </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#6B8F5E", marginTop: 3 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", marginTop: 4 }}>
                 km Driving
               </div>
-              <div style={{ fontSize: 9, color: "#6B8F5E", fontStyle: "italic", marginTop: 1, lineHeight: 1.2 }}>
+              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 1, lineHeight: 1.2 }}>
                 equivalent distance
               </div>
             </div>
 
+            <div style={{ height: 1, background: "rgba(184,212,168,0.4)", margin: "12px 0" }} className="snap-divider" />
+
             {/* Home Energy */}
-            <div>
+            <div className="snap-item">
               <div
                 style={{
                   fontSize: "clamp(26px, 3.2vw, 36px)",
@@ -498,10 +506,10 @@ export default function FutureStoryBento({
               >
                 <AnimatedNumber value={homeDays} />
               </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#6B8F5E", marginTop: 3 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", marginTop: 4 }}>
                 Days Energy
               </div>
-              <div style={{ fontSize: 9, color: "#6B8F5E", fontStyle: "italic", marginTop: 1, lineHeight: 1.2 }}>
+              <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", marginTop: 1, lineHeight: 1.2 }}>
                 powering a home
               </div>
             </div>
@@ -524,9 +532,22 @@ export default function FutureStoryBento({
             grid-template-rows: auto !important;
             grid-template-areas:
               "diff diff"
+              "snap snap"
               "ripple hero"
-              "verd verd"
-              "snap snap" !important;
+              "verd verd" !important;
+          }
+          .snapshot-grid-sidebar {
+            flex-direction: row !important;
+            align-items: center;
+          }
+          .snap-item {
+            flex: 1;
+            text-align: center;
+          }
+          .snap-divider {
+            width: 1px !important;
+            height: 40px !important;
+            margin: 0 16px !important;
           }
         }
 
@@ -538,24 +559,21 @@ export default function FutureStoryBento({
               "diff"
               "ripple"
               "hero"
-              "verd"
-              "snap" !important;
+              "snap"
+              "verd" !important;
           }
           .snapshot-grid-sidebar {
-            grid-template-columns: 1fr !important;
-            gap: 14px !important;
+            flex-direction: column !important;
+            align-items: stretch;
           }
-          .snapshot-grid-sidebar > div {
-            border-left: none !important;
-            border-right: none !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            border-bottom: 1px solid rgba(184,212,168,0.3);
-            padding-bottom: 12px;
+          .snap-item {
+            flex: none;
+            text-align: left;
           }
-          .snapshot-grid-sidebar > div:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
+          .snap-divider {
+            width: 100% !important;
+            height: 1px !important;
+            margin: 12px 0 !important;
           }
         }
       `}</style>
