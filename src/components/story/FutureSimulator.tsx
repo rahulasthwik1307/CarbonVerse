@@ -584,36 +584,37 @@ export default function FutureSimulator() {
                   transform: "translateX(-50%)",
                   width: "calc(100% - 32px)",
                   maxWidth: 580,
-                  backgroundColor: "rgba(255, 248, 231, 0.45)",
-                  backdropFilter: "blur(6px)",
-                  border: "1px solid rgba(184, 212, 168, 0.35)",
+                  background: "linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 248, 231, 0.18) 100%)",
+                  backdropFilter: "blur(10px)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  border: "1px solid rgba(184, 212, 168, 0.28)",
                   borderRadius: 16,
-                  padding: "10px 16px",
+                  padding: "12px 18px",
                   zIndex: 10,
                   textAlign: "center",
-                  boxShadow: "0 4px 16px rgba(45, 80, 22, 0.08)",
+                  boxShadow: "0 8px 32px rgba(45, 80, 22, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.45)",
                   pointerEvents: "none",
                 }}>
                   <div style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: "#6B8F5E",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: "#4A7C2F",
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
-                    marginBottom: 2,
-                    textShadow: "0 1px 1px rgba(255, 255, 255, 0.9)",
+                    marginBottom: 4,
+                    textShadow: "0 1px 1px rgba(255, 255, 255, 0.95), 0 1px 3px rgba(255, 255, 255, 0.8)",
                   }}>
                     📖 One Year Later
                   </div>
                   <p style={{
-                    fontSize: 13,
-                    lineHeight: 1.4,
+                    fontSize: 13.5,
+                    lineHeight: 1.5,
                     color: "#2D5016",
                     margin: 0,
-                    fontWeight: 500,
+                    fontWeight: 600,
                     fontStyle: "italic",
                     fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                    textShadow: "0 1px 2px rgba(255, 255, 255, 0.85)",
+                    textShadow: "0 1px 2px #fff, 0 1px 4px #fff, 0 0 8px rgba(255, 255, 255, 0.8)",
                   }}>
                     {sliderPct < 50 
                       ? "In the greener timeline, the air is sweet and the city breathes easy. This is the garden we can grow together when we seed our tomorrow."
