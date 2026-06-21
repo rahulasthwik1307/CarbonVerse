@@ -145,6 +145,12 @@ interface SessionState {
     emoji: string;
     description: string;
   }>;
+  verdContext: {
+    lastReceiptType: string | null;
+    lastReceiptCO2: number | null;
+    totalReceiptsAnalyzed: number;
+    suggestedActions: string[];
+  };
   
   // Actions
   setCity: (city: string) => void;
@@ -173,6 +179,8 @@ interface SessionState {
   deleteReceipt: (id: string) => void;
   setCoachRecommendations: (actions: SessionState["coach"]["recommendations"]) => void;
   acceptCoachPlan: (actionIds: string[]) => void;
+  updateVerdContext: (patch: Partial<SessionState["verdContext"]>) => void;
+  acceptDetectiveMission: (mission: { id: string; title: string; emoji: string; description: string; targetType: string }) => void;
 }
 
 const defaultState = {
@@ -213,6 +221,12 @@ const defaultState = {
   coach: {
     recommendations: [],
     isCompleted: false,
+  },
+  verdContext: {
+    lastReceiptType: null,
+    lastReceiptCO2: null,
+    totalReceiptsAnalyzed: 0,
+    suggestedActions: [],
   },
   activeMissions: [
     {
@@ -434,6 +448,7 @@ export const useSessionStore = create<SessionState>()(
     activeMissions: state.activeMissions,
     achievements: state.achievements,
     coach: state.coach,
+    verdContext: state.verdContext,
     // Clear story-specific cached data
     storyCompleted: false,
     completedStoryData: null,
@@ -769,6 +784,39 @@ export const useSessionStore = create<SessionState>()(
       }
     };
   }),
+
+  updateVerdContext: (patch) => set((state) => ({
+    verdContext: { ...state.verdContext, ...patch }
+  })),
+
+  acceptDetectiveMission: (mission) => set((state) => {
+    const newMission = {
+      ...mission,
+      targetType: mission.targetType as any,
+      targetCount: 1,
+      currentCount: 0,
+      completed: false,
+      reward: "Detective Badge"
+    };
+    
+    const nowStr = new Date().toISOString();
+    return {
+      activeMissions: [...state.activeMissions, newMission],
+      memoryBook: {
+        ...state.memoryBook,
+        timelineEvents: [
+          ...state.memoryBook.timelineEvents,
+          {
+            id: crypto.randomUUID(),
+            date: nowStr,
+            type: "story_completed", // using this for simple green styling
+            title: `🌱 Accepted ${mission.title} Mission`,
+            carbonDelta: 0
+          }
+        ]
+      }
+    };
+  }),
     }),
     {
       name: "carbonverse-session-storage",
@@ -789,6 +837,7 @@ export const useSessionStore = create<SessionState>()(
         worldState: state.worldState,
         totalCarbonDelta: state.totalCarbonDelta,
         currentChapter: state.currentChapter,
+        verdContext: state.verdContext,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

@@ -4,11 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { useSessionStore } from "@/lib/session-store";
+import { usePathname } from "next/navigation";
 
 export default function LandingWorld() {
   const containerRef = useRef<HTMLDivElement>(null);
   const hillsRef = useRef<HTMLDivElement>(null);
   const cloudsRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const isDetectivePage = pathname === "/detective";
+  
   const { worldState } = useSessionStore();
   const { planetMood, skyQuality, birdCount, greenCoverage } = worldState;
 
@@ -135,6 +139,8 @@ export default function LandingWorld() {
           height: 360,
           pointerEvents: "none",
           zIndex: 2,
+          opacity: isDetectivePage ? 0.4 : 1,
+          filter: isDetectivePage ? "blur(4px)" : "none",
         }}
       >
         <motion.div

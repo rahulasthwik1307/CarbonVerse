@@ -10,7 +10,7 @@ export default function DetectivePage() {
       <div style={{
         position: "absolute", inset: 0, zIndex: 20,
         overflowY: "auto", scrollbarWidth: "none",
-        padding: "24px 16px 80px",
+        padding: "80px 16px 80px",
       }}>
         <style>{`div::-webkit-scrollbar{display:none}`}</style>
         <motion.div
