@@ -517,11 +517,14 @@ export default function DetectiveResults({ result, city, onReset }: DetectiveRes
         {/* Analyze Another */}
         <button
           onClick={onReset}
-          className="w-full py-2 rounded-2xl font-semibold text-[12px] md:text-[13px] cursor-pointer transition-transform active:scale-[0.97]"
+          className="w-full py-3 rounded-2xl font-bold text-[13px] md:text-[14px] cursor-pointer transition-all hover:-translate-y-0.5 active:scale-[0.97]"
           style={{
-            background: "transparent",
-            border: "1.5px dashed rgba(184, 212, 168, 0.5)",
-            color: "#4A7C2F"
+            background: "rgba(255, 255, 255, 0.8)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            border: "1px solid rgba(184, 212, 168, 0.5)",
+            color: "#2D5016",
+            boxShadow: "0 4px 12px rgba(45,80,22,0.08)"
           }}
         >
           🔍 Analyze Another Receipt

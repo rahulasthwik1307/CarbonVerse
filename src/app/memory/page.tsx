@@ -1,6 +1,7 @@
 "use client"
 import MemoryBook from "@/components/memory/MemoryBook"
 import LandingWorld from "@/components/world/LandingWorld"
+import MemoryBookButton from "@/components/ui/MemoryBookButton"
 
 export default function MemoryPage() {
   return (
@@ -14,6 +15,7 @@ export default function MemoryPage() {
         <style>{`div::-webkit-scrollbar{display:none}`}</style>
         <MemoryBook />
       </div>
+      <MemoryBookButton />
     </main>
   );
 }
