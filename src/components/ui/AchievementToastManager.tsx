@@ -10,11 +10,19 @@ export default function AchievementToastManager() {
 
   useEffect(() => {
     if (pendingAchievements.length > 0 && !currentToast) {
-      setCurrentToast({ ...pendingAchievements[0], type: "achievement" });
-      clearPendingAchievements();
+      const first = pendingAchievements[0];
+      const timer = setTimeout(() => {
+        setCurrentToast({ ...first, type: "achievement" });
+        clearPendingAchievements();
+      }, 0);
+      return () => clearTimeout(timer);
     } else if (pendingMissions && pendingMissions.length > 0 && !currentToast) {
-      setCurrentToast({ ...pendingMissions[0], type: "mission" });
-      clearPendingMissions();
+      const first = pendingMissions[0];
+      const timer = setTimeout(() => {
+        setCurrentToast({ ...first, type: "mission" });
+        clearPendingMissions();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [pendingAchievements, pendingMissions, currentToast, clearPendingAchievements, clearPendingMissions]);
 

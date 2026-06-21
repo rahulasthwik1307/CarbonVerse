@@ -7,10 +7,6 @@ import { useSessionStore } from "@/lib/session-store";
 import { DetectiveResult } from "@/types/carbon";
 import ReceiptUpload from "./ReceiptUpload";
 import DetectiveResults from "./DetectiveResults";
-import ImpactCard from "./ImpactCard";
-import VerdInsightCard from "./VerdInsightCard";
-import MissionOpportunityCard from "./MissionOpportunityCard";
-import BadgePreviewCard from "./BadgePreviewCard";
 import VerdOrb from "@/components/ui/VerdOrb";
 
 type DetectiveStep = "upload" | "analyzing" | "impact" | "insight" | "mission" | "badge" | "duplicate_warning" | "results" | "error";
@@ -27,19 +23,14 @@ export default function CarbonDetective() {
 
   const [loadingTextIdx, setLoadingTextIdx] = useState(0);
   const [analyzingProgress, setAnalyzingProgress] = useState(0);
-  const loadingTexts = [
-    "Verd is examining your receipt...",
-    "Reading line items...",
-    "Estimating carbon impact...",
-    "Finding improvement opportunities...",
-    "Building your report..."
-  ];
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     if (step === "analyzing") {
-      setLoadingTextIdx(0);
-      setAnalyzingProgress(0);
+      setTimeout(() => {
+        setLoadingTextIdx(0);
+        setAnalyzingProgress(0);
+      }, 0);
       
       const timings = [800, 800, 900, 900];
       let currentStep = 0;
@@ -114,7 +105,7 @@ export default function CarbonDetective() {
     }
   };
 
-  const proceedWithResult = (dataToSave: any) => {
+  const proceedWithResult = (dataToSave: DetectiveResult) => {
     const { addReceiptToMemoryBook, updateMissionProgress, checkAndUnlockAchievements, updateVerdContext, generateNewMissions } = useSessionStore.getState();
     
     addReceiptToMemoryBook({
@@ -122,7 +113,7 @@ export default function CarbonDetective() {
       merchantName: dataToSave.merchantName || "Unknown",
       totalCO2: dataToSave.totalCO2,
       impactLevel: dataToSave.impactLevel,
-      items: dataToSave.items.map((i: any) => ({
+      items: dataToSave.items.map((i) => ({
         name: i.name,
         estimatedCO2: i.estimatedCO2
       }))
@@ -253,7 +244,7 @@ export default function CarbonDetective() {
                     <VerdOrb size={64} mood="eco" />
                   </motion.div>
                   <h2 className="text-[20px] font-bold tracking-tight" style={{ color: "#2D5016" }}>
-                    🕵️ Verd's Investigation
+                    🕵️ Verd&apos;s Investigation
                   </h2>
                   <p className="text-[14px] font-medium mt-1" style={{ color: "#6B8F5E" }}>
                     Analyzing receipt carbon footprints...
@@ -344,7 +335,7 @@ export default function CarbonDetective() {
                 exit={{ opacity: 0 }}
                 className="w-full"
               >
-                <DetectiveResults result={result} city={city || ""} onReset={handleReset} />
+                <DetectiveResults result={result} onReset={handleReset} />
               </motion.div>
             )}
 

@@ -1,5 +1,20 @@
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import { DetectiveResult, DetectiveItem, DetectiveSuggestion } from "@/types/carbon";
+
+interface SimplifiedResult {
+  isValid: boolean;
+  invalidReason?: string | null;
+  receiptType?: string | null;
+  merchantName?: string | null;
+  items?: Array<{ name?: string; co2?: number; estimatedCO2?: number; confidence?: string; note?: string }> | null;
+  totalCO2?: number | string | null;
+  impactLevel?: string | null;
+  totalCO2Label?: string | null;
+  verdVerdict?: string | null;
+  suggestions?: Array<{ action?: string; potentialSaving?: string; difficulty?: string }> | null;
+  topInsight?: string | null;
+}
 
 const FALLBACK_SUGGESTIONS = {
   food: [
@@ -100,13 +115,15 @@ function cleanAndParseJSON(rawResponse: string) {
   return JSON.parse(cleaned);
 }
 
-function runRecoveryParser(rawResponse: string): any {
-  console.log("[Recovery Parser] JSON.parse failed. Executing fallback regex extraction.");
+function runRecoveryParser(rawResponse: string): SimplifiedResult {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn("[Recovery Parser] JSON.parse failed. Executing fallback regex extraction.");
+  }
   const items: Array<{ name: string; co2: number }> = [];
   const suggestions: Array<{ action: string }> = [];
   let receiptType: "food" | "utility" | "shopping" | "fuel" = "food";
   let merchantName = "Merchant";
-  let isValid = true;
+  const isValid = true;
   
   const rawLower = rawResponse.toLowerCase();
   
@@ -250,12 +267,12 @@ function runRecoveryParser(rawResponse: string): any {
   };
 }
 
-function mapToFullSchema(simplified: any): any {
-  const receiptType = (simplified.receiptType || "unknown").toLowerCase();
+function mapToFullSchema(simplified: SimplifiedResult): DetectiveResult {
+  const receiptType = (simplified.receiptType || "unknown").toLowerCase() as "food" | "fuel" | "electricity" | "transport" | "shopping" | "grocery" | "utility" | "other" | "unknown";
   
   // Process items
-  const items = (simplified.items || []).map((item: any) => {
-    const estimatedCO2 = parseFloat(item.co2 ?? item.estimatedCO2 ?? 0);
+  const items: DetectiveItem[] = (simplified.items || []).map((item) => {
+    const estimatedCO2 = Number(item.co2 ?? item.estimatedCO2 ?? 0);
     
     let category = "food_packaged";
     if (receiptType === "food") {
@@ -278,7 +295,7 @@ function mapToFullSchema(simplified: any): any {
       name: item.name || "Item",
       category,
       estimatedCO2,
-      confidence: item.confidence || "high",
+      confidence: (item.confidence === "high" || item.confidence === "medium" || item.confidence === "low" ? item.confidence : "high") as "high" | "medium" | "low",
       note: item.note || `Estimated carbon footprint for ${item.name || "item"}`
     };
   });
@@ -298,15 +315,16 @@ function mapToFullSchema(simplified: any): any {
   }
 
   // Process suggestions
-  const suggestions = (simplified.suggestions || []).map((sug: any) => {
+  const totalCO2Val = Number(simplified.totalCO2 ?? 5);
+  const suggestions: DetectiveSuggestion[] = (simplified.suggestions || []).map((sug) => {
     let diff = sug.difficulty || "easy";
     if (diff !== "easy" && diff !== "medium" && diff !== "hard") {
       diff = "easy";
     }
     return {
       action: sug.action || "",
-      potentialSaving: sug.potentialSaving || `${((simplified.totalCO2 || 5) * 0.2).toFixed(1)} kg CO₂`,
-      difficulty: diff
+      potentialSaving: sug.potentialSaving || `${(totalCO2Val * 0.2).toFixed(1)} kg CO₂`,
+      difficulty: diff as "easy" | "medium" | "hard"
     };
   });
 
@@ -317,21 +335,24 @@ function mapToFullSchema(simplified: any): any {
       suggestions.push({
         action: sug.action,
         potentialSaving: sug.potentialSaving,
-        difficulty: sug.difficulty
+        difficulty: sug.difficulty as "easy" | "medium" | "hard"
       });
     });
   }
 
   // Total CO2
-  let totalCO2 = parseFloat(simplified.totalCO2 || 0);
+  let totalCO2 = typeof simplified.totalCO2 === "number" ? simplified.totalCO2 : parseFloat((simplified.totalCO2 as string) || "0");
   if (totalCO2 <= 0) {
-    totalCO2 = items.reduce((sum: number, item: any) => sum + item.estimatedCO2, 0);
+    totalCO2 = items.reduce((sum: number, item) => sum + item.estimatedCO2, 0);
   }
   totalCO2 = parseFloat(totalCO2.toFixed(1));
 
   // Impact Level
-  let impactLevel = simplified.impactLevel || "moderate";
-  if (!["low", "moderate", "high", "very_high"].includes(impactLevel)) {
+  let impactLevel: "low" | "moderate" | "high" | "very_high" = "moderate";
+  const rawImpact = simplified.impactLevel || "";
+  if (rawImpact === "low" || rawImpact === "moderate" || rawImpact === "high" || rawImpact === "very_high") {
+    impactLevel = rawImpact;
+  } else {
     if (totalCO2 < 5) impactLevel = "low";
     else if (totalCO2 < 15) impactLevel = "moderate";
     else if (totalCO2 < 40) impactLevel = "high";
@@ -384,7 +405,13 @@ function mapToFullSchema(simplified: any): any {
   }
 
   // Suggested Mission
-  let suggestedMission = undefined;
+  let suggestedMission: {
+    id: string;
+    title: string;
+    emoji: string;
+    description: string;
+    targetType: "eco_choices" | "receipt_upload" | "story_complete";
+  } | undefined = undefined;
   if (receiptType === "food") {
     suggestedMission = {
       id: "mission-seed-plate-detective",
@@ -527,20 +554,14 @@ export async function POST(req: Request) {
     });
 
     const rawResponse = completion.choices[0]?.message?.content || "";
-    console.log("---------- RAW GROQ RESPONSE ----------");
-    console.log(rawResponse);
-    console.log("----------------------------------------");
 
     let simplifiedResult;
-    let usedRecoveryParser = false;
 
     try {
       simplifiedResult = cleanAndParseJSON(rawResponse);
-      console.log("[JSON Parse Status] Successfully parsed JSON natively.");
     } catch (parseError) {
       console.error("[JSON Parse Status] Native parse failed. Parsing raw text using Recovery Parser.", parseError);
       simplifiedResult = runRecoveryParser(rawResponse);
-      usedRecoveryParser = true;
     }
 
     if (!simplifiedResult.isValid) {
@@ -562,7 +583,7 @@ export async function POST(req: Request) {
 
     // Fuel logic refinement if we have carbon API
     if (finalResult.receiptType === "fuel" && finalResult.items) {
-      const totalLiters = finalResult.items.reduce((sum: number, item: any) => {
+      const totalLiters = finalResult.items.reduce((sum: number, item: DetectiveItem) => {
         const literMatch = item.name?.match(/(\d+(?:\.\d+)?)\s*(?:liters?|litres?|L)/i);
         if (literMatch) return sum + parseFloat(literMatch[1]);
         return sum;
@@ -616,11 +637,6 @@ export async function POST(req: Request) {
         } catch {}
       }
     }
-
-    console.log("---------- FINAL RETURNED OBJECT ----------");
-    console.log(JSON.stringify(finalResult, null, 2));
-    console.log(`Recovery Parser Used: ${usedRecoveryParser}`);
-    console.log("-------------------------------------------");
 
     return NextResponse.json(finalResult);
 

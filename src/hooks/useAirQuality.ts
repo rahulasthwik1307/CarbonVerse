@@ -13,16 +13,19 @@ export function useAirQuality() {
 
   useEffect(() => {
     if (!city) return;
-    setLoading(true);
-    fetch(`/api/airquality?city=${encodeURIComponent(city)}`)
-      .then(r => r.json())
-      .then(d => setData(d))
-      .catch(() => setData({
-        aqi: 75, aqiLevel: "Moderate",
-        aqiColor: "#F4A832",
-        verdMessage: "Your eco choices help clean the air! 🌿"
-      }))
-      .finally(() => setLoading(false));
+    const timer = setTimeout(() => {
+      setLoading(true);
+      fetch(`/api/airquality?city=${encodeURIComponent(city)}`)
+        .then(r => r.json())
+        .then(d => setData(d))
+        .catch(() => setData({
+          aqi: 75, aqiLevel: "Moderate",
+          aqiColor: "#F4A832",
+          verdMessage: "Your eco choices help clean the air! 🌿"
+        }))
+        .finally(() => setLoading(false));
+    }, 0);
+    return () => clearTimeout(timer);
   }, [city]);
 
   return { data, loading };

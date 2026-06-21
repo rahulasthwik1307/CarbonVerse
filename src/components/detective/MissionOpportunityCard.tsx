@@ -10,7 +10,7 @@ interface MissionOpportunityCardProps {
     title: string;
     emoji: string;
     description: string;
-    targetType: string;
+    targetType: "eco_choices" | "receipt_upload" | "story_complete";
   };
   onAccept: () => void;
   onSkip: () => void;

@@ -1,51 +1,6 @@
 import { NextResponse } from "next/server";
 
-const EMISSIONS_API = "https://api.climatiq.io/data/v1/estimate";
-// Note: emissions.dev uses climatiq under the hood
-// Actual emissions.dev endpoint:
-const EMISSIONS_DEV_URL = "https://beta3.api.climatiq.io/estimate";
 
-interface EmissionRequest {
-  activity: string;  
-  // e.g. "passenger_vehicle-vehicle_type_car-fuel_source_petrol"
-  value: number;
-  unit: string;
-}
-
-// Activity ID mapping for Indian context
-const ACTIVITY_MAP: Record<string, {
-  activityId: string,
-  unit: string,
-  multiplier: number
-}> = {
-  // Transport
-  "walk-cycle": { 
-    activityId: "passenger_vehicle-vehicle_type_bicycle-fuel_source_na-engine_size_na-vehicle_age_na-vehicle_weight_na",
-    unit: "km", multiplier: 0 // zero emissions
-  },
-  "metro": {
-    activityId: "passenger_vehicle-vehicle_type_subway-fuel_source_na-engine_size_na-vehicle_age_na-vehicle_weight_na",
-    unit: "passenger_km", multiplier: 5 // assume 5km trip
-  },
-  "cab": {
-    activityId: "passenger_vehicle-vehicle_type_taxi-fuel_source_petrol-engine_size_na-vehicle_age_na-vehicle_weight_na",
-    unit: "passenger_km", multiplier: 8
-  },
-  // Food
-  "plant-breakfast": {
-    activityId: "consumer_goods-type_food_beverage_tobacco-trade_flow_na",
-    unit: "kg", multiplier: 0.5
-  },
-  "delivery-burger": {
-    activityId: "consumer_goods-type_food_beverage_tobacco-trade_flow_na",
-    unit: "kg", multiplier: 2.5
-  },
-  // Electricity
-  "electricity": {
-    activityId: "electricity-supply_grid-source_residual_mix",
-    unit: "kWh", multiplier: 1
-  },
-};
 
 // Fallback values when API fails (kg CO2)
 const FALLBACK_CARBON: Record<string, number> = {

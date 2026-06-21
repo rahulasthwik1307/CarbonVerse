@@ -119,18 +119,6 @@ const CHAPTERS: Record<number, typeof CHAPTER_1_MOMENTS> = {
   2: CHAPTER_2_MOMENTS,
 };
 
-function SkeletonLine({ width, height }: { width: string; height: number }) {
-  return (
-    <div style={{ position: "relative", overflow: "hidden", height, width, borderRadius: 4, background: "rgba(74, 124, 47, 0.1)" }}>
-      <motion.div
-        animate={{ x: ["-100%", "200%"] }}
-        transition={{ duration: 1.5, ease: "linear", repeat: Infinity }}
-        style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)" }}
-      />
-    </div>
-  );
-}
-
 const getAqiBadge = (
   impactType: "eco"|"moderate"|"high",
   aqi: number
@@ -198,8 +186,15 @@ const getCommuteCO2 = async (choiceId: string): Promise<number> => {
 
 function TypewriterText({ text, onComplete }: { text: string; onComplete?: () => void }) {
   const [displayedText, setDisplayedText] = useState("");
+  const onCompleteRef = useRef(onComplete);
   useEffect(() => {
-    setDisplayedText("");
+    onCompleteRef.current = onComplete;
+  });
+
+  useEffect(() => {
+    setTimeout(() => {
+      setDisplayedText("");
+    }, 0);
     const chars = Array.from(text);
     let i = 0;
     const interval = setInterval(() => {
@@ -207,7 +202,7 @@ function TypewriterText({ text, onComplete }: { text: string; onComplete?: () =>
       i++;
       if (i >= chars.length) {
         clearInterval(interval);
-        onComplete?.();
+        onCompleteRef.current?.();
       }
     }, 12);
     return () => clearInterval(interval);
@@ -234,8 +229,9 @@ export default function ChapterView() {
 
   // Cleanup timer on unmount
   useEffect(() => {
+    const timer = autoAdvanceTimerRef.current;
     return () => {
-      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+      if (timer) clearTimeout(timer);
     };
   }, []);
 
@@ -252,7 +248,10 @@ export default function ChapterView() {
   const [shuffledDecisions, setShuffledDecisions] = useState(moment.decisions);
 
   useEffect(() => {
-    setShuffledDecisions([...moment.decisions].sort(() => Math.random() - 0.5));
+    const timer = setTimeout(() => {
+      setShuffledDecisions([...moment.decisions].sort(() => Math.random() - 0.5));
+    }, 0);
+    return () => clearTimeout(timer);
   }, [moment]);
 
   const isAutoAdvanceQuestion = currentDecision !== 2;
@@ -625,7 +624,7 @@ export default function ChapterView() {
             border: "1px solid rgba(184, 212, 168, 0.3)",
           }}>
             {(() => {
-              const nodes: any[] = [];
+              const nodes: React.ReactNode[] = [];
               const steps = chapter === 1 
               ? [
                   { key: "breakfast", emoji: "🍳", label: "Breakfast" },

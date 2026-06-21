@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { motion, useSpring, useMotionValue, AnimatePresence } from "framer-motion";
+import { motion, useSpring, useMotionValue, AnimatePresence, TargetAndTransition } from "framer-motion";
 
 interface VerdOrbProps {
   size?: number;
@@ -56,7 +56,7 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
       eyeX.set(0);
       eyeY.set(0);
     }
-  }, [rotateX, rotateY, eyeX, eyeY]);
+  }, [rotateX, rotateY, eyeX, eyeY, mood]);
 
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
@@ -92,7 +92,7 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
     return () => clearTimeout(timeoutId);
   }, []);
 
-  const [animState, setAnimState] = useState<any>({
+  const [animState, setAnimState] = useState<TargetAndTransition>({
     y: [0, -4, 0],
     scale: [1, 1.025, 1],
     opacity: 1,
@@ -100,55 +100,72 @@ export default function VerdOrb({ size = 48, className = "", mood }: VerdOrbProp
   });
 
   useEffect(() => {
-    if (mood === "eco") {
-      setAnimState({
-        y: [0, -4, 0],
-        scale: [1, 1.08, 1],
-        opacity: 1,
-        transition: { duration: 0.4, repeat: 2 }
-      });
-      // Show cheek blush briefly
-      setShowMoodCheeks(true);
-      setMoodGlow("0 0 20px rgba(76,175,80,0.3)");
-      setEyebrowWorry(0);
-      setTimeout(() => {
-        setShowMoodCheeks(false);
-        setMoodGlow("0 0 12px rgba(76,175,80,0.15)");
-      }, 2000);
-      setTimeout(() => setAnimState({
-        y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
-        transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
-      }), 1200);
-    } else if (mood === "high") {
-      setAnimState({
-        y: [0, -4, 0],
-        scale: [1, 1.025, 1],
-        opacity: 0.85,
-        transition: { duration: 0.3 }
-      });
-      setShowMoodCheeks(false);
-      setMoodGlow("0 0 8px rgba(76,175,80,0.1)");
-      setEyebrowWorry(1);
-      setTimeout(() => {
-        setEyebrowWorry(0);
-        setMoodGlow("none");
+    const timer = setTimeout(() => {
+      if (mood === "eco") {
         setAnimState({
+          y: [0, -4, 0],
+          scale: [1, 1.08, 1],
+          opacity: 1,
+          transition: { duration: 0.4, repeat: 2 }
+        });
+        setShowMoodCheeks(true);
+        setMoodGlow("0 0 20px rgba(76,175,80,0.3)");
+        setEyebrowWorry(0);
+        
+        const resetBlushTimer = setTimeout(() => {
+          setShowMoodCheeks(false);
+          setMoodGlow("0 0 12px rgba(76,175,80,0.15)");
+        }, 2000);
+        
+        const resetAnimTimer = setTimeout(() => {
+          setAnimState({
+            y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
+            transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
+          });
+        }, 1200);
+
+        return () => {
+          clearTimeout(resetBlushTimer);
+          clearTimeout(resetAnimTimer);
+        };
+      } else if (mood === "high") {
+        setAnimState({
+          y: [0, -4, 0],
+          scale: [1, 1.025, 1],
+          opacity: 0.85,
+          transition: { duration: 0.3 }
+        });
+        setShowMoodCheeks(false);
+        setMoodGlow("0 0 8px rgba(76,175,80,0.1)");
+        setEyebrowWorry(1);
+        
+        const resetWorryTimer = setTimeout(() => {
+          setEyebrowWorry(0);
+          setMoodGlow("none");
+          setAnimState({
+            y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
+            transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
+          });
+        }, 2500);
+
+        return () => clearTimeout(resetWorryTimer);
+      } else if (mood === "moderate") {
+        setAnimState({
+          y: [0, -8, 0],
+          scale: [1, 1.025, 1],
+          opacity: 1,
+          transition: { duration: 0.3 }
+        });
+        const resetAnimTimer = setTimeout(() => setAnimState({
           y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
           transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
-        });
-      }, 2500);
-    } else if (mood === "moderate") {
-      setAnimState({
-        y: [0, -8, 0],
-        scale: [1, 1.025, 1],
-        opacity: 1,
-        transition: { duration: 0.3 }
-      });
-      setTimeout(() => setAnimState({
-        y: [0, -4, 0], scale: [1, 1.025, 1], opacity: 1,
-        transition: { duration: 3.5, ease: "easeInOut", repeat: Infinity }
-      }), 300);
-    }
+        }), 300);
+
+        return () => clearTimeout(resetAnimTimer);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [mood]);
 
   const eyeSize = Math.max(4, size * 0.09);

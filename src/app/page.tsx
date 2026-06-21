@@ -144,9 +144,10 @@ export default function Home() {
   const springMagX = useSpring(primaryMagneticX, { stiffness: 150, damping: 18 });
   const springMagY = useSpring(primaryMagneticY, { stiffness: 150, damping: 18 });
 
-  const lastMouseMoveTime = useRef(Date.now());
+  const lastMouseMoveTime = useRef<number>(0);
 
   useEffect(() => {
+    lastMouseMoveTime.current = Date.now();
     const handleMove = (e: MouseEvent) => {
       // Glow coords (-90 to center 180px circle)
       mouseX.set(e.clientX - 90);
@@ -425,7 +426,7 @@ export default function Home() {
               onHoverEnd={() => setHoveredButton(null)}
               whileTap={{ y: 2, boxShadow: "0 1px 4px rgba(74,124,47,0.25)" }}
               onClick={() => router.push("/story")}
-              className="relative px-7 py-3.5 rounded-2xl font-semibold text-base text-white cursor-pointer outline-none border-none"
+              className="relative px-7 py-3.5 rounded-2xl font-semibold text-base text-white cursor-pointer border-none"
               style={{
                 background: "linear-gradient(135deg, #4A7C2F 0%, #F4A832 100%)",
                 boxShadow: "0 6px 20px rgba(74,124,47,0.35)",
@@ -522,7 +523,7 @@ export default function Home() {
               }}
               onHoverEnd={() => setHoveredButton(null)}
               onClick={() => router.push("/detective")}
-              className="px-7 py-3.5 rounded-2xl font-medium text-base cursor-pointer outline-none relative overflow-hidden block"
+              className="px-7 py-3.5 rounded-2xl font-medium text-base cursor-pointer relative overflow-hidden block"
               style={{
                 background: "rgba(255,255,255,0.75)",
                 backdropFilter: "blur(12px)",

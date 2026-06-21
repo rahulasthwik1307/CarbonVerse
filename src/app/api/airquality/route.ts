@@ -67,7 +67,7 @@ export async function GET(req: Request) {
       aqiColor,
       verdMessage
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       aqi: 75,
       aqiLevel: "Moderate",

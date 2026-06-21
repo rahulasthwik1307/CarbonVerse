@@ -62,7 +62,7 @@ Badges Earned: ${badgesCount}.
       });
       const data = await res.json();
       setMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
-    } catch (e) {
+    } catch {
       setMessages(prev => [...prev, { role: "assistant", content: "Oops, my network to the forest is a bit weak right now! 🌳" }]);
     } finally {
       setIsTyping(false);
@@ -97,6 +97,15 @@ Badges Earned: ${badgesCount}.
               exit={{ opacity: 0, x: 10, scale: 0.8 }}
               whileHover={{ scale: 1.05 }}
               onClick={() => setIsOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsOpen(true);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label="Ask Verd Assistant"
               style={{
                 background: "rgba(255, 248, 231, 0.95)",
                 backdropFilter: "blur(12px)",
@@ -125,6 +134,15 @@ Badges Earned: ${badgesCount}.
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setIsOpen(!isOpen);
+            }
+          }}
+          tabIndex={0}
+          role="button"
+          aria-label={isOpen ? "Close Verd Assistant" : "Open Verd Assistant"}
           style={{
             cursor: "pointer",
             filter: "drop-shadow(0 10px 25px rgba(45, 80, 22, 0.18))",
@@ -175,6 +193,7 @@ Badges Earned: ${badgesCount}.
               </div>
               <button 
                 onClick={() => setIsOpen(false)}
+                aria-label="Close assistant"
                 style={{ marginLeft: "auto", background: "none", border: "none", fontSize: 20, color: "#6B8F5E", cursor: "pointer" }}
               >
                 ✕
@@ -242,6 +261,7 @@ Badges Earned: ${badgesCount}.
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleSend()}
                 placeholder="Ask Verd anything..."
+                aria-label="Ask Verd anything"
                 style={{
                   flex: 1,
                   padding: "10px 14px",
@@ -256,6 +276,7 @@ Badges Earned: ${badgesCount}.
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || isTyping}
+                aria-label="Send message"
                 style={{
                   width: 40,
                   height: 40,

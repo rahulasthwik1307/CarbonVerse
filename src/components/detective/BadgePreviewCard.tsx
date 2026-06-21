@@ -4,11 +4,10 @@ import { motion } from "framer-motion";
 import { useEffect } from "react";
 
 interface BadgePreviewCardProps {
-  missionTitle: string;
   onNext: () => void;
 }
 
-export default function BadgePreviewCard({ missionTitle, onNext }: BadgePreviewCardProps) {
+export default function BadgePreviewCard({ onNext }: BadgePreviewCardProps) {
   useEffect(() => {
     // Auto advance after short preview
     const timer = setTimeout(() => {

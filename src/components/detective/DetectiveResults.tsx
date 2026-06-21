@@ -9,7 +9,6 @@ import VerdOrb from "@/components/ui/VerdOrb";
 
 interface DetectiveResultsProps {
   result: DetectiveResult;
-  city: string;
   onReset: () => void;
 }
 
@@ -69,7 +68,7 @@ const getContributorEmoji = (receiptType: string) => {
   }
 };
 
-export default function DetectiveResults({ result, city, onReset }: DetectiveResultsProps) {
+export default function DetectiveResults({ result, onReset }: DetectiveResultsProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"findings" | "impact" | "actions">("findings");
   const [showAllItems, setShowAllItems] = useState(false);
@@ -369,9 +368,9 @@ export default function DetectiveResults({ result, city, onReset }: DetectiveRes
                       <VerdOrb size={34} mood={result.impactLevel === "high" || result.impactLevel === "very_high" ? "high" : "eco"} />
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#4A7C2F]">Verd's Insight</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#4A7C2F]">Verd&apos;s Insight</span>
                       <p className="text-[13px] italic font-semibold leading-relaxed" style={{ color: "#2D5016" }}>
-                        "{result.verdVerdict}"
+                        &ldquo;{result.verdVerdict}&rdquo;
                       </p>
                     </div>
                   </div>

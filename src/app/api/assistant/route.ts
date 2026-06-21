@@ -23,9 +23,14 @@ When the user asks about their own data (missions, carbon footprint, story), use
 When they ask general sustainability questions (climate change, AQI, renewables), provide an accurate, helpful answer.
 Do not mention that you have access to "context" or "data", just answer naturally.`;
 
+    interface ChatMessage {
+      role: "system" | "user" | "assistant";
+      content: string;
+    }
+
     const groqMessages = [
       { role: "system", content: systemPrompt },
-      ...messages.map((m: any) => ({ role: m.role, content: m.content }))
+      ...messages.map((m: ChatMessage) => ({ role: m.role, content: m.content }))
     ];
 
     const completion = await groq.chat.completions.create({

@@ -12,7 +12,6 @@ export default function FutureSimulator() {
   const {
     decisions, totalCarbonDelta, resetSession, storyCompleted,
     futureOutcome, setFutureOutcome, memoryBook,
-    addStoryToMemoryBook, completeStory, worldState, profile,
   } = useSessionStore();
 
   // Check if user has a valid completed story
@@ -21,10 +20,7 @@ export default function FutureSimulator() {
   // Video loading and synchronization states
   const [userVideoReady, setUserVideoReady] = useState(false);
   const [greenerVideoReady, setGreenerVideoReady] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [videosActive, setVideosActive] = useState(true);
-  const [userVideoFailed, setUserVideoFailed] = useState(false);
-  const [greenerVideoFailed, setGreenerVideoFailed] = useState(false);
+  const [videosActive] = useState(true);
 
   // Drag slider refs and state
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,10 +44,7 @@ export default function FutureSimulator() {
   const userVideoRef = useRef<HTMLVideoElement>(null);
   const greenerVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Hybrid Scoring Models Choice Counts
   const highCount = decisions.filter(d => d.impactType === "high").length;
-  const moderateCount = decisions.filter(d => d.impactType === "moderate").length;
-  const ecoCount = decisions.filter(d => d.impactType === "eco").length;
 
   // 1. Video Sourcing Logic based on Final Story Engine
   const greenerVideoUrl = "https://res.cloudinary.com/dsdy81lwd/video/upload/v1781851014/Greener_Story_hrakq8.mp4";
@@ -83,46 +76,7 @@ export default function FutureSimulator() {
     }
   }
 
-  const bothVideosReady = userVideoReady && greenerVideoReady;
 
-  // 2. Progressive Loading & Illusion Curve Effect
-  useEffect(() => {
-    if (videosActive) return;
-
-    let startTimestamp = Date.now();
-    let intervalId = setInterval(() => {
-      const elapsed = Date.now() - startTimestamp;
-      
-      if (bothVideosReady) {
-        setLoadingProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(intervalId);
-            setTimeout(() => {
-              setVideosActive(true);
-            }, 300);
-            return 100;
-          }
-          return Math.min(100, prev + 4);
-        });
-      } else {
-        let targetProgress = 0;
-        if (elapsed <= 600) {
-          targetProgress = (elapsed / 600) * 60;
-        } else if (elapsed <= 1400) {
-          const t = (elapsed - 600) / 800;
-          targetProgress = 60 + t * 25;
-        } else if (elapsed <= 2600) {
-          const t = (elapsed - 1400) / 1200;
-          targetProgress = 85 + t * 10;
-        } else {
-          targetProgress = 95;
-        }
-        setLoadingProgress(targetProgress);
-      }
-    }, 16);
-
-    return () => clearInterval(intervalId);
-  }, [bothVideosReady, videosActive]);
 
   // Cache future outcome for back-navigation
   useEffect(() => {
@@ -132,11 +86,9 @@ export default function FutureSimulator() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasCompletedStory, storyState, baseVideoType]);
 
-  // Safety loading bypass — also handles video failure
+  // Safety loading bypass
   useEffect(() => {
     const safetyTimeout = setTimeout(() => {
-      if (!userVideoReady) setUserVideoFailed(true);
-      if (!greenerVideoReady) setGreenerVideoFailed(true);
       setUserVideoReady(true);
       setGreenerVideoReady(true);
     }, 8000);
@@ -226,7 +178,7 @@ export default function FutureSimulator() {
     updateSliderPosition(e.clientX);
   };
 
-  const handlePointerUp = (e: React.PointerEvent) => {
+  const handlePointerUp = () => {
     setIsDragging(false);
   };
 
@@ -387,27 +339,34 @@ export default function FutureSimulator() {
           >
             {/* Subtle floating particles/leaves effect behind content */}
             <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 32, pointerEvents: "none", zIndex: -1 }}>
-              {[...Array(6)].map((_, i) => (
+              {[
+                { initX: 50, initY: 150, scale: 0.8, rotate: 120, xOffset: 10, duration: 3.2, delay: 0.5 },
+                { initX: 180, initY: 280, scale: 0.6, rotate: 240, xOffset: -15, duration: 2.8, delay: 1.2 },
+                { initX: 250, initY: 110, scale: 0.9, rotate: 45, xOffset: 5, duration: 3.8, delay: 0.1 },
+                { initX: 100, initY: 220, scale: 0.7, rotate: 190, xOffset: 20, duration: 3.0, delay: 1.8 },
+                { initX: 220, initY: 160, scale: 0.5, rotate: 310, xOffset: -5, duration: 4.0, delay: 0.8 },
+                { initX: 300, initY: 250, scale: 0.75, rotate: 15, xOffset: 12, duration: 3.5, delay: 2.2 }
+              ].map((leaf, i) => (
                 <motion.div
                   key={`leaf-${i}`}
                   initial={{ 
-                    x: Math.random() * 300, 
-                    y: Math.random() * 200 + 100,
+                    x: leaf.initX, 
+                    y: leaf.initY,
                     opacity: 0,
                     rotate: 0,
-                    scale: Math.random() * 0.5 + 0.5
+                    scale: leaf.scale
                   }}
                   animate={{ 
                     y: -50,
                     opacity: [0, 0.6, 0],
-                    rotate: Math.random() * 360,
-                    x: `calc(${Math.random() * 100}% + ${Math.random() * 40 - 20}px)`
+                    rotate: leaf.rotate,
+                    x: `calc(${i * 18}% + ${leaf.xOffset}px)`
                   }}
                   transition={{ 
-                    duration: 2.5 + Math.random() * 1.5,
+                    duration: leaf.duration,
                     repeat: Infinity,
                     ease: "linear",
-                    delay: Math.random() * 2
+                    delay: leaf.delay
                   }}
                   style={{
                     position: "absolute",
@@ -615,7 +574,7 @@ export default function FutureSimulator() {
                     preload="auto"
                     onLoadedData={() => setUserVideoReady(true)}
                     onCanPlayThrough={() => setUserVideoReady(true)}
-                    onError={() => { setUserVideoFailed(true); setUserVideoReady(true); }}
+                    onError={() => { setUserVideoReady(true); }}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -653,7 +612,7 @@ export default function FutureSimulator() {
                           🌍 Building Your Future Story
                         </h3>
                         <p style={{ fontSize: 12, color: "#4A7C2F", margin: 0, textAlign: "center", fontStyle: "italic", fontWeight: 500 }}>
-                          "Verd is stitching your choices into tomorrow."
+                          &ldquo;Verd is stitching your choices into tomorrow.&rdquo;
                         </p>
                         {/* Subtle loader bar */}
                         <div style={{ width: 120, height: 4, background: "rgba(184, 212, 168, 0.3)", borderRadius: 2, marginTop: 12, overflow: "hidden", position: "relative" }}>
@@ -688,7 +647,7 @@ export default function FutureSimulator() {
                     preload="auto"
                     onLoadedData={() => setGreenerVideoReady(true)}
                     onCanPlayThrough={() => setGreenerVideoReady(true)}
-                    onError={() => { setGreenerVideoFailed(true); setGreenerVideoReady(true); }}
+                    onError={() => { setGreenerVideoReady(true); }}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -726,7 +685,7 @@ export default function FutureSimulator() {
                           🌍 Building Your Future Story
                         </h3>
                         <p style={{ fontSize: 12, color: "#4A7C2F", margin: 0, textAlign: "center", fontStyle: "italic", fontWeight: 500 }}>
-                          "Verd is stitching your choices into tomorrow."
+                          &ldquo;Verd is stitching your choices into tomorrow.&rdquo;
                         </p>
                         {/* Subtle loader bar */}
                         <div style={{ width: 120, height: 4, background: "rgba(184, 212, 168, 0.3)", borderRadius: 2, marginTop: 12, overflow: "hidden", position: "relative" }}>

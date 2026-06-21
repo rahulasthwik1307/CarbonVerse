@@ -218,20 +218,20 @@ type Tab = "stories" | "receipts" | "totals" | "coach";
 export default function MemoryBook() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { memoryBook, activeMissions, achievements, totalCarbonDelta, deleteReceipt, worldState } = useSessionStore();
+  const { memoryBook, activeMissions, achievements, deleteReceipt, worldState } = useSessionStore();
   const [activeTab, setActiveTab] = useState<Tab>("stories");
 
   useEffect(() => {
     const tabParam = searchParams?.get("tab");
     if (tabParam && ["stories", "receipts", "totals", "coach"].includes(tabParam)) {
-      setActiveTab(tabParam as Tab);
+      setTimeout(() => {
+        setActiveTab(tabParam as Tab);
+      }, 0);
     }
   }, [searchParams]);
   const [expandedStoryId, setExpandedStoryId] = useState<string | null>(null);
   const [expandedReceiptId, setExpandedReceiptId] = useState<string | null>(null);
   const [deletingReceiptId, setDeletingReceiptId] = useState<string | null>(null);
-  const [expandedStoryImpact, setExpandedStoryImpact] = useState(false);
-  const [expandedReceiptImpact, setExpandedReceiptImpact] = useState(false);
   const [hoveredBadgeId, setHoveredBadgeId] = useState<string | null>(null);
   const [showAllTimeline, setShowAllTimeline] = useState(false);
 
@@ -271,20 +271,7 @@ export default function MemoryBook() {
 
   const cats = calculateCategories();
 
-  const getStoryImpact = () => {
-    let impact = 0;
-    const breakdown: Record<string, number> = {
-      breakfast: 0, commute: 0, lunch: 0, shopping: 0, dinner: 0, "wind-down": 0
-    };
-    memoryBook.stories.forEach(s => {
-      impact += s.totalCarbonKg;
-      s.decisions.forEach(d => {
-        breakdown[d.moment] = (breakdown[d.moment] || 0) + d.carbonKg;
-      });
-    });
-    return { impact, breakdown };
-  };
-  const storyData = getStoryImpact();
+
 
   const getBestChoice = () => {
     let best: { choice: string; carbonKg: number; moment: string } | null = null;
@@ -573,7 +560,7 @@ export default function MemoryBook() {
     );
   };
 
-  const renderTimelineEvent = (evt: { id: string; date: string; type: string; title: string; carbonDelta?: number }, isCompact: boolean = false) => {
+  const renderTimelineEvent = (evt: { id: string; date: string; type: string; title: string; carbonDelta?: number }) => {
     const isEco = evt.carbonDelta && evt.carbonDelta < 0;
     const isHigh = evt.carbonDelta && evt.carbonDelta > 0;
     const color = evt.type === "achievement_earned" ? "#F4A832" : isEco ? "#4CAF50" : isHigh ? "#A0401A" : "#4A7C2F";
@@ -683,7 +670,7 @@ export default function MemoryBook() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {recentEvents.map(evt => renderTimelineEvent(evt, true))}
+            {recentEvents.map(evt => renderTimelineEvent(evt))}
           </div>
         )}
       </div>
@@ -721,7 +708,7 @@ export default function MemoryBook() {
               envelope: { attack: 0.02, decay: 0.1, sustain: 0.2, release: 0.4 }
             }).toDestination();
             synth.triggerAttackRelease("E5", "8n");
-          } catch (e) {}
+          } catch {}
           router.back();
         }}
         style={{
@@ -766,18 +753,26 @@ export default function MemoryBook() {
       </div>
 
       {/* TABS */}
-      <div style={{ 
-        display: "flex", 
-        gap: 6, 
-        padding: 4, 
-        background: "rgba(74, 124, 47, 0.05)", 
-        border: "1px solid rgba(184, 212, 168, 0.3)", 
-        borderRadius: 20,
-        marginBottom: 4
-      }}>
+      <div 
+        role="tablist"
+        aria-label="Memory Book Tabs"
+        style={{ 
+          display: "flex", 
+          gap: 6, 
+          padding: 4, 
+          background: "rgba(74, 124, 47, 0.05)", 
+          border: "1px solid rgba(184, 212, 168, 0.3)", 
+          borderRadius: 20,
+          marginBottom: 4
+        }}
+      >
         {(["stories", "receipts", "totals", "coach"] as const).map(tab => (
           <button
             key={tab}
+            id={`tab-${tab}`}
+            role="tab"
+            aria-selected={activeTab === tab}
+            aria-controls={`tabpanel-${tab}`}
             onClick={() => setActiveTab(tab)}
             style={{
               flex: 1,
@@ -816,7 +811,7 @@ export default function MemoryBook() {
       {/* TAB CONTENT */}
       <AnimatePresence mode="wait">
         {activeTab === "stories" && (
-          <motion.div key="stories" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+          <motion.div key="stories" role="tabpanel" id="tabpanel-stories" aria-labelledby="tab-stories" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
             {memoryBook.stories.length === 0 ? (
               <div style={{ textAlign: "center", padding: 40 }}>
                 <VerdOrb size={40} />
@@ -1094,7 +1089,7 @@ export default function MemoryBook() {
         )}
 
         {activeTab === "receipts" && (
-          <motion.div key="receipts" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+          <motion.div key="receipts" role="tabpanel" id="tabpanel-receipts" aria-labelledby="tab-receipts" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
             {/* Redesigned Analyze Receipt Button (Glassmorphic Action Card) */}
             <div style={{ marginBottom: 24 }}>
               <motion.div
@@ -1550,7 +1545,7 @@ export default function MemoryBook() {
         )}
 
         {activeTab === "totals" && (
-          <motion.div key="totals" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <motion.div key="totals" role="tabpanel" id="tabpanel-totals" aria-labelledby="tab-totals" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             
             {/* SECTION 1: BENTO HERO DASHBOARD */}
             <div className="grid grid-cols-2 gap-3">
@@ -1871,7 +1866,7 @@ export default function MemoryBook() {
                       <div className="timeline-scroll" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                         {[...(memoryBook.timelineEvents || [])]
                           .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                          .map(evt => renderTimelineEvent(evt, false))
+                          .map(evt => renderTimelineEvent(evt))
                         }
                       </div>
                     </div>
@@ -1886,6 +1881,9 @@ export default function MemoryBook() {
         {activeTab === "coach" && (
           <motion.div
             key="coach"
+            role="tabpanel"
+            id="tabpanel-coach"
+            aria-labelledby="tab-coach"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}

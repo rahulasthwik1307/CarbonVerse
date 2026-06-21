@@ -47,13 +47,13 @@ export default function VerdInsightCard({ verdVerdict, topInsight, impactLevel, 
         <div className="absolute -top-3 left-8 w-4 h-4 bg-white border-l border-t border-[rgba(184,212,168,0.4)] rotate-45" />
         
         <p className="text-[16px] font-medium leading-relaxed mb-4" style={{ color: "#2D5016" }}>
-          "{verdVerdict}"
+          &ldquo;{verdVerdict}&rdquo;
         </p>
 
         {topInsight && (
           <div className="pt-4 mt-4 border-t border-[rgba(184,212,168,0.3)]">
             <h4 className="text-[12px] font-bold uppercase tracking-wider mb-1" style={{ color: "#F4A832" }}>
-              Verd's Insight
+              Verd&apos;s Insight
             </h4>
             <p className="text-[14px] italic font-medium" style={{ color: "#4A7C2F" }}>
               {topInsight}

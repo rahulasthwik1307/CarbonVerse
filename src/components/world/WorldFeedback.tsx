@@ -27,22 +27,24 @@ export default function WorldFeedback() {
   useEffect(() => {
     if (!lastImpact) return;
 
-    if (lastImpact === "eco") {
-      setBrightnessShift(1);
-      const brTimer = setTimeout(() => setBrightnessShift(0), 3000);
+    const timer = setTimeout(() => {
+      if (lastImpact === "eco") {
+        setBrightnessShift(1);
+        const brTimer = setTimeout(() => setBrightnessShift(0), 3000);
+        return () => clearTimeout(brTimer);
+      }
 
-      return () => clearTimeout(brTimer);
-    }
+      if (lastImpact === "high") {
+        setBrightnessShift(-1);
+        const brTimer = setTimeout(() => setBrightnessShift(0), 2500);
+        return () => clearTimeout(brTimer);
+      }
 
-    if (lastImpact === "high") {
-      setBrightnessShift(-1);
-      const brTimer = setTimeout(() => setBrightnessShift(0), 2500);
+      // Moderate — no special reactions
+      setLastImpact(null);
+    }, 0);
 
-      return () => clearTimeout(brTimer);
-    }
-
-    // Moderate — no special reactions
-    setLastImpact(null);
+    return () => clearTimeout(timer);
   }, [lastImpact]);
 
   return (

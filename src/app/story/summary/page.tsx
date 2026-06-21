@@ -16,10 +16,8 @@ export default function SummaryPage() {
     decisions,
     resetSession,
     activeMissions,
-    totalCarbonDelta,
     completeStory,
     storyCompleted,
-    memoryBook,
     updateMissionProgress,
     checkAndUnlockAchievements,
   } = useSessionStore();
@@ -170,9 +168,7 @@ export default function SummaryPage() {
   }, []);
 
   // ── Colours ────────────────────────────────────────────────────
-  const accent       = isEco ? "#7EC86A"                : "#F4A832";
   const accentGlow   = isEco ? "rgba(126,200,106,0.22)" : "rgba(244,168,50,0.22)";
-  const accentShadow = isEco ? "rgba(74,200,100,0.14)"  : "rgba(255,140,50,0.14)";
 
   // ── Render ─────────────────────────────────────────────────────
   return (
@@ -284,7 +280,7 @@ export default function SummaryPage() {
                   fontSize: 14, color: "#6B8F5E",
                   margin: "4px 0 0", lineHeight: 1.4,
                 }}>
-                  Your choices wrote today's story —{" "}
+                  Your choices wrote today&apos;s story —{" "}
                   <span style={{ color: "#2D5016", fontWeight: 700 }}>
                     {decisions.length} decisions
                   </span>{" "}
@@ -665,14 +661,14 @@ export default function SummaryPage() {
                 const displayMissions = [...unlockedMissions];
                 if (displayMissions.length < 3) {
                   const defaults = [
-                    { id: "starter-1", emoji: "🥗", title: "Green Plate", description: "Choose a plant-based meal" },
-                    { id: "starter-2", emoji: "🔍", title: "Receipt Detective", description: "Analyze one receipt" },
-                    { id: "starter-3", emoji: "🚇", title: "Commute Champion", description: "Choose public transit or walk" }
+                    { id: "starter-1", emoji: "🥗", title: "Green Plate", description: "Choose a plant-based meal", targetType: "eco_choices" as const, targetCount: 1, currentCount: 0, completed: false, reward: "Eco badge" },
+                    { id: "starter-2", emoji: "🔍", title: "Receipt Detective", description: "Analyze one receipt", targetType: "receipt_upload" as const, targetCount: 1, currentCount: 0, completed: false, reward: "Detective badge" },
+                    { id: "starter-3", emoji: "🚇", title: "Commute Champion", description: "Choose public transit or walk", targetType: "eco_choices" as const, targetCount: 1, currentCount: 0, completed: false, reward: "Commute badge" }
                   ];
                   for (const d of defaults) {
                     if (displayMissions.length >= 3) break;
                     if (!displayMissions.some(m => m.title === d.title)) {
-                      displayMissions.push(d as any);
+                      displayMissions.push(d);
                     }
                   }
                 }

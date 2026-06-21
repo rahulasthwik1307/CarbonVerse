@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useReducedMotion, useSpring, useInView } from "framer-motion";
 import VerdOrb from "@/components/ui/VerdOrb";
+import { useSessionStore } from "@/lib/session-store";
 
 /* ─────────────────────────────────────────────
    Types
@@ -33,16 +34,21 @@ function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string
   const spring = useSpring(0, { stiffness: 60, damping: 20 });
 
   // Drive spring to target when in view
-  if (isInView) {
-    spring.set(value);
-  }
+  useEffect(() => {
+    if (isInView) {
+      spring.set(value);
+    }
+  }, [isInView, value, spring]);
 
   // Subscribe to spring updates and write to DOM
-  spring.on("change", (v) => {
-    if (ref.current) {
-      ref.current.textContent = Math.round(v).toLocaleString() + suffix;
-    }
-  });
+  useEffect(() => {
+    const unsubscribe = spring.on("change", (v) => {
+      if (ref.current) {
+        ref.current.textContent = Math.round(v).toLocaleString() + suffix;
+      }
+    });
+    return () => unsubscribe();
+  }, [spring, suffix]);
 
   return <span ref={ref}>0{suffix}</span>;
 }
@@ -145,10 +151,9 @@ export default function FutureStoryBento({
   treesNeeded,
   carKm,
   homeDays,
-  verdMessage,
   totalCarbonDelta,
 }: BentoProps) {
-  const { decisions } = require("@/lib/session-store").useSessionStore();
+  const { decisions } = useSessionStore();
   const categoryInsight = getCategoryInsight(decisions);
   const shouldReduce = useReducedMotion();
 

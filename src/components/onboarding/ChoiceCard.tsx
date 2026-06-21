@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
@@ -15,11 +15,36 @@ interface ChoiceCardProps {
   impactType?: "eco" | "moderate" | "high";
 }
 
+interface Particle {
+  id: number;
+  left: number;
+  top: number;
+  endX: number;
+  endY: number;
+  delay: number;
+  color: string;
+  rotation: number;
+  duration: number;
+}
+
+interface Butterfly {
+  id: number;
+  left: number;
+  top: number;
+  endX: number;
+  endY: number;
+  delay: number;
+  scale: number;
+  duration: number;
+}
+
 export default function ChoiceCard({ emoji, label, description, isSelected, onClick, aqiBadge, aqiLabel, impactType }: ChoiceCardProps) {
   const [showRipple, setShowRipple] = useState(false);
   const [ripplePos, setRipplePos] = useState({ x: 0, y: 0 });
   const [showParticles, setShowParticles] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
   const [showButterfly, setShowButterfly] = useState(false);
+  const [butterflies, setButterflies] = useState<Butterfly[]>([]);
   const [showWind, setShowWind] = useState(false);
   const [flashBorder, setFlashBorder] = useState(false);
 
@@ -38,21 +63,63 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
     });
     
     setShowRipple(true);
-    setShowParticles(true);
     setFlashBorder(true);
     
     if (isEcoFriendly) {
       setShowButterfly(true);
+      const bCount = Math.floor(Math.random() * 2) + 3;
+      setButterflies(Array.from({ length: bCount }, (_, i) => ({
+        id: i,
+        left: 10 + Math.random() * 80,
+        top: 30 + Math.random() * 50,
+        endX: (Math.random() - 0.5) * 100,
+        endY: -80 - Math.random() * 80,
+        delay: Math.random() * 0.4,
+        scale: 0.9 + Math.random() * 0.3,
+        duration: 2.0 + Math.random() * 0.8,
+      })));
+
+      const pCount = Math.floor(Math.random() * 4) + 5;
+      setParticles(Array.from({ length: pCount }, (_, i) => ({
+        id: i,
+        left: 20 + Math.random() * 60,
+        top: 30 + Math.random() * 40,
+        endX: (Math.random() - 0.5) * 80,
+        endY: -40 - Math.random() * 60,
+        delay: Math.random() * 0.3,
+        color: `rgba(76,175,80,${0.7 + Math.random() * 0.3})`,
+        rotation: -60 + Math.random() * 120,
+        duration: 1.2 + Math.random() * 0.8,
+      })));
+      setShowParticles(true);
     } else if (isHigh) {
       setShowWind(true);
+      setParticles(Array.from({ length: 3 }, (_, i) => ({
+        id: i,
+        left: 40 + Math.random() * 20,
+        top: 50,
+        endX: 60 + Math.random() * 40,
+        endY: (Math.random() - 0.5) * 40,
+        delay: i * 0.1,
+        color: `rgba(210,155,90,${0.25 + Math.random() * 0.25})`,
+        rotation: 0,
+        duration: 1.2 + Math.random() * 0.8,
+      })));
+      setShowParticles(true);
     }
 
     onClick();
     
     setTimeout(() => setShowRipple(false), 500);
-    setTimeout(() => setShowParticles(false), 2000);
+    setTimeout(() => {
+      setShowParticles(false);
+      setParticles([]);
+    }, 2000);
     setTimeout(() => setFlashBorder(false), 1000);
-    setTimeout(() => setShowButterfly(false), 3000);
+    setTimeout(() => {
+      setShowButterfly(false);
+      setButterflies([]);
+    }, 3000);
     setTimeout(() => setShowWind(false), 2500);
   };
 
@@ -121,56 +188,6 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
   const rippleColor = isHigh
     ? "rgba(210,145,100,0.2)"
     : "rgba(76,175,80,0.18)";
-
-  // --- Selection particles ---
-  const particles = useMemo(() => {
-    if (!showParticles) return [];
-    if (isEcoFriendly) {
-      // 5-8 Leaf-like particles floating up and outward
-      const count = Math.floor(Math.random() * 4) + 5; // 5 to 8
-      return Array.from({ length: count }, (_, i) => ({
-        id: i,
-        left: 20 + Math.random() * 60, // 20% to 80% of card width
-        top: 30 + Math.random() * 40, // 30% to 70% of card height
-        endX: (Math.random() - 0.5) * 80, // drift sideways by -40px to +40px
-        endY: -40 - Math.random() * 60, // drift up by 40px to 100px
-        delay: Math.random() * 0.3, // staggered
-        color: `rgba(76,175,80,${0.7 + Math.random() * 0.3})`,
-        rotation: -60 + Math.random() * 120,
-      }));
-    }
-    if (isHigh) {
-      // Amber dots drifting sideways
-      return Array.from({ length: 3 }, (_, i) => ({
-        id: i,
-        left: 40 + Math.random() * 20,
-        top: 50,
-        endX: 60 + Math.random() * 40,
-        endY: (Math.random() - 0.5) * 40,
-        delay: i * 0.1,
-        color: `rgba(210,155,90,${0.25 + Math.random() * 0.25})`,
-        rotation: 0,
-      }));
-    }
-    return [];
-  }, [showParticles, isEcoFriendly, isHigh]);
-
-  // --- Butterflies ---
-  const butterflies = useMemo(() => {
-    if (!showButterfly) return [];
-    // 3 to 4 butterflies
-    const count = Math.floor(Math.random() * 2) + 3;
-    return Array.from({ length: count }, (_, i) => ({
-      id: i,
-      left: 10 + Math.random() * 80, // 10% to 90% of card width
-      top: 30 + Math.random() * 50, // 30% to 80% of card height
-      endX: (Math.random() - 0.5) * 100, // horizontal drift -50px to +50px
-      endY: -80 - Math.random() * 80, // float upwards 80px to 160px
-      delay: Math.random() * 0.4,
-      scale: 0.9 + Math.random() * 0.3, // 1.8x to 2.2x original size
-      duration: 2.0 + Math.random() * 0.8,
-    }));
-  }, [showButterfly]);
 
   // --- Warning/danger badge styles ---
   const getBadgeStyles = () => {
@@ -346,7 +363,7 @@ export default function ChoiceCard({ emoji, label, description, isSelected, onCl
             }}
             exit={{ opacity: 0 }}
             transition={{
-              duration: 1.2 + Math.random() * 0.8,
+              duration: p.duration,
               delay: p.delay,
               ease: "easeOut",
             }}

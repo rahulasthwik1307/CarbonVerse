@@ -77,6 +77,15 @@ export default function ReceiptUpload({ onImageReady, isAnalyzing }: ReceiptUplo
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (!preview && !isAnalyzing && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            handleClick();
+          }
+        }}
+        tabIndex={preview ? -1 : 0}
+        role="button"
+        aria-label="Upload receipt image"
         animate={{
           scale: isDragging ? 1.02 : 1,
           borderColor: isDragging ? "#4CAF50" : "#B8D4A8",
@@ -125,6 +134,7 @@ export default function ReceiptUpload({ onImageReady, isAnalyzing }: ReceiptUplo
 
         {preview && !isAnalyzing && (
           <div className="flex flex-col items-center w-full text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src={preview} 
               alt="Receipt preview" 

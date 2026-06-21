@@ -1,9 +1,6 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSessionStore } from "@/lib/session-store";
-import VerdOrb from "@/components/ui/VerdOrb";
 
 type Action = {
   id: string;
@@ -92,11 +89,8 @@ export default function VerdActionCoach() {
   const [topCategory, setTopCategory] = useState("Transport");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  useEffect(() => {
-    console.log("[Coach] Active missions:", activeMissions);
-  }, [activeMissions]);
 
-  const generatePlan = (manual = false) => {
+  const generatePlan = useCallback((manual = false) => {
     setIsGenerating(true);
     if (manual) {
       setCoachRecommendations([]);
@@ -155,13 +149,16 @@ export default function VerdActionCoach() {
       setCoachRecommendations(generated);
       setIsGenerating(false);
     }, 800);
-  };
+  }, [memoryBook.stories, memoryBook.receipts, achievements, activeMissions, setCoachRecommendations]);
 
   useEffect(() => {
     if (coach.recommendations.length === 0) {
-      generatePlan(false);
+      const timer = setTimeout(() => {
+        generatePlan(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, []);
+  }, [coach.recommendations.length, generatePlan]);
 
   // Filter recommendations: remove completed ones (that are in timeline events)
   const visibleRecommendations = coach.recommendations.filter(action => {
@@ -197,7 +194,7 @@ export default function VerdActionCoach() {
     return "Electricity choices are driving most of your footprint right now.";
   };
 
-  const getQuestMeta = (quest: any) => {
+  const getQuestMeta = (quest: { title: string; emoji: string; saving?: string; reward?: string }) => {
     let category: "Transport" | "Food" | "Shopping" | "Electricity" = "Transport";
     let difficulty = "Easy";
     let saving = quest.saving || "CO₂";
@@ -205,7 +202,7 @@ export default function VerdActionCoach() {
     for (const cat of Object.keys(ACTION_BANKS)) {
       const found = ACTION_BANKS[cat].find(a => a.title.toLowerCase() === quest.title.toLowerCase());
       if (found) {
-        category = cat as any;
+        category = cat as "Transport" | "Food" | "Shopping" | "Electricity";
         difficulty = found.difficulty;
         saving = found.saving;
         break;
@@ -228,7 +225,6 @@ export default function VerdActionCoach() {
   };
 
   const handleAcceptSingle = (id: string) => {
-    console.log("[Coach] Accept clicked:", id);
     acceptCoachPlan([id]);
   };
 
@@ -255,10 +251,10 @@ export default function VerdActionCoach() {
         }}
       >
         <h3 style={{ margin: 0, color: "#F4A832", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, display: "flex", alignItems: "center", gap: 6 }}>
-          🌱 Verd's Daily Guidance
+          🌱 Verd&apos;s Daily Guidance
         </h3>
         <p style={{ margin: 0, color: "#2D5016", fontSize: 14, lineHeight: 1.4, fontWeight: 600, fontStyle: "italic" }}>
-          "{getVerdGuidance()}"
+          &ldquo;{getVerdGuidance()}&rdquo;
         </p>
       </motion.div>
 
@@ -310,7 +306,7 @@ export default function VerdActionCoach() {
 
             <h2 style={{ margin: 0, color: "#2D5016", fontSize: 20, fontWeight: 800 }}>🌱 All Missions Completed</h2>
             <p style={{ margin: 0, color: "#4A7C2F", fontSize: 14, lineHeight: 1.5, maxWidth: 360 }}>
-              You've completed every active quest.
+              You&apos;ve completed every active quest.
               Verd will prepare new recommendations after your next story or receipt analysis.
             </p>
           </motion.div>
@@ -336,7 +332,7 @@ export default function VerdActionCoach() {
             {/* Header section with counts */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 4, borderBottom: "1px solid rgba(184, 212, 168, 0.3)" }}>
               <h2 style={{ margin: 0, color: "#2D5016", fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
-                🌱 Verd's Quests
+                🌱 Verd&apos;s Quests
               </h2>
               <div style={{ display: "flex", gap: 6 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#4A7C2F", background: "rgba(74, 124, 47, 0.08)", padding: "2px 8px", borderRadius: 6 }}>

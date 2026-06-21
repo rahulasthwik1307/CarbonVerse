@@ -40,8 +40,14 @@ const CopyIcon = () => (
   </svg>
 );
 
+interface DoubleBezelCardProps extends React.HTMLAttributes<HTMLDivElement> {
+  children?: React.ReactNode;
+  style?: React.CSSProperties;
+  innerStyle?: React.CSSProperties;
+}
+
 // Reusable Double-Bezel nested card wrapper
-const DoubleBezelCard = ({ children, style = {}, innerStyle = {}, ...props }: any) => {
+const DoubleBezelCard = ({ children, style = {}, innerStyle = {}, ...props }: DoubleBezelCardProps) => {
   return (
     <div
       style={{
@@ -70,29 +76,6 @@ const DoubleBezelCard = ({ children, style = {}, innerStyle = {}, ...props }: an
       >
         {children}
       </div>
-    </div>
-  );
-};
-
-// Reusable integrated Inner Bento Panel for secondary sections
-const InnerBentoPanel = ({ children, style = {}, ...props }: any) => {
-  return (
-    <div
-      style={{
-        background: "rgba(255, 255, 255, 0.65)", // Semi-transparent warm white
-        border: "1.5px solid rgba(184, 212, 168, 0.35)",
-        borderRadius: 16,
-        padding: 20,
-        boxSizing: "border-box",
-        boxShadow: "0 2px 12px rgba(45, 80, 22, 0.04)",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        ...style
-      }}
-      {...props}
-    >
-      {children}
     </div>
   );
 };
@@ -307,10 +290,11 @@ export default function MemoryGarden() {
   const [showJourneyModal, setShowJourneyModal] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
-  const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
-    setVideoReady(false);
+    setTimeout(() => {
+      setVideoReady(false);
+    }, 0);
   }, [outcome]);
 
   // Outcome details mapping
@@ -335,17 +319,23 @@ export default function MemoryGarden() {
   // Narrative fetch — use cache if available (for back-navigation)
   useEffect(() => {
     if (!hasCompletedStory) {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 0);
       return;
     }
     // Use cached narrative if available (back-navigation)
     if (gardenOutcome?.narrative) {
-      setNarrative(gardenOutcome.narrative);
-      setLoading(false);
+      setTimeout(() => {
+        setNarrative(gardenOutcome.narrative);
+        setLoading(false);
+      }, 0);
       return;
     }
     const fetchNarrative = async () => {
-      setLoading(true);
+      setTimeout(() => {
+        setLoading(true);
+      }, 0);
       try {
         const res = await fetch("/api/narrate", {
           method: "POST",
@@ -363,7 +353,7 @@ export default function MemoryGarden() {
         setNarrative(data.narrative);
         // Cache the narrative for back-navigation
         setGardenOutcome({ narrative: data.narrative, outcome });
-      } catch (e) {
+      } catch {
         // Poetic fallback on error
         setNarrative("");
       } finally {
@@ -378,24 +368,14 @@ export default function MemoryGarden() {
   useEffect(() => {
     if (!hasCompletedStory) return;
     const safetyTimeout = setTimeout(() => {
-      if (!videoReady) {
-        setVideoFailed(true);
-        setVideoReady(true);
-      }
+      setVideoReady(true);
     }, 8000);
     return () => clearTimeout(safetyTimeout);
-  }, [hasCompletedStory, videoReady]);
+  }, [hasCompletedStory]);
 
   // Save Completed Story to Memory Book once on Garden page load
   useEffect(() => {
     if (hasCompletedStory) {
-      console.log(
-        "MEMORY STORY",
-        decisions.map(d => ({
-          choice: d.choice,
-          moment: getDecisionMoment(d.choice)
-        }))
-      );
       addStoryToMemoryBook({
         chapterNumber: 2,
         decisions: decisions.map(d => ({
@@ -921,7 +901,7 @@ ${shareUrl}
             <GardenVideo
               src={outcomeDetails.videoUrl}
               onLoadedData={() => setVideoReady(true)}
-              onError={() => { setVideoFailed(true); setVideoReady(true); }}
+              onError={() => { setVideoReady(true); }}
             />
             
             <AnimatePresence>
@@ -954,7 +934,7 @@ ${shareUrl}
                     🌱 Growing Your Memory Garden
                   </h3>
                   <p style={{ fontSize: 12, color: "#4A7C2F", margin: 0, textAlign: "center", fontStyle: "italic", fontWeight: 500 }}>
-                    "Every choice planted a seed. Nature is taking shape..."
+                    &ldquo;Every choice planted a seed. Nature is taking shape...&rdquo;
                   </p>
                   {/* Elegant loading animation */}
                   <div style={{ width: 120, height: 4, background: "rgba(184, 212, 168, 0.3)", borderRadius: 2, marginTop: 12, overflow: "hidden", position: "relative" }}>
@@ -1085,7 +1065,7 @@ ${shareUrl}
             <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E", marginBottom: 12 }}>
-                  Today's Story
+                  Today&apos;s Story
                 </div>
                 
                 {totalDecisions === 0 ? (
@@ -1402,7 +1382,7 @@ ${shareUrl}
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E" }}>
-                  Today's Choices
+                  Today&apos;s Choices
                 </span>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#2D5016", fontWeight: 700 }}>

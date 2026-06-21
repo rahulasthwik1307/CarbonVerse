@@ -42,7 +42,7 @@ const formatDate = (dateStr: string | null) => {
       day: "numeric",
       year: "numeric"
     });
-  } catch (e) {
+  } catch {
     return "";
   }
 };
@@ -196,7 +196,9 @@ export default function AchievementsView() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    setTimeout(() => {
+      setIsClient(true);
+    }, 0);
   }, []);
 
   // Hydration fallback showing skeleton loader matching premium container constraints
@@ -336,6 +338,7 @@ export default function AchievementsView() {
             playSound("click");
             router.back();
           }}
+          aria-label="Back to Story"
           style={{
             background: "rgba(255, 255, 255, 0.6)",
             border: "1px solid rgba(184, 212, 168, 0.4)",
@@ -520,6 +523,16 @@ export default function AchievementsView() {
                   onClick={() => {
                     playSound("click");
                     setSelectedBadgeId(ach.id);
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${ach.title} badge - ${isUnlocked ? 'Unlocked' : 'Locked'}. ${detail.impact}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      playSound("click");
+                      setSelectedBadgeId(ach.id);
+                    }
                   }}
                   style={{
                     background: styles.bg,

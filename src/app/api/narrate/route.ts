@@ -9,7 +9,7 @@ const fallbacks = {
 
 export async function POST(req: Request) {
   try {
-    const { decision, impactType, worldState, city, chapter, aqi } = await req.json();
+    const { decision, impactType, chapter, aqi } = await req.json();
 
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json({ narrative: fallbacks[impactType as keyof typeof fallbacks] || fallbacks.moderate });

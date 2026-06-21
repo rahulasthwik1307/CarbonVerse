@@ -34,6 +34,6 @@ export interface DetectiveResult {
     title: string;
     emoji: string;
     description: string;
-    targetType: string;
+    targetType: "eco_choices" | "receipt_upload" | "story_complete";
   };
 }

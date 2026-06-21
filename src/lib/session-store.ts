@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
 
 interface UserProfile {
   city: string;
@@ -183,7 +183,7 @@ interface SessionState {
   setCoachRecommendations: (actions: SessionState["coach"]["recommendations"]) => void;
   acceptCoachPlan: (actionIds: string[]) => void;
   updateVerdContext: (patch: Partial<SessionState["verdContext"]>) => void;
-  acceptDetectiveMission: (mission: { id: string; title: string; emoji: string; description: string; targetType: string }) => void;
+  acceptDetectiveMission: (mission: { id: string; title: string; emoji: string; description: string; targetType: "eco_choices" | "receipt_upload" | "story_complete" }) => void;
 }
 
 const defaultState = {
@@ -331,11 +331,11 @@ const isMissionCompletedByChoice = (emoji: string, title: string, choice: string
   return false;
 };
 
-const getUnlockedAchievementsState = (state: any) => {
+const getUnlockedAchievementsState = (state: SessionState) => {
   const now = new Date().toISOString();
-  const newlyUnlocked: any[] = [];
+  const newlyUnlocked: SessionState["achievements"] = [];
   
-  const newAchievements = state.achievements.map((ach: any) => {
+  const newAchievements = state.achievements.map((ach: SessionState["achievements"][0]) => {
     if (ach.unlockedAt) return ach;
     
     let unlock = false;
@@ -350,14 +350,14 @@ const getUnlockedAchievementsState = (state: any) => {
         unlock = state.memoryBook.stories.length >= 1;
         break;
       case "metro-master": {
-        const publicChoices = state.memoryBook.stories.flatMap((s: any) => s.decisions)
-          .filter((d: any) => d.choice.toLowerCase().includes("metro") || d.choice.toLowerCase().includes("walk"));
+        const publicChoices = state.memoryBook.stories.flatMap((s: SessionState["memoryBook"]["stories"][0]) => s.decisions)
+          .filter((d: SessionState["memoryBook"]["stories"][0]["decisions"][0]) => d.choice.toLowerCase().includes("metro") || d.choice.toLowerCase().includes("walk"));
         unlock = publicChoices.length >= 3;
         break;
       }
       case "plant-pro": {
-        const plantChoices = state.memoryBook.stories.flatMap((s: any) => s.decisions)
-          .filter((d: any) => d.impactType === "eco" && (d.choice.toLowerCase().includes("plant") || d.choice.toLowerCase().includes("tiffin") || d.choice.toLowerCase().includes("canteen")));
+        const plantChoices = state.memoryBook.stories.flatMap((s: SessionState["memoryBook"]["stories"][0]) => s.decisions)
+          .filter((d: SessionState["memoryBook"]["stories"][0]["decisions"][0]) => d.impactType === "eco" && (d.choice.toLowerCase().includes("plant") || d.choice.toLowerCase().includes("tiffin") || d.choice.toLowerCase().includes("canteen")));
         unlock = plantChoices.length >= 3;
         break;
       }
@@ -370,7 +370,7 @@ const getUnlockedAchievementsState = (state: any) => {
       case "sustainability-hero": {
         if (state.memoryBook.stories.length >= 1) {
           const recentStory = state.memoryBook.stories[state.memoryBook.stories.length - 1];
-          unlock = recentStory.decisions.length > 0 && recentStory.decisions.every((d: any) => d.impactType === "eco");
+          unlock = recentStory.decisions.length > 0 && recentStory.decisions.every((d: SessionState["memoryBook"]["stories"][0]["decisions"][0]) => d.impactType === "eco");
         }
         break;
       }
@@ -579,7 +579,6 @@ export const useSessionStore = create<SessionState>()(
   addStoryToMemoryBook: (story) => set((state) => {
     // 1. Session ID check
     if (story.storySessionId && state.memoryBook.stories.some(s => s.storySessionId === story.storySessionId)) {
-      console.log(`[Store] Story for session ${story.storySessionId} already saved. Skipping duplicate save.`);
       return {};
     }
 
@@ -591,7 +590,6 @@ export const useSessionStore = create<SessionState>()(
       return timeDiff && sameCarbon;
     });
     if (isRecentDuplicate) {
-      console.log("[Store] Identical story carbon saved within 15 seconds. Skipping duplicate save.");
       return {};
     }
 
@@ -1008,7 +1006,7 @@ export const useSessionStore = create<SessionState>()(
   acceptDetectiveMission: (mission) => set((state) => {
     const newMission = {
       ...mission,
-      targetType: mission.targetType as any,
+      targetType: mission.targetType,
       targetCount: 1,
       currentCount: 0,
       completed: false,

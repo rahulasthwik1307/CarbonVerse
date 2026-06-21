@@ -45,14 +45,18 @@ export default function AchievementToast({ achievement, onClose }: AchievementTo
           <div style={{ position: "relative", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
             {achievement.emoji}
             {/* Sparkles */}
-            {[0, 1, 2].map(i => (
+            {[
+              { x: -15, y: -10 },
+              { x: 10, y: 15 },
+              { x: -5, y: 12 }
+            ].map((offset, i) => (
               <motion.div
                 key={i}
                 initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
                 animate={{ 
                   scale: [0, 1, 0], 
-                  x: (Math.random() - 0.5) * 30, 
-                  y: (Math.random() - 0.5) * 30,
+                  x: offset.x, 
+                  y: offset.y,
                   opacity: 0
                 }}
                 transition={{ duration: 0.8, delay: i * 0.1, ease: "easeOut" }}
