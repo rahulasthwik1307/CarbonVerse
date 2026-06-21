@@ -290,7 +290,7 @@ ${shareUrl}
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Handle Share Click
+  // Handle Share Click with fallbacks
   const handleShareClick = (platform: "x" | "linkedin" | "facebook" | "instagram") => {
     const storyText = generateStoryMessage();
     const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://carbonverse.earth";
@@ -300,17 +300,32 @@ ${shareUrl}
       return;
     }
 
-    let url = "";
-    if (platform === "x") {
-      url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(storyText)}`;
-    } else if (platform === "linkedin") {
-      url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
-    } else if (platform === "facebook") {
-      url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    if (platform === "linkedin") {
+      // Copy to clipboard first
+      navigator.clipboard.writeText(storyText);
+      setAlertText("Story copied. Paste into LinkedIn and click Post.");
+      setTimeout(() => setAlertText(""), 4000);
+      
+      const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
     }
 
-    if (url) {
+    if (platform === "facebook") {
+      // Copy to clipboard first
+      navigator.clipboard.writeText(storyText);
+      setAlertText("Story copied. Paste into Facebook and click Post.");
+      setTimeout(() => setAlertText(""), 4000);
+      
+      const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
       window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    if (platform === "x") {
+      const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(storyText)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
     }
   };
 
@@ -412,8 +427,26 @@ ${shareUrl}
               Every choice you made helped nature flourish.
             </p>
             
-            {/* COMPACT ELEGANT OUTCOME SUMMARY CHIPS */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            {/* ELEGANT SUMMARY CHIPS WITH EMPHASIZED DOMINANT OUTCOME CHIP FIRST */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8, alignItems: "center" }}>
+              {/* FINAL OUTCOME CHIP (Dominant, Larger, First in row, Subtle Glow) */}
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "4px 12px",
+                background: outcome === "eco" ? "rgba(76, 175, 80, 0.22)" : outcome === "high" ? "rgba(255, 107, 107, 0.22)" : "rgba(244, 168, 50, 0.22)",
+                border: `1.5px solid ${outcome === "eco" ? "rgba(76, 175, 80, 0.6)" : outcome === "high" ? "rgba(255, 107, 107, 0.6)" : "rgba(244, 168, 50, 0.6)"}`,
+                borderRadius: 14,
+                fontSize: 12.5,
+                fontWeight: 800,
+                color: "#2D5016",
+                boxShadow: outcome === "eco" ? "0 0 12px rgba(76, 175, 80, 0.25)" : outcome === "high" ? "0 0 12px rgba(255, 107, 107, 0.25)" : "0 0 12px rgba(244, 168, 50, 0.25)",
+                marginRight: 4
+              }}>
+                {outcome === "eco" ? "🌍" : outcome === "high" ? "🌫️" : "🌱"} {outcomeDetails.title.replace(/^[^\w\s]*/, "").trim()}
+              </div>
+
               {ecoCount > 0 && (
                 <div style={{
                   display: "flex",
@@ -459,55 +492,60 @@ ${shareUrl}
                   fontWeight: 700,
                   color: "#2D5016"
                 }}>
-                  🌫️ {highCount} High Carbon Choice{highCount !== 1 ? "s" : ""}
+                  🌫️ {highCount} High Choice{highCount !== 1 ? "s" : ""}
                 </div>
               )}
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                padding: "2px 8px",
-                background: outcome === "eco" ? "rgba(76, 175, 80, 0.12)" : outcome === "high" ? "rgba(255, 107, 107, 0.12)" : "rgba(244, 168, 50, 0.12)",
-                border: `1px solid ${outcome === "eco" ? "rgba(76, 175, 80, 0.3)" : outcome === "high" ? "rgba(255, 107, 107, 0.3)" : "rgba(244, 168, 50, 0.3)"}`,
-                borderRadius: 12,
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#2D5016"
-              }}>
-                {outcome === "eco" ? "🌍" : outcome === "high" ? "🌫️" : "🌱"} {outcomeDetails.title.replace(/^[^\w\s]*/, "").trim()}
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Right column above Bento Stack (Perfect visual alignment with World Outcome card) */}
+        {/* Right column above Bento Stack (Perfect vertical alignment with World Outcome card + Upgraded animations) */}
         <div style={{ display: "flex", width: "100%", height: "100%", justifyContent: "flex-end" }}>
           <motion.button
             className="play-again-btn"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
+            whileHover={{ 
+              scale: 1.03,
+              boxShadow: "0 6px 18px rgba(74, 124, 47, 0.12), 0 0 10px rgba(184, 212, 168, 0.4)",
+              background: "rgba(255, 255, 255, 0.95)",
+              borderColor: "#4CAF50"
+            }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => { resetSession(); router.push("/"); }}
             style={{
               padding: "10px 18px",
-              background: "rgba(255, 255, 255, 0.75)",
+              background: "rgba(255, 255, 255, 0.8)",
               backdropFilter: "blur(12px)",
               border: "1.5px solid #B8D4A8",
-              borderRadius: 20,
-              fontSize: 13,
-              fontWeight: 700,
+              borderRadius: 14,
+              fontSize: 13.5,
+              fontWeight: 800,
               color: "#2D5016",
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 6,
+              gap: 8,
               width: "100%",
               maxWidth: 295,
-              boxShadow: "0 2px 10px rgba(45, 80, 22, 0.05)",
-              transition: "transform 150ms ease-out"
+              boxShadow: "0 3px 10px rgba(45, 80, 22, 0.06)",
+              transition: "border-color 150ms ease-out, background-color 150ms ease-out"
             }}
           >
-            Play Again ↺
+            <motion.span
+              animate={{ rotate: [0, 8, -8, 0] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+              style={{ display: "inline-block" }}
+            >
+              🌱
+            </motion.span>
+            Play Another Story
+            <motion.span
+              animate={{ x: [0, 3, 0] }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              style={{ display: "inline-block", fontSize: 13, fontWeight: 900 }}
+            >
+              ↺
+            </motion.span>
           </motion.button>
         </div>
       </div>
@@ -822,6 +860,34 @@ ${shareUrl}
             >
               📖 View My Journey
             </motion.button>
+
+            <AnimatePresence>
+              {alertText && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    marginTop: 6,
+                    right: 0,
+                    background: "rgba(74, 124, 47, 0.95)",
+                    border: "1px solid rgba(184, 212, 168, 0.8)",
+                    borderRadius: 10,
+                    padding: "6px 12px",
+                    fontSize: 11,
+                    color: "white",
+                    fontWeight: 700,
+                    boxShadow: "0 4px 12px rgba(45, 80, 22, 0.1)",
+                    zIndex: 10,
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {alertText}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </motion.div>
