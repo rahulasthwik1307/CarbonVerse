@@ -15,7 +15,7 @@ export default function FutureSimulator() {
   const [userVideoReady, setUserVideoReady] = useState(false);
   const [greenerVideoReady, setGreenerVideoReady] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [videosActive, setVideosActive] = useState(false);
+  const [videosActive, setVideosActive] = useState(true);
 
   // Drag slider refs and state
   const containerRef = useRef<HTMLDivElement>(null);
@@ -245,77 +245,7 @@ export default function FutureSimulator() {
 
   return (
     <div style={{ position: "relative", display: "flex", flexDirection: "column", flex: 1, justifyContent: "center", width: "100%" }}>
-      {/* ── Loading Screen ── */}
-      <AnimatePresence mode="wait">
-        {!videosActive && (
-          <motion.div
-            key="loading-screen"
-            initial={{ opacity: 0, x: "-50%", y: "calc(-50% + 20px)", scale: 0.95 }}
-            animate={{ opacity: 1, x: "-50%", y: "-50%", scale: 1 }}
-            exit={{ opacity: 0, x: "-50%", y: "calc(-50% - 20px)", scale: 0.95 }}
-            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              zIndex: 100,
-              width: "90%",
-              maxWidth: 380,
-              background: "rgba(255, 255, 255, 0.85)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: "1px solid rgba(255, 255, 255, 0.6)",
-              boxShadow: "0 12px 40px rgba(45, 80, 22, 0.15)",
-              borderRadius: 32,
-              padding: "40px 24px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <VerdOrb size={80} mood={totalCarbonDelta < 0 ? "eco" : "thinking"} />
-            </motion.div>
-            
-            <h1 style={{
-              fontSize: "1.6rem",
-              fontWeight: 700,
-              color: "#2D5016",
-              textAlign: "center",
-              maxWidth: 500,
-              lineHeight: 1.4,
-              marginTop: 28,
-              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif"
-            }}>
-              🌱 Verd is revealing your future...
-            </h1>
 
-            <div style={{
-              width: "240px",
-              height: "6px",
-              backgroundColor: "#E8F5E3",
-              borderRadius: "3px",
-              marginTop: "20px",
-              overflow: "hidden",
-              position: "relative"
-            }}>
-              <motion.div
-                style={{
-                  height: "100%",
-                  width: `${loadingProgress}%`,
-                  background: "linear-gradient(90deg, #F4A832 0%, #FFD166 50%, #F4A832 100%)",
-                  borderRadius: "3px",
-                  boxShadow: "0 0 8px rgba(244,168,50,0.5)",
-                }}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Main Content OR Garden Transition ── */}
       <AnimatePresence mode="wait">
@@ -573,8 +503,8 @@ export default function FutureSimulator() {
                     muted
                     loop
                     playsInline
-                    preload="metadata"
-                    onCanPlay={() => setUserVideoReady(true)}
+                    preload="auto"
+                    onLoadedData={() => setUserVideoReady(true)}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -582,6 +512,49 @@ export default function FutureSimulator() {
                       pointerEvents: "none"
                     }}
                   />
+                  <AnimatePresence>
+                    {!userVideoReady && (
+                      <motion.div
+                        initial={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "linear-gradient(135deg, #F0FAF0 0%, #FFF8E7 100%)",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 24,
+                          zIndex: 10,
+                          boxSizing: "border-box"
+                        }}
+                      >
+                        <motion.div
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          style={{ marginBottom: 12 }}
+                        >
+                          <VerdOrb size={48} mood="thinking" />
+                        </motion.div>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: "#2D5016", margin: "0 0 4px 0", textAlign: "center" }}>
+                          🌍 Building Your Future Story
+                        </h3>
+                        <p style={{ fontSize: 12, color: "#4A7C2F", margin: 0, textAlign: "center", fontStyle: "italic", fontWeight: 500 }}>
+                          "Verd is stitching your choices into tomorrow."
+                        </p>
+                        {/* Subtle loader bar */}
+                        <div style={{ width: 120, height: 4, background: "rgba(184, 212, 168, 0.3)", borderRadius: 2, marginTop: 12, overflow: "hidden", position: "relative" }}>
+                          <motion.div
+                            animate={{ x: ["-100%", "100%"] }}
+                            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                            style={{ width: "100%", height: "100%", background: "#F4A832", borderRadius: 2 }}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Right World: Greener Story (Top Layer - Clipped) */}
@@ -601,8 +574,8 @@ export default function FutureSimulator() {
                     muted
                     loop
                     playsInline
-                    preload="metadata"
-                    onCanPlay={() => setGreenerVideoReady(true)}
+                    preload="auto"
+                    onLoadedData={() => setGreenerVideoReady(true)}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -610,6 +583,49 @@ export default function FutureSimulator() {
                       pointerEvents: "none"
                     }}
                   />
+                  <AnimatePresence>
+                    {!greenerVideoReady && (
+                      <motion.div
+                        initial={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "linear-gradient(135deg, #F0FAF0 0%, #FFF8E7 100%)",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: 24,
+                          zIndex: 10,
+                          boxSizing: "border-box"
+                        }}
+                      >
+                        <motion.div
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          style={{ marginBottom: 12 }}
+                        >
+                          <VerdOrb size={48} mood="eco" />
+                        </motion.div>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: "#2D5016", margin: "0 0 4px 0", textAlign: "center" }}>
+                          🌍 Building Your Future Story
+                        </h3>
+                        <p style={{ fontSize: 12, color: "#4A7C2F", margin: 0, textAlign: "center", fontStyle: "italic", fontWeight: 500 }}>
+                          "Verd is stitching your choices into tomorrow."
+                        </p>
+                        {/* Subtle loader bar */}
+                        <div style={{ width: 120, height: 4, background: "rgba(184, 212, 168, 0.3)", borderRadius: 2, marginTop: 12, overflow: "hidden", position: "relative" }}>
+                          <motion.div
+                            animate={{ x: ["-100%", "100%"] }}
+                            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                            style={{ width: "100%", height: "100%", background: "#4CAF50", borderRadius: 2 }}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Vertical Divider Line */}

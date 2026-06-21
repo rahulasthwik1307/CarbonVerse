@@ -98,7 +98,7 @@ const InnerBentoPanel = ({ children, style = {}, ...props }: any) => {
 };
 
 // Stable memoized video component to prevent re-creation and stuttering
-const GardenVideo = memo(({ src }: { src: string }) => {
+const GardenVideo = memo(({ src, onLoadedData }: { src: string; onLoadedData?: () => void }) => {
   return (
     <video
       src={src}
@@ -107,6 +107,7 @@ const GardenVideo = memo(({ src }: { src: string }) => {
       loop
       playsInline
       preload="auto"
+      onLoadedData={onLoadedData}
       style={{
         width: "100%",
         height: "100%",
@@ -204,13 +205,6 @@ const shareCardVariants = {
 export default function MemoryGarden() {
   const router = useRouter();
   const { decisions, profile, worldState, totalCarbonDelta, resetSession } = useSessionStore();
-  const [narrative, setNarrative] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const [alertText, setAlertText] = useState("");
-  const [showJourneyModal, setShowJourneyModal] = useState(false);
-  const [showInstagramModal, setShowInstagramModal] = useState(false);
-
   const ecoCount = decisions.filter(d => d.impactType === "eco").length;
   const highCount = decisions.filter(d => d.impactType === "high").length;
   const totalDecisions = decisions.length;
@@ -227,6 +221,18 @@ export default function MemoryGarden() {
       outcome = "moderate";
     }
   }
+
+  const [narrative, setNarrative] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [alertText, setAlertText] = useState("");
+  const [showJourneyModal, setShowJourneyModal] = useState(false);
+  const [showInstagramModal, setShowInstagramModal] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+
+  useEffect(() => {
+    setVideoReady(false);
+  }, [outcome]);
 
   // Outcome details mapping
   const outcomeDetails = {
@@ -652,7 +658,52 @@ ${shareUrl}
               boxShadow: "0 6px 20px rgba(45, 80, 22, 0.05)"
             }}
           >
-            <GardenVideo src={outcomeDetails.videoUrl} />
+            <GardenVideo src={outcomeDetails.videoUrl} onLoadedData={() => setVideoReady(true)} />
+            
+            <AnimatePresence>
+              {!videoReady && (
+                <motion.div
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(135deg, #FFF8E7 0%, #E8F5E3 100%)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 24,
+                    zIndex: 10,
+                    boxSizing: "border-box"
+                  }}
+                >
+                  <motion.div
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    style={{ marginBottom: 12 }}
+                  >
+                    <VerdOrb size={48} mood={outcome === "eco" ? "eco" : outcome === "high" ? "high" : "moderate"} />
+                  </motion.div>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "#2D5016", margin: "0 0 4px 0", textAlign: "center" }}>
+                    🌱 Growing Your Memory Garden
+                  </h3>
+                  <p style={{ fontSize: 12, color: "#4A7C2F", margin: 0, textAlign: "center", fontStyle: "italic", fontWeight: 500 }}>
+                    "Every choice planted a seed. Nature is taking shape..."
+                  </p>
+                  {/* Elegant loading animation */}
+                  <div style={{ width: 120, height: 4, background: "rgba(184, 212, 168, 0.3)", borderRadius: 2, marginTop: 12, overflow: "hidden", position: "relative" }}>
+                    <motion.div
+                      animate={{ x: ["-100%", "100%"] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                      style={{ width: "100%", height: "100%", background: "#4CAF50", borderRadius: 2 }}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Dark vignette overlay */}
             <div
               style={{
