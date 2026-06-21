@@ -92,6 +92,10 @@ export default function VerdActionCoach() {
   const [topCategory, setTopCategory] = useState("Transport");
   const [isGenerating, setIsGenerating] = useState(false);
 
+  useEffect(() => {
+    console.log("[Coach] Active missions:", activeMissions);
+  }, [activeMissions]);
+
   const generatePlan = (manual = false) => {
     setIsGenerating(true);
     if (manual) {
@@ -224,6 +228,7 @@ export default function VerdActionCoach() {
   };
 
   const handleAcceptSingle = (id: string) => {
+    console.log("[Coach] Accept clicked:", id);
     acceptCoachPlan([id]);
   };
 

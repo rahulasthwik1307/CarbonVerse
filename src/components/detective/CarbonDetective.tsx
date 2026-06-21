@@ -115,7 +115,7 @@ export default function CarbonDetective() {
   };
 
   const proceedWithResult = (dataToSave: any) => {
-    const { addReceiptToMemoryBook, updateMissionProgress, checkAndUnlockAchievements, updateVerdContext } = useSessionStore.getState();
+    const { addReceiptToMemoryBook, updateMissionProgress, checkAndUnlockAchievements, updateVerdContext, generateNewMissions } = useSessionStore.getState();
     
     addReceiptToMemoryBook({
       receiptType: dataToSave.receiptType,
@@ -127,6 +127,13 @@ export default function CarbonDetective() {
         estimatedCO2: i.estimatedCO2
       }))
     });
+
+    // First-Time User Safety: If active non-completed missions are empty, generate starter missions
+    const currentMissions = useSessionStore.getState().activeMissions || [];
+    const activeNonCompleted = currentMissions.filter(m => !m.completed);
+    if (activeNonCompleted.length === 0) {
+      generateNewMissions();
+    }
 
     updateVerdContext({
       lastReceiptType: dataToSave.receiptType,

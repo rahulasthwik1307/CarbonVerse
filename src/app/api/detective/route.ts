@@ -1,88 +1,459 @@
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
 
-// Carbon emission factors per category
-const CARBON_FACTORS = {
-  food_meat: { factor: 27, unit: "kg CO₂ per kg", label: "Meat/Poultry" },
-  food_dairy: { factor: 13.5, unit: "kg CO₂ per kg", label: "Dairy" },
-  food_vegetables: { factor: 2, unit: "kg CO₂ per kg", label: "Vegetables" },
-  food_packaged: { factor: 3.5, unit: "kg CO₂ per item", label: "Packaged Food" },
-  food_delivery: { factor: 2.5, unit: "kg CO₂ per delivery", label: "Food Delivery" },
-  fuel_petrol: { factor: 2.31, unit: "kg CO₂ per liter", label: "Petrol" },
-  fuel_diesel: { factor: 2.68, unit: "kg CO₂ per liter", label: "Diesel" },
-  electricity: { factor: 0.82, unit: "kg CO₂ per kWh", label: "Electricity (India avg)" },
-  transport_cab: { factor: 0.21, unit: "kg CO₂ per km", label: "Cab/Taxi" },
-  transport_flight: { factor: 0.255, unit: "kg CO₂ per km", label: "Flight" },
-  shopping_clothing: { factor: 10, unit: "kg CO₂ per item", label: "Clothing" },
-  shopping_electronics: { factor: 70, unit: "kg CO₂ per item", label: "Electronics" },
+const FALLBACK_SUGGESTIONS = {
+  food: [
+    { action: "Choose plant-based meals", potentialSaving: "2.5 kg CO₂", difficulty: "easy" },
+    { action: "Reduce food waste", potentialSaving: "1.2 kg CO₂", difficulty: "easy" }
+  ],
+  utility: [
+    { action: "Turn off unused devices", potentialSaving: "1.8 kg CO₂", difficulty: "easy" },
+    { action: "Use natural light during the day", potentialSaving: "0.9 kg CO₂", difficulty: "easy" }
+  ],
+  shopping: [
+    { action: "Buy only what you need", potentialSaving: "3.5 kg CO₂", difficulty: "medium" },
+    { action: "Prefer local products", potentialSaving: "2.0 kg CO₂", difficulty: "easy" }
+  ],
+  fuel: [
+    { action: "Use public transit", potentialSaving: "4.5 kg CO₂", difficulty: "medium" },
+    { action: "Carpool when possible", potentialSaving: "3.0 kg CO₂", difficulty: "easy" }
+  ],
+  unknown: [
+    { action: "Choose low-impact daily choices", potentialSaving: "1.5 kg CO₂", difficulty: "easy" },
+    { action: "Reduce household waste", potentialSaving: "1.0 kg CO₂", difficulty: "easy" }
+  ]
+};
+
+const FALLBACK_ITEMS = {
+  food: [
+    { name: "Meal Selection", co2: 3.5 },
+    { name: "Packaging & Delivery", co2: 0.8 }
+  ],
+  utility: [
+    { name: "Electricity Consumption", co2: 38.2 },
+    { name: "Utility Maintenance Fee", co2: 2.1 }
+  ],
+  shopping: [
+    { name: "Purchased Goods", co2: 12.0 },
+    { name: "Store Packaging", co2: 1.5 }
+  ],
+  fuel: [
+    { name: "Fuel Refueling", co2: 26.5 }
+  ],
+  unknown: [
+    { name: "Eco Contributor Item", co2: 4.5 }
+  ]
 };
 
 const SYSTEM_PROMPT = `You are Verd, an expert carbon footprint analyst.
 You analyze receipts and bills to estimate carbon emissions.
 
 When given a receipt image, you MUST:
-1. Identify what type of receipt it is: food | fuel | electricity | transport | shopping | grocery | utility | other
+1. Identify what type of receipt it is: food | utility | shopping | fuel
 2. List the key items that contribute to carbon emissions
-3. Estimate carbon impact for each item
-4. Give a total carbon estimate
+3. Estimate carbon impact (co2 in kg) for each item
+4. Provide a total carbon estimate (totalCO2 in kg)
 5. Provide 2-3 specific actionable suggestions
-6. If the receipt is electricity/utility, extract structured electricityData
-7. Identify ONE relevant "suggestedMission" the user can take
+6. Provide a top insight and a warm encouraging verdict (verdVerdict).
 
 RESPOND ONLY WITH VALID JSON in this exact format:
 {
-  "receiptType": "food|fuel|electricity|transport|shopping|grocery|utility|other|unknown",
-  "isValid": true|false,
-  "invalidReason": "reason if not valid, else null",
-  "merchantName": "store/merchant name or null",
+  "isValid": true,
+  "receiptType": "food | utility | shopping | fuel",
+  "merchantName": "string",
   "items": [
     {
-      "name": "item name",
-      "category": "category from list",
-      "estimatedCO2": number in kg,
-      "confidence": "high|medium|low",
-      "note": "brief explanation"
+      "name": "string",
+      "co2": number
     }
   ],
-  "totalCO2": number in kg,
-  "totalCO2Label": "equivalent description (e.g. driving 45km)",
-  "impactLevel": "low|moderate|high|very_high",
-  "verdVerdict": "one warm encouraging sentence about their choices",
+  "totalCO2": number,
+  "impactLevel": "low | moderate | high | very_high",
+  "verdVerdict": "string",
   "suggestions": [
     {
-      "action": "specific action they can take",
-      "potentialSaving": "X kg CO₂ saved",
-      "difficulty": "easy|medium|hard"
+      "action": "string"
     }
   ],
-  "topInsight": "the single most surprising fact about this receipt",
-  "electricityData": {
-    "kwhConsumed": number | null,
-    "provider": "string | null",
-    "billPeriodDays": number | null
-  },
-  "suggestedMission": {
-    "id": "unique string like 'mission-energy-1'",
-    "title": "short title e.g. Energy Saver",
-    "emoji": "emoji that fits",
-    "description": "short one-sentence mission description",
-    "targetType": "eco_choices"
-  }
+  "topInsight": "string"
 }
 
-If the image is NOT a receipt or bill, set isValid to false and invalidReason to a friendly explanation.
+If the image is NOT a receipt or bill, set isValid to false.
+Never shame the user. Always be warm and encouraging.`;
 
-IMPORTANT FOR ELECTRICITY/UTILITY BILLS:
-Do NOT skip the electricityData field. Look for any values indicating 'Units Consumed' or 'kWh' and put that number in kwhConsumed.
+function cleanAndParseJSON(rawResponse: string) {
+  let cleaned = rawResponse.trim();
+  
+  // Remove markdown code fences if present
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  
+  // Extract only the JSON block if the LLM output contains extra conversational text
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+  
+  // Clean trailing commas before closing braces/brackets
+  cleaned = cleaned.replace(/,\s*([\}\]])/g, "$1");
+  
+  return JSON.parse(cleaned);
+}
 
-SUGGESTED MISSION LOGIC:
-- If food/grocery (high impact): Plant-Based Explorer 🥗 or Zero-Waste Shopper 🛍️
-- If fuel/transport: Metro Master 🚇
-- If electricity/utility: Energy Saver ⚡
-- If shopping: Local Shopper 🛒
+function runRecoveryParser(rawResponse: string): any {
+  console.log("[Recovery Parser] JSON.parse failed. Executing fallback regex extraction.");
+  const items: Array<{ name: string; co2: number }> = [];
+  const suggestions: Array<{ action: string }> = [];
+  let receiptType: "food" | "utility" | "shopping" | "fuel" = "food";
+  let merchantName = "Merchant";
+  let isValid = true;
+  
+  const rawLower = rawResponse.toLowerCase();
+  
+  // Determine receiptType based on keywords
+  if (rawLower.includes("electricity") || rawLower.includes("utility") || rawLower.includes("power") || rawLower.includes("energy chg") || rawLower.includes("fixed chg") || rawLower.includes("surcharges") || rawLower.includes("bill")) {
+    receiptType = "utility";
+  } else if (rawLower.includes("fuel") || rawLower.includes("petrol") || rawLower.includes("diesel") || rawLower.includes("gasoline") || rawLower.includes("speed") || rawLower.includes("pump")) {
+    receiptType = "fuel";
+  } else if (rawLower.includes("shopping") || rawLower.includes("store") || rawLower.includes("clothing") || rawLower.includes("shirt") || rawLower.includes("shoe") || rawLower.includes("retail") || rawLower.includes("groceries") || rawLower.includes("grocery")) {
+    receiptType = "shopping";
+  } else if (rawLower.includes("food") || rawLower.includes("restaurant") || rawLower.includes("dining") || rawLower.includes("meal") || rawLower.includes("chicken") || rawLower.includes("biryani") || rawLower.includes("veg") || rawLower.includes("paneer")) {
+    receiptType = "food";
+  }
 
-Never shame the user. Always be warm and encouraging.
-Include quantities in item notes like 'X liters' or 'X kg'.`;
+  // Extract Merchant Name
+  const merchantMatch = rawResponse.match(/(?:merchantName|merchant|store|provider)\s*["']?[:=]\s*["']?([^"\n,]+)/i);
+  if (merchantMatch) {
+    merchantName = merchantMatch[1].trim();
+  }
+
+  const lines = rawResponse.split("\n");
+  const getCO2FromLine = (line: string, defaultCO2: number): number => {
+    const co2Match = line.match(/(?:co2|carbon|emissions?|impact)?\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(?:kg\s*(?:co2)?)?/i);
+    if (co2Match) {
+      return parseFloat(co2Match[1]);
+    }
+    const fallbackMatch = line.match(/(\d+(?:\.\d+)?)/);
+    if (fallbackMatch) {
+      return parseFloat(fallbackMatch[1]);
+    }
+    return defaultCO2;
+  };
+
+  // Keyword extraction for items: ENERGY CHG, FIXED CHG, SURCHARGES
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (/energy\s*chg/i.test(trimmed)) {
+      items.push({ name: "Energy Charge", co2: getCO2FromLine(trimmed, 15.0) });
+      continue;
+    }
+    if (/fixed\s*chg/i.test(trimmed)) {
+      items.push({ name: "Fixed Charge", co2: getCO2FromLine(trimmed, 2.5) });
+      continue;
+    }
+    if (/surcharges/i.test(trimmed)) {
+      items.push({ name: "Surcharges", co2: getCO2FromLine(trimmed, 1.2) });
+      continue;
+    }
+  }
+
+  // Section-based extraction for FOOD ITEMS, RESTAURANT ITEMS, SHOPPING ITEMS, FUEL ITEMS
+  let currentSection: "food" | "utility" | "shopping" | "fuel" | null = null;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/suggestion|action|recommendation|verdict|insight/i.test(trimmed)) {
+      currentSection = null;
+      continue;
+    }
+    if (/food\s*items|restaurant\s*items/i.test(trimmed)) {
+      currentSection = "food";
+      continue;
+    } else if (/shopping\s*items/i.test(trimmed)) {
+      currentSection = "shopping";
+      continue;
+    } else if (/fuel\s*items/i.test(trimmed)) {
+      currentSection = "fuel";
+      continue;
+    } else if (/utility\s*items|electricity\s*items/i.test(trimmed)) {
+      currentSection = "utility";
+      continue;
+    }
+    
+    if (currentSection && /^[-\*\+•\d+\.]\s*(.+)/.test(trimmed)) {
+      const content = trimmed.replace(/^[-\*\+•\d+\.]\s*/, "");
+      const parts = content.split(/[:=-]/);
+      const name = parts[0].trim();
+      const co2Val = parts[1] ? parseFloat(parts[1]) : 1.5;
+      if (name && name.length > 2 && name.length < 50) {
+        items.push({ name, co2: isNaN(co2Val) ? 1.5 : co2Val });
+      }
+    }
+  }
+
+  // General list item fallback parser if no items added yet
+  if (items.length === 0) {
+    for (const line of lines) {
+      const trimmed = line.trim();
+      const listMatch = trimmed.match(/^[-\*\+•\d+\.]\s*([^:=]+)(?:[:=]|\s-\s)\s*(\d+(?:\.\d+)?)/);
+      if (listMatch) {
+        const name = listMatch[1].replace(/["']/g, "").trim();
+        const co2 = parseFloat(listMatch[2]);
+        if (!/list|items|suggestions|summary/i.test(name) && name.length > 2 && name.length < 50) {
+          items.push({ name, co2 });
+        }
+      }
+    }
+  }
+
+  // Extract suggestions
+  let inSuggestionsSection = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/suggestion|action|recommendation/i.test(trimmed)) {
+      inSuggestionsSection = true;
+      continue;
+    }
+    if (inSuggestionsSection && /^[-\*\+•\d+\.]\s*(.+)/.test(trimmed)) {
+      const actionText = trimmed.replace(/^[-\*\+•\d+\.]\s*/, "").replace(/["']/g, "").trim();
+      if (actionText.length > 5 && actionText.length < 100 && !/list|summary|insight/i.test(actionText)) {
+        suggestions.push({ action: actionText });
+      }
+    }
+  }
+
+  const totalCO2 = items.reduce((sum, item) => sum + item.co2, 0);
+
+  let topInsight = "Every small action helps reduce carbon emissions!";
+  const insightMatch = rawResponse.match(/(?:insight|did you know|fact)\s*[:=]\s*["']?([^"\n]+)/i);
+  if (insightMatch) {
+    topInsight = insightMatch[1].trim();
+  }
+
+  let verdVerdict = "Great job tracking your carbon footprint! Let's work together to make it even lower. 🌿";
+  const verdictMatch = rawResponse.match(/(?:verdVerdict|verdict|opinion)\s*[:=]\s*["']?([^"\n\.]+)/i);
+  if (verdictMatch) {
+    verdVerdict = verdictMatch[1].trim() + ". 🌿";
+  }
+
+  return {
+    isValid,
+    receiptType,
+    merchantName,
+    items,
+    totalCO2,
+    impactLevel: totalCO2 < 5 ? "low" : totalCO2 < 15 ? "moderate" : totalCO2 < 40 ? "high" : "very_high",
+    verdVerdict,
+    suggestions,
+    topInsight
+  };
+}
+
+function mapToFullSchema(simplified: any): any {
+  const receiptType = (simplified.receiptType || "unknown").toLowerCase();
+  
+  // Process items
+  const items = (simplified.items || []).map((item: any) => {
+    const estimatedCO2 = parseFloat(item.co2 ?? item.estimatedCO2 ?? 0);
+    
+    let category = "food_packaged";
+    if (receiptType === "food") {
+      if (item.name?.toLowerCase().includes("chicken") || item.name?.toLowerCase().includes("meat") || item.name?.toLowerCase().includes("mutton")) {
+        category = "food_meat";
+      } else if (item.name?.toLowerCase().includes("milk") || item.name?.toLowerCase().includes("paneer") || item.name?.toLowerCase().includes("cheese")) {
+        category = "food_dairy";
+      } else {
+        category = "food_vegetables";
+      }
+    } else if (receiptType === "utility" || receiptType === "electricity") {
+      category = "electricity";
+    } else if (receiptType === "fuel") {
+      category = item.name?.toLowerCase().includes("diesel") ? "fuel_diesel" : "fuel_petrol";
+    } else if (receiptType === "shopping") {
+      category = item.name?.toLowerCase().includes("electronics") || item.name?.toLowerCase().includes("phone") ? "shopping_electronics" : "shopping_clothing";
+    }
+
+    return {
+      name: item.name || "Item",
+      category,
+      estimatedCO2,
+      confidence: item.confidence || "high",
+      note: item.note || `Estimated carbon footprint for ${item.name || "item"}`
+    };
+  });
+
+  // Fallback items if empty
+  if (items.length === 0) {
+    const fallbackList = FALLBACK_ITEMS[receiptType as keyof typeof FALLBACK_ITEMS] || FALLBACK_ITEMS.unknown;
+    fallbackList.forEach(item => {
+      items.push({
+        name: item.name,
+        category: receiptType === "utility" ? "electricity" : receiptType === "fuel" ? "fuel_petrol" : "food_packaged",
+        estimatedCO2: item.co2,
+        confidence: "medium",
+        note: `Estimated from average ${receiptType} consumption`
+      });
+    });
+  }
+
+  // Process suggestions
+  const suggestions = (simplified.suggestions || []).map((sug: any) => {
+    let diff = sug.difficulty || "easy";
+    if (diff !== "easy" && diff !== "medium" && diff !== "hard") {
+      diff = "easy";
+    }
+    return {
+      action: sug.action || "",
+      potentialSaving: sug.potentialSaving || `${((simplified.totalCO2 || 5) * 0.2).toFixed(1)} kg CO₂`,
+      difficulty: diff
+    };
+  });
+
+  // Fallback suggestions if empty
+  if (suggestions.length === 0) {
+    const fallbackList = FALLBACK_SUGGESTIONS[receiptType as keyof typeof FALLBACK_SUGGESTIONS] || FALLBACK_SUGGESTIONS.unknown;
+    fallbackList.forEach(sug => {
+      suggestions.push({
+        action: sug.action,
+        potentialSaving: sug.potentialSaving,
+        difficulty: sug.difficulty
+      });
+    });
+  }
+
+  // Total CO2
+  let totalCO2 = parseFloat(simplified.totalCO2 || 0);
+  if (totalCO2 <= 0) {
+    totalCO2 = items.reduce((sum: number, item: any) => sum + item.estimatedCO2, 0);
+  }
+  totalCO2 = parseFloat(totalCO2.toFixed(1));
+
+  // Impact Level
+  let impactLevel = simplified.impactLevel || "moderate";
+  if (!["low", "moderate", "high", "very_high"].includes(impactLevel)) {
+    if (totalCO2 < 5) impactLevel = "low";
+    else if (totalCO2 < 15) impactLevel = "moderate";
+    else if (totalCO2 < 40) impactLevel = "high";
+    else impactLevel = "very_high";
+  }
+
+  // Labels and Insights
+  let totalCO2Label = simplified.totalCO2Label || "";
+  if (!totalCO2Label) {
+    if (receiptType === "fuel") {
+      const estLiters = (totalCO2 / 2.31).toFixed(1);
+      totalCO2Label = `${estLiters}L fuel = ${totalCO2} kg CO₂`;
+    } else if (receiptType === "utility") {
+      const estKwh = (totalCO2 / 0.82).toFixed(1);
+      totalCO2Label = `${estKwh} kWh = ${totalCO2} kg CO₂`;
+    } else {
+      const kmEquivalent = (totalCO2 / 0.21).toFixed(1);
+      totalCO2Label = `equivalent to driving ${kmEquivalent} km in a car`;
+    }
+  }
+
+  let verdVerdict = simplified.verdVerdict || "";
+  if (!verdVerdict) {
+    if (receiptType === "food") {
+      verdVerdict = "A delicious choice! Try choosing plant-based options next time to save even more carbon. 🥗";
+    } else if (receiptType === "utility") {
+      verdVerdict = "Being mindful of energy consumption makes a massive difference for our planet! ⚡";
+    } else if (receiptType === "shopping") {
+      verdVerdict = "Sleek pick! Opting for durable goods and local brands helps reduce overhead emissions. 🛍️";
+    } else if (receiptType === "fuel") {
+      verdVerdict = "Every liter saved counts. Carpooling or walking can help clean our skies! 🚇";
+    } else {
+      verdVerdict = "Excellent tracking! Every recorded receipt builds a clearer picture of your impact. 🌿";
+    }
+  }
+
+  let topInsight = simplified.topInsight || "";
+  if (!topInsight) {
+    if (receiptType === "food") {
+      topInsight = "Switching from red meat to plant-based protein once a week saves ~100 kg CO₂ per year!";
+    } else if (receiptType === "utility") {
+      topInsight = "A simple 1°C increase in AC settings can save up to 6% of electricity consumption daily!";
+    } else if (receiptType === "shopping") {
+      topInsight = "Fast fashion accounts for nearly 10% of global carbon emissions, more than flights!";
+    } else if (receiptType === "fuel") {
+      topInsight = "Standard combustion engines waste nearly 70% of energy as heat. Carpooling doubles efficiency!";
+    } else {
+      topInsight = "Logging and visualizing emissions is the first step toward reducing personal impact.";
+    }
+  }
+
+  // Suggested Mission
+  let suggestedMission = undefined;
+  if (receiptType === "food") {
+    suggestedMission = {
+      id: "mission-seed-plate-detective",
+      title: "Green Plate",
+      emoji: "🥗",
+      description: "Choose a plant-based or local meal",
+      targetType: "eco_choices"
+    };
+  } else if (receiptType === "utility") {
+    suggestedMission = {
+      id: "mission-seed-utility-detective",
+      title: "Energy Saver",
+      emoji: "⚡",
+      description: "Turn off unused devices to save power",
+      targetType: "eco_choices"
+    };
+  } else if (receiptType === "shopping") {
+    suggestedMission = {
+      id: "mission-seed-shopping-detective",
+      title: "Local Buyer",
+      emoji: "🛒",
+      description: "Choose local kirana store or products",
+      targetType: "eco_choices"
+    };
+  } else if (receiptType === "fuel") {
+    suggestedMission = {
+      id: "mission-seed-commute-detective",
+      title: "Commute Champion",
+      emoji: "🚇",
+      description: "Choose public transit or walk",
+      targetType: "eco_choices"
+    };
+  } else {
+    suggestedMission = {
+      id: "mission-seed-receipt-detective",
+      title: "Receipt Detective",
+      emoji: "🔍",
+      description: "Analyze your first real receipt",
+      targetType: "receipt_upload"
+    };
+  }
+
+  // Electricity Data
+  let electricityData = undefined;
+  if (receiptType === "utility") {
+    const kwhConsumed = Math.round(totalCO2 / 0.82);
+    electricityData = {
+      kwhConsumed: kwhConsumed > 0 ? kwhConsumed : 120,
+      provider: "State Grid Provider",
+      billPeriodDays: 30
+    };
+  }
+
+  return {
+    isValid: true,
+    invalidReason: null,
+    receiptType,
+    merchantName: simplified.merchantName || "Unknown Merchant",
+    items,
+    totalCO2,
+    totalCO2Label,
+    impactLevel,
+    verdVerdict,
+    suggestions,
+    topInsight,
+    electricityData,
+    suggestedMission
+  };
+}
 
 export async function POST(req: Request) {
   try {
@@ -103,37 +474,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const validMimeTypes = ["image/jpeg","image/jpg","image/png","image/webp"];
+    const validMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     const safeMimeType = validMimeTypes.includes(mimeType) 
       ? mimeType : "image/jpeg";
 
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({
+      // Demo response
+      const demoResult = mapToFullSchema({
         isValid: true,
         receiptType: "food",
         merchantName: "Demo Restaurant",
         items: [
-          { name: "Chicken Biryani", category: "food_meat",
-            estimatedCO2: 3.2, confidence: "medium",
-            note: "Poultry has moderate carbon footprint" },
-          { name: "Soft Drink", category: "food_packaged",
-            estimatedCO2: 0.3, confidence: "low",
-            note: "Packaging adds to emissions" }
+          { name: "Chicken Biryani", co2: 3.2 },
+          { name: "Soft Drink", co2: 0.3 }
         ],
         totalCO2: 3.5,
-        totalCO2Label: "like driving 16km in a car",
         impactLevel: "moderate",
         verdVerdict: "A balanced meal choice! Try plant-based options occasionally to reduce impact. 🌿",
         suggestions: [
-          { action: "Choose vegetarian biryani instead",
-            potentialSaving: "2.1 kg CO₂",
-            difficulty: "easy" }
+          { action: "Choose vegetarian biryani instead" }
         ],
-        topInsight: "Switching to vegetarian protein once a week saves ~100 kg CO₂ per year!",
-        suggestedMission: {
-          id: "demo-mission", title: "Plant-Based Explorer", emoji: "🥗", description: "Try one plant-based meal this week", targetType: "eco_choices"
-        }
+        topInsight: "Switching to vegetarian protein once a week saves ~100 kg CO₂ per year!"
       });
+      return NextResponse.json(demoResult);
     }
 
     const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
@@ -164,49 +527,43 @@ export async function POST(req: Request) {
     });
 
     const rawResponse = completion.choices[0]?.message?.content || "";
-    
-    let result;
+    console.log("---------- RAW GROQ RESPONSE ----------");
+    console.log(rawResponse);
+    console.log("----------------------------------------");
+
+    let simplifiedResult;
+    let usedRecoveryParser = false;
+
     try {
-      const cleaned = rawResponse
-        .replace(/```json\n?/g, "")
-        .replace(/```\n?/g, "")
-        .trim();
-      result = JSON.parse(cleaned);
-    } catch {
-      // Very lenient fallback if partial JSON found
-      const matchCO2 = rawResponse.match(/"totalCO2"\s*:\s*(\d+(?:\.\d+)?)/);
-      if (matchCO2) {
-        result = {
-          isValid: true,
-          receiptType: "unknown",
-          merchantName: "Receipt",
-          items: [],
-          totalCO2: parseFloat(matchCO2[1]),
-          totalCO2Label: "Estimated from partial read",
-          impactLevel: "moderate",
-          verdVerdict: "I couldn't read all the details, but I found the total!",
-          suggestions: [],
-          topInsight: "Clearer photos help me find more insights."
-        };
-      } else {
-        return NextResponse.json({
-          isValid: false,
-          invalidReason: "Could not read the receipt clearly. Please try a clearer photo.",
-          receiptType: "unknown",
-          items: [],
-          totalCO2: 0,
-          totalCO2Label: "",
-          impactLevel: "low",
-          verdVerdict: "Try uploading a clearer photo of your receipt! 🌿",
-          suggestions: [],
-          topInsight: ""
-        });
-      }
+      simplifiedResult = cleanAndParseJSON(rawResponse);
+      console.log("[JSON Parse Status] Successfully parsed JSON natively.");
+    } catch (parseError) {
+      console.error("[JSON Parse Status] Native parse failed. Parsing raw text using Recovery Parser.", parseError);
+      simplifiedResult = runRecoveryParser(rawResponse);
+      usedRecoveryParser = true;
     }
 
-    if (result.receiptType === "fuel" && result.items) {
-      const totalLiters = result.items.reduce((sum: number, item: any) => {
-        const literMatch = item.note?.match(/(\d+(?:\.\d+)?)\s*(?:liters?|litres?|L)/i);
+    if (!simplifiedResult.isValid) {
+      return NextResponse.json({
+        isValid: false,
+        invalidReason: simplifiedResult.invalidReason || "Could not read the receipt clearly. Please try a clearer photo.",
+        receiptType: "unknown",
+        items: [],
+        totalCO2: 0,
+        totalCO2Label: "",
+        impactLevel: "low",
+        verdVerdict: "Try uploading a clearer photo of your receipt! 🌿",
+        suggestions: [],
+        topInsight: ""
+      });
+    }
+
+    const finalResult = mapToFullSchema(simplifiedResult);
+
+    // Fuel logic refinement if we have carbon API
+    if (finalResult.receiptType === "fuel" && finalResult.items) {
+      const totalLiters = finalResult.items.reduce((sum: number, item: any) => {
+        const literMatch = item.name?.match(/(\d+(?:\.\d+)?)\s*(?:liters?|litres?|L)/i);
         if (literMatch) return sum + parseFloat(literMatch[1]);
         return sum;
       }, 0);
@@ -227,29 +584,16 @@ export async function POST(req: Request) {
           );
           const emissionsData = await emissionsRes.json();
           if (emissionsData.co2kg) {
-            result.totalCO2 = emissionsData.co2kg;
-            result.totalCO2Label = 
-              `${totalLiters}L fuel = ${emissionsData.co2kg.toFixed(1)} kg CO₂`;
+            finalResult.totalCO2 = parseFloat(emissionsData.co2kg.toFixed(1));
+            finalResult.totalCO2Label = `${totalLiters}L fuel = ${finalResult.totalCO2} kg CO₂`;
           }
-        } catch { }
+        } catch {}
       }
     }
 
-    if ((result.receiptType === "electricity" || result.receiptType === "utility") && (result.items || result.electricityData)) {
-      let totalKwh = 0;
-      
-      // Prefer structured electricityData
-      if (result.electricityData && result.electricityData.kwhConsumed) {
-        totalKwh = result.electricityData.kwhConsumed;
-      } else if (result.items) {
-        // Fallback to searching notes
-        totalKwh = result.items.reduce((sum: number, item: any) => {
-          const kwhMatch = item.note?.match(/(\d+(?:\.\d+)?)\s*kWh/i);
-          if (kwhMatch) return sum + parseFloat(kwhMatch[1]);
-          return sum;
-        }, 0);
-      }
-      
+    // Utility/Electricity logic refinement
+    if ((finalResult.receiptType === "utility" || finalResult.receiptType === "electricity") && finalResult.electricityData?.kwhConsumed) {
+      const totalKwh = finalResult.electricityData.kwhConsumed;
       if (totalKwh > 0) {
         try {
           const emissionsRes = await fetch(
@@ -266,15 +610,19 @@ export async function POST(req: Request) {
           );
           const emissionsData = await emissionsRes.json();
           if (emissionsData.co2kg) {
-            result.totalCO2 = emissionsData.co2kg;
-            result.totalCO2Label = 
-              `${totalKwh} kWh = ${emissionsData.co2kg.toFixed(1)} kg CO₂ (India grid)`;
+            finalResult.totalCO2 = parseFloat(emissionsData.co2kg.toFixed(1));
+            finalResult.totalCO2Label = `${totalKwh} kWh = ${finalResult.totalCO2} kg CO₂ (India grid)`;
           }
-        } catch { }
+        } catch {}
       }
     }
 
-    return NextResponse.json(result);
+    console.log("---------- FINAL RETURNED OBJECT ----------");
+    console.log(JSON.stringify(finalResult, null, 2));
+    console.log(`Recovery Parser Used: ${usedRecoveryParser}`);
+    console.log("-------------------------------------------");
+
+    return NextResponse.json(finalResult);
 
   } catch (error) {
     console.error("Detective API error:", error);
