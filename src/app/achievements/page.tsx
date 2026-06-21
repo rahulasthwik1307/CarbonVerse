@@ -2,6 +2,7 @@
 
 import LandingWorld from "@/components/world/LandingWorld";
 import AchievementsView from "@/components/achievements/AchievementsView";
+import MemoryBookButton from "@/components/ui/MemoryBookButton";
 
 export default function AchievementsPage() {
   return (
@@ -15,6 +16,7 @@ export default function AchievementsPage() {
         <style>{`div::-webkit-scrollbar{display:none}`}</style>
         <AchievementsView />
       </div>
+      <MemoryBookButton />
     </main>
   );
 }

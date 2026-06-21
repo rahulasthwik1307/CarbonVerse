@@ -705,7 +705,44 @@ ${shareUrl}
         </div>
 
         {/* Right column above Bento Stack (Perfect vertical alignment with World Outcome card + Upgraded animations) */}
-        <div style={{ display: "flex", width: "100%", height: "100%", justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", width: "100%", height: "100%", justifyContent: "flex-end", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          {/* Secondary: Logout button */}
+          <motion.button
+            whileHover={{ 
+              scale: 1.03,
+              background: "rgba(255, 255, 255, 0.95)",
+              borderColor: "#B8D4A8",
+              color: "#2D5016"
+            }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("carbonverse-session-storage");
+                sessionStorage.removeItem("carbonverse-session-storage");
+                window.location.href = "/";
+              }
+            }}
+            style={{
+              padding: "10px 18px",
+              background: "rgba(255, 255, 255, 0.5)",
+              backdropFilter: "blur(12px)",
+              border: "1.5px dashed rgba(184, 212, 168, 0.6)",
+              borderRadius: 14,
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: "#6B8F5E",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              transition: "all 150ms ease-out"
+            }}
+          >
+            <span>🚪</span>
+            Logout
+          </motion.button>
+
           <motion.button
             className="play-again-btn"
             whileHover={{ 

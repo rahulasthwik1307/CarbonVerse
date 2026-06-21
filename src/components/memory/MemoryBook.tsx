@@ -666,6 +666,41 @@ export default function MemoryBook() {
       }}
       className="w-full p-5 md:p-8"
     >
+      {/* BACK ACTION */}
+      <button
+        onClick={async () => {
+          try {
+            const Tone = await import("tone");
+            const synth = new Tone.Synth({
+              oscillator: { type: "sine" },
+              envelope: { attack: 0.02, decay: 0.1, sustain: 0.2, release: 0.4 }
+            }).toDestination();
+            synth.triggerAttackRelease("E5", "8n");
+          } catch (e) {}
+          router.back();
+        }}
+        style={{
+          background: "rgba(255, 255, 255, 0.6)",
+          border: "1px solid rgba(184, 212, 168, 0.4)",
+          color: "#2D5016",
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          width: "fit-content",
+          padding: "8px 16px",
+          borderRadius: 16,
+          boxShadow: "0 2px 8px rgba(45,80,22,0.04)",
+          transition: "transform 150ms ease-out",
+        }}
+        onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.97)"}
+        onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
+      >
+        <span>←</span> Back to Story
+      </button>
+
       {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, borderBottom: "1px solid rgba(184, 212, 168, 0.3)", paddingBottom: 16 }}>
         <motion.div
