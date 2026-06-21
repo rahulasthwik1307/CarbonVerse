@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/lib/session-store";
@@ -73,6 +73,50 @@ const DoubleBezelCard = ({ children, style = {}, innerStyle = {}, ...props }: an
     </div>
   );
 };
+
+// Reusable integrated Inner Bento Panel for secondary sections
+const InnerBentoPanel = ({ children, style = {}, ...props }: any) => {
+  return (
+    <div
+      style={{
+        background: "rgba(255, 255, 255, 0.65)", // Semi-transparent warm white
+        border: "1.5px solid rgba(184, 212, 168, 0.35)",
+        borderRadius: 16,
+        padding: 20,
+        boxSizing: "border-box",
+        boxShadow: "0 2px 12px rgba(45, 80, 22, 0.04)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        ...style
+      }}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+
+// Stable memoized video component to prevent re-creation and stuttering
+const GardenVideo = memo(({ src }: { src: string }) => {
+  return (
+    <video
+      src={src}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="auto"
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        display: "block"
+      }}
+    />
+  );
+});
+GardenVideo.displayName = "GardenVideo";
 
 // Shimmering skeleton loader for narrative text
 function SkeletonLine({ width, height }: { width: string; height: number }) {
@@ -277,47 +321,64 @@ ${shareUrl}
   const communityRef = getCommunityReflection();
 
   return (
-    <div
+    <DoubleBezelCard
       style={{
         width: "100%",
         maxWidth: 1100,
         margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: 20,
-        height: "100%",
+        height: "auto",
         boxSizing: "border-box"
+      }}
+      innerStyle={{
+        padding: 24,
+        gap: 20,
+        boxShadow: "0 8px 30px rgba(45, 80, 22, 0.08)"
       }}
     >
       <style>{`
         @media (min-width: 1024px) {
           .garden-layout-grid {
             display: grid !important;
-            grid-template-columns: 7fr 3fr !important;
-            gap: 24px !important;
-            flex-grow: 1 !important;
-            height: 0 !important; /* Forces grid elements to obey container flex bounds */
-            min-height: 0 !important;
+            grid-template-columns: 72fr 28fr !important;
+            gap: 20px !important;
+            width: 100% !important;
           }
         }
         @media (max-width: 1023px) {
           .garden-layout-grid {
             display: flex !important;
             flex-direction: column !important;
-            gap: 20px !important;
-            height: auto !important;
-          }
-          .video-card-bezel {
-            height: 380px !important;
+            gap: 16px !important;
+            width: 100% !important;
           }
           .bento-card-stack {
             height: auto !important;
           }
+          .share-section-container {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 16px !important;
+            text-align: center !important;
+          }
+          .share-actions-row {
+            flex-direction: column !important;
+            align-items: center !important;
+            width: 100% !important;
+            gap: 16px !important;
+          }
+          .social-buttons-grid {
+            justify-content: center !important;
+            width: 100% !important;
+          }
+          .copy-button-container {
+            width: 100% !important;
+            align-items: center !important;
+          }
+          .copy-button-container button {
+            width: 100% !important;
+          }
         }
         @media (max-width: 480px) {
-          .video-card-bezel {
-            height: 240px !important;
-          }
           .garden-header-container {
             flex-direction: column !important;
             align-items: flex-start !important;
@@ -331,16 +392,15 @@ ${shareUrl}
       `}</style>
 
       {/* HEADER */}
-      <motion.div
+      <div
         className="garden-header-container"
-        initial={{ opacity: 0, y: 20, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ delay: 0, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         style={{
           display: "flex",
           alignItems: "center",
           width: "100%",
-          boxSizing: "border-box"
+          boxSizing: "border-box",
+          paddingBottom: 16,
+          borderBottom: "1px solid rgba(184, 212, 168, 0.35)"
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -381,51 +441,41 @@ ${shareUrl}
         >
           Play Again ↺
         </motion.button>
-      </motion.div>
+      </div>
 
       {/* BENTO LAYOUT */}
       <div className="garden-layout-grid">
         
-        {/* LEFT COLUMN: Large Hero Video Card (70%) */}
+        {/* LEFT COLUMN: Large Hero Video Card (72%) */}
         <motion.div
           className="video-card-bezel"
           initial={{ opacity: 0, y: 20, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.25, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
           style={{
-            background: "rgba(184, 212, 168, 0.15)", // Outer shell
-            border: "1.5px solid rgba(184, 212, 168, 0.4)",
-            borderRadius: 24,
+            background: "rgba(255, 255, 255, 0.6)",
+            border: "1.5px solid rgba(184, 212, 168, 0.35)",
+            borderRadius: 20,
             padding: 6,
             boxSizing: "border-box",
-            height: "100%",
-            position: "relative"
+            position: "relative",
+            width: "100%",
+            aspectRatio: "16 / 9",
+            overflow: "hidden"
           }}
         >
           <div
             style={{
-              borderRadius: 18,
+              borderRadius: 14,
               height: "100%",
               width: "100%",
               overflow: "hidden",
               position: "relative",
-              border: "1px solid rgba(184, 212, 168, 0.5)",
-              boxShadow: "0 8px 32px rgba(45, 80, 22, 0.08)"
+              border: "1px solid rgba(184, 212, 168, 0.4)",
+              boxShadow: "0 6px 20px rgba(45, 80, 22, 0.05)"
             }}
           >
-            <video
-              src={outcomeDetails.videoUrl}
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls={false}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
+            <GardenVideo src={outcomeDetails.videoUrl} />
             {/* Dark vignette overlay */}
             <div
               style={{
@@ -440,11 +490,11 @@ ${shareUrl}
             <div
               style={{
                 position: "absolute",
-                top: 16,
-                left: 16,
-                background: "rgba(255, 255, 255, 0.85)",
+                top: 14,
+                left: 14,
+                background: "rgba(255, 255, 255, 0.9)",
                 backdropFilter: "blur(12px)",
-                border: "1px solid rgba(184, 212, 168, 0.6)",
+                border: "1px solid rgba(184, 212, 168, 0.5)",
                 borderRadius: 20,
                 padding: "6px 14px",
                 fontSize: 12,
@@ -461,7 +511,7 @@ ${shareUrl}
           </div>
         </motion.div>
 
-        {/* RIGHT COLUMN: Stacked Bento Cards (30%) */}
+        {/* RIGHT COLUMN: Stacked Bento Cards (28%) */}
         <div
           className="bento-card-stack"
           style={{
@@ -479,7 +529,7 @@ ${shareUrl}
             transition={{ delay: 0.45, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
             style={{ flex: 1 }}
           >
-            <DoubleBezelCard style={{ height: "100%" }}>
+            <InnerBentoPanel style={{ height: "100%", justifyContent: "center" }}>
               <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E", marginBottom: 6 }}>
                   World Outcome
@@ -491,7 +541,7 @@ ${shareUrl}
                   {outcomeDetails.desc}
                 </p>
               </div>
-            </DoubleBezelCard>
+            </InnerBentoPanel>
           </motion.div>
 
           {/* Card 2: Story Reflection Card */}
@@ -499,9 +549,9 @@ ${shareUrl}
             initial={{ opacity: 0, y: 20, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.65, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-            style={{ flex: 1.8 }}
+            style={{ flex: 1.5 }}
           >
-            <DoubleBezelCard style={{ height: "100%" }}>
+            <InnerBentoPanel style={{ height: "100%" }}>
               <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E", marginBottom: 12 }}>
@@ -509,9 +559,9 @@ ${shareUrl}
                   </div>
                   
                   {totalDecisions === 0 ? (
-                    <div style={{ padding: "10px 0", fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
-                      No choices recorded in this run. Start a new chapter! 🌱
-                    </div>
+                     <div style={{ padding: "10px 0", fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
+                       No choices recorded in this run. Start a new chapter! 🌱
+                     </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "#2D5016", fontWeight: 700 }}>
@@ -554,169 +604,188 @@ ${shareUrl}
                   )}
                 </div>
               </div>
-            </DoubleBezelCard>
-          </motion.div>
-
-          {/* Card 3: Share Garden Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.85, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-            style={{ flex: 1.4 }}
-          >
-            <DoubleBezelCard style={{ height: "100%" }}>
-              <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between", gap: 12 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E", marginBottom: 10 }}>
-                    Share Garden
-                  </div>
-                  
-                  {/* Social Buttons Grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, width: "100%" }}>
-                    <motion.button
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => handleShareClick("x")}
-                      style={{
-                        background: "rgba(255, 255, 255, 0.55)",
-                        backdropFilter: "blur(8px)",
-                        border: "1px solid rgba(184, 212, 168, 0.5)",
-                        borderRadius: 12,
-                        padding: "10px",
-                        color: "#2D5016",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(45, 80, 22, 0.04)"
-                      }}
-                      title="Share on X"
-                    >
-                      <XIcon />
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => handleShareClick("linkedin")}
-                      style={{
-                        background: "rgba(255, 255, 255, 0.55)",
-                        backdropFilter: "blur(8px)",
-                        border: "1px solid rgba(184, 212, 168, 0.5)",
-                        borderRadius: 12,
-                        padding: "10px",
-                        color: "#2D5016",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(45, 80, 22, 0.04)"
-                      }}
-                      title="Share on LinkedIn"
-                    >
-                      <LinkedInIcon />
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => handleShareClick("instagram")}
-                      style={{
-                        background: "rgba(255, 255, 255, 0.55)",
-                        backdropFilter: "blur(8px)",
-                        border: "1px solid rgba(184, 212, 168, 0.5)",
-                        borderRadius: 12,
-                        padding: "10px",
-                        color: "#2D5016",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(45, 80, 22, 0.04)"
-                      }}
-                      title="Copy for Instagram"
-                    >
-                      <InstagramIcon />
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => handleShareClick("facebook")}
-                      style={{
-                        background: "rgba(255, 255, 255, 0.55)",
-                        backdropFilter: "blur(8px)",
-                        border: "1px solid rgba(184, 212, 168, 0.5)",
-                        borderRadius: 12,
-                        padding: "10px",
-                        color: "#2D5016",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(45, 80, 22, 0.04)"
-                      }}
-                      title="Share on Facebook"
-                    >
-                      <FacebookIcon />
-                    </motion.button>
-                  </div>
-                </div>
-
-                {/* Copy Link Button & Alert Area */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => handleShareClick("copy")}
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      background: "#F4A832",
-                      color: "white",
-                      borderRadius: 14,
-                      border: "none",
-                      fontWeight: 700,
-                      fontSize: 13,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                      cursor: "pointer",
-                      boxShadow: "0 3px 10px rgba(244, 168, 50, 0.3)"
-                    }}
-                  >
-                    <CopyIcon />
-                    {copied ? "✓ Copied!" : "Copy Summary & Link"}
-                  </motion.button>
-
-                  <AnimatePresence>
-                    {alertText && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        style={{
-                          background: "rgba(74, 124, 47, 0.1)",
-                          border: "1px solid rgba(74, 124, 47, 0.25)",
-                          borderRadius: 10,
-                          padding: "6px 10px",
-                          fontSize: 11,
-                          color: "#4A7C2F",
-                          fontWeight: 700,
-                          textAlign: "center"
-                        }}
-                      >
-                        {alertText}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </DoubleBezelCard>
+            </InnerBentoPanel>
           </motion.div>
         </div>
       </div>
-    </div>
+
+      {/* SHARE SECTION */}
+      <motion.div
+        className="share-section-container"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "rgba(184, 212, 168, 0.08)",
+          border: "1.5px solid rgba(184, 212, 168, 0.25)",
+          borderRadius: 20,
+          padding: "16px 20px",
+          width: "100%",
+          boxSizing: "border-box",
+          marginTop: 8
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E" }}>
+            Share Garden
+          </span>
+          <span style={{ fontSize: 13, color: "#4A7C2F", fontWeight: 600 }}>
+            Invite others to rewrite their future and explore their own Memory Garden.
+          </span>
+        </div>
+
+        <div className="share-actions-row" style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {/* Social Buttons Group */}
+          <div className="social-buttons-grid" style={{ display: "flex", gap: 8 }}>
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => handleShareClick("x")}
+              style={{
+                background: "rgba(255, 255, 255, 0.75)",
+                border: "1px solid rgba(184, 212, 168, 0.5)",
+                borderRadius: 12,
+                width: 38,
+                height: 38,
+                color: "#2D5016",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(45, 80, 22, 0.04)"
+              }}
+              title="Share on X"
+            >
+              <XIcon />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => handleShareClick("linkedin")}
+              style={{
+                background: "rgba(255, 255, 255, 0.75)",
+                border: "1px solid rgba(184, 212, 168, 0.5)",
+                borderRadius: 12,
+                width: 38,
+                height: 38,
+                color: "#2D5016",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(45, 80, 22, 0.04)"
+              }}
+              title="Share on LinkedIn"
+            >
+              <LinkedInIcon />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => handleShareClick("instagram")}
+              style={{
+                background: "rgba(255, 255, 255, 0.75)",
+                border: "1px solid rgba(184, 212, 168, 0.5)",
+                borderRadius: 12,
+                width: 38,
+                height: 38,
+                color: "#2D5016",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(45, 80, 22, 0.04)"
+              }}
+              title="Copy for Instagram"
+            >
+              <InstagramIcon />
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => handleShareClick("facebook")}
+              style={{
+                background: "rgba(255, 255, 255, 0.75)",
+                border: "1px solid rgba(184, 212, 168, 0.5)",
+                borderRadius: 12,
+                width: 38,
+                height: 38,
+                color: "#2D5016",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(45, 80, 22, 0.04)"
+              }}
+              title="Share on Facebook"
+            >
+              <FacebookIcon />
+            </motion.button>
+          </div>
+
+          {/* Copy Link Button & Alert Area */}
+          <div className="copy-button-container" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", position: "relative" }}>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handleShareClick("copy")}
+              style={{
+                padding: "10px 18px",
+                background: "#F4A832",
+                color: "white",
+                borderRadius: 14,
+                border: "none",
+                fontWeight: 700,
+                fontSize: 13,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                cursor: "pointer",
+                boxShadow: "0 3px 10px rgba(244, 168, 50, 0.25)"
+              }}
+            >
+              <CopyIcon />
+              {copied ? "✓ Copied!" : "Copy Summary & Link"}
+            </motion.button>
+
+            <AnimatePresence>
+              {alertText && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    marginTop: 6,
+                    right: 0,
+                    background: "rgba(74, 124, 47, 0.95)",
+                    border: "1px solid rgba(184, 212, 168, 0.8)",
+                    borderRadius: 10,
+                    padding: "6px 12px",
+                    fontSize: 11,
+                    color: "white",
+                    fontWeight: 700,
+                    boxShadow: "0 4px 12px rgba(45, 80, 22, 0.1)",
+                    zIndex: 10,
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {alertText}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </motion.div>
+
+    </DoubleBezelCard>
   );
 }
