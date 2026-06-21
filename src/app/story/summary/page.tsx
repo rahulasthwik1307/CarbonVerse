@@ -677,77 +677,58 @@ export default function SummaryPage() {
                 )}
               </div>
 
-              {unlockedMissions.length === 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: showDecisions ? 12 : 6 }}>
-                  {[
-                    { id: "starter-1", emoji: "🌱", title: "Green Plate", description: "Choose a plant-based meal" },
-                    { id: "starter-2", emoji: "🚶", title: "Walk Short Trips", description: "Walk for a trip under 1km" },
-                    { id: "starter-3", emoji: "🛒", title: "Local Buyer", description: "Support local stores" }
-                  ].map(mission => (
-                    <div key={mission.id} style={{
-                      display: "flex", alignItems: "flex-start", gap: showDecisions ? 14 : 10,
-                      padding: showDecisions ? "14px 16px" : "8px 12px", borderRadius: 16,
-                      background: "rgba(74,124,47,0.05)",
-                      border: "1px dashed rgba(74,124,47,0.22)",
-                    }}>
-                      <span style={{ fontSize: 26, flexShrink: 0, marginTop: 2 }}>{mission.emoji}</span>
-                      <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-                        <div style={{
-                          fontSize: 14, fontWeight: 700, color: "#2D5016",
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        }}>
-                          {mission.title}
-                        </div>
-                        <div style={{
-                          fontSize: 12, fontWeight: 600, color: "#4A7C2F",
-                          display: "flex", alignItems: "center", gap: 4
-                        }}>
-                          🏅 {getBadgeSubtitle(mission.title)}
-                        </div>
-                        <div style={{
-                          fontSize: 12, color: "#6B8F5E",
-                          lineHeight: 1.4,
-                        }}>
-                          {mission.description}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: showDecisions ? 12 : 6 }}>
-                  {(showAllMissions ? unlockedMissions : unlockedMissions.slice(0, 3)).map(mission => (
-                    <div key={mission.id} style={{
-                      display: "flex", alignItems: "flex-start", gap: showDecisions ? 14 : 10,
-                      padding: showDecisions ? "14px 16px" : "8px 12px", borderRadius: 16,
-                      background: "rgba(74,124,47,0.05)",
-                      border: "1px dashed rgba(74,124,47,0.22)",
-                    }}>
-                      <span style={{ fontSize: 26, flexShrink: 0, marginTop: 2 }}>{mission.emoji}</span>
-                      <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-                        <div style={{
-                          fontSize: 14, fontWeight: 700, color: "#2D5016",
-                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        }}>
-                          {mission.title}
-                        </div>
-                        <div style={{
-                          fontSize: 12, fontWeight: 600, color: "#4A7C2F",
-                          display: "flex", alignItems: "center", gap: 4
-                        }}>
-                          🏅 {getBadgeSubtitle(mission.title)}
-                        </div>
-                        <div style={{
-                          fontSize: 12, color: "#6B8F5E",
-                          lineHeight: 1.4,
-                        }}>
-                          {mission.description}
+              {(() => {
+                const displayMissions = [...unlockedMissions];
+                if (displayMissions.length < 3) {
+                  const defaults = [
+                    { id: "starter-1", emoji: "🥗", title: "Green Plate", description: "Choose a plant-based meal" },
+                    { id: "starter-2", emoji: "🔍", title: "Receipt Detective", description: "Analyze one receipt" },
+                    { id: "starter-3", emoji: "🚇", title: "Commute Champion", description: "Choose public transit or walk" }
+                  ];
+                  for (const d of defaults) {
+                    if (displayMissions.length >= 3) break;
+                    if (!displayMissions.some(m => m.title === d.title)) {
+                      displayMissions.push(d as any);
+                    }
+                  }
+                }
+                const visible = showAllMissions ? displayMissions : displayMissions.slice(0, 3);
+                
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: showDecisions ? 12 : 6 }}>
+                    {visible.map(mission => (
+                      <div key={mission.id} style={{
+                        display: "flex", alignItems: "flex-start", gap: showDecisions ? 14 : 10,
+                        padding: showDecisions ? "14px 16px" : "8px 12px", borderRadius: 16,
+                        background: "rgba(74,124,47,0.05)",
+                        border: "1px dashed rgba(74,124,47,0.22)",
+                      }}>
+                        <span style={{ fontSize: 26, flexShrink: 0, marginTop: 2 }}>{mission.emoji}</span>
+                        <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                          <div style={{
+                            fontSize: 14, fontWeight: 700, color: "#2D5016",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}>
+                            {mission.title}
+                          </div>
+                          <div style={{
+                            fontSize: 12, fontWeight: 600, color: "#4A7C2F",
+                            display: "flex", alignItems: "center", gap: 4
+                          }}>
+                            🏅 {getBadgeSubtitle(mission.title)}
+                          </div>
+                          <div style={{
+                            fontSize: 12, color: "#6B8F5E",
+                            lineHeight: 1.4,
+                          }}>
+                            {mission.description}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                );
+              })()}
             </motion.div>
             </div>
           </div>

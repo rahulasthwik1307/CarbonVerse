@@ -226,12 +226,11 @@ export default function ChapterView() {
   const [selectedImpact, setSelectedImpact] = useState<"eco" | "moderate" | "high" | null>(null);
   const [narrative, setNarrative] = useState("");
   const [thinkingPhase, setThinkingPhase] = useState<"idle"|"thinking"|"speaking">("idle");
-  const [worldReacting, setWorldReacting] = useState(false);
-  const [showChapterComplete, setShowChapterComplete] = useState(false);
-  const [branchContext, setBranchContext] = useState<string[]>([]);
   const [verdPulseKey, setVerdPulseKey] = useState(0);
   const [autoAdvancePending, setAutoAdvancePending] = useState(false);
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [branchContext, setBranchContext] = useState<string[]>([]);
+  const [showChapterComplete, setShowChapterComplete] = useState(false);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -256,6 +255,8 @@ export default function ChapterView() {
     setShuffledDecisions([...moment.decisions].sort(() => Math.random() - 0.5));
   }, [moment]);
 
+  const isAutoAdvanceQuestion = currentDecision !== 2;
+
   const handleSelect = async (choiceId: string, label: string, impactType: "eco" | "moderate" | "high", carbonDelta: number) => {
     if (selectedChoice) return;
     
@@ -263,52 +264,52 @@ export default function ChapterView() {
     setSelectedImpact(impactType);
     setBranchContext(prev => [...prev, choiceId]);
 
-    // For commute choices, get real emissions.dev value
-    let finalCarbonDelta = carbonDelta; // default hardcoded
-    if (currentDecision === 1 && chapter === 1) {
-      // This is the commute choice — use real API
-      const realCO2 = await getCommuteCO2(choiceId);
-      finalCarbonDelta = realCO2;
-    }
-
-    applyDecision(label, impactType, finalCarbonDelta);
-    
-    setWorldReacting(true);
-    setTimeout(() => setWorldReacting(false), 400);
-
     // Pulse Verd once when an eco option is selected
     if (impactType === "eco") {
       setVerdPulseKey(prev => prev + 1);
     }
 
-    setThinkingPhase("thinking");
-    
-    try {
-      const res = await fetch("/api/narrate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          decision: label,
-          impactType,
-          worldState,
-          city: profile.city || "your city",
-          chapter: currentSituation,
-          aqi: aqiData?.aqi || 75,
-        })
-      });
-      const data = await res.json();
-      setNarrative(data.narrative);
-    } catch (e) {
-      console.error(e);
-      setNarrative("Every choice matters. Let's see what happens next! 🌱");
-    } finally {
-      setThinkingPhase("speaking");
+    const processChoice = async () => {
+      let finalCarbonDelta = carbonDelta;
+      if (currentDecision === 1 && chapter === 1) {
+        finalCarbonDelta = await getCommuteCO2(choiceId);
+      }
+      applyDecision(label, impactType, finalCarbonDelta);
+    };
+
+    if (isAutoAdvanceQuestion) {
+      // Non-terminal: wait a tiny beat for selection animation, then advance immediately
+      setTimeout(() => {
+        advanceToNextRef.current();
+      }, 150);
+      processChoice(); // runs in background
+    } else {
+      // Terminal question: wait for commute API if necessary, then show narrative
+      await processChoice();
+      setThinkingPhase("thinking");
+      try {
+        const res = await fetch("/api/narrate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            decision: label,
+            impactType,
+            worldState,
+            city: profile.city || "your city",
+            chapter: currentSituation,
+            aqi: aqiData?.aqi || 75,
+          })
+        });
+        const data = await res.json();
+        setNarrative(data.narrative);
+      } catch (e) {
+        console.error(e);
+        setNarrative("Every choice matters. Let's see what happens next! 🌱");
+      } finally {
+        setThinkingPhase("speaking");
+      }
     }
   };
-
-  // Determines if this question should auto-advance after typewriter finishes.
-  // Q3 (idx 2, chapter 1) and Q6 (idx 2, chapter 2) are chapter-end questions — keep manual.
-  const isAutoAdvanceQuestion = currentDecision !== 2;
 
   const advanceToNext = () => {
     setAutoAdvancePending(false);
@@ -362,14 +363,7 @@ export default function ChapterView() {
   const handleNext = advanceToNext;
 
   const handleTypewriterComplete = () => {
-    if (isAutoAdvanceQuestion) {
-      // Auto-advance: pause 500ms so user can read Verd's insight, then proceed
-      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
-      autoAdvanceTimerRef.current = setTimeout(() => {
-        advanceToNextRef.current();
-      }, 500);
-    } else {
-      // Chapter-end question (Q3, Q6): reveal the manual CTA button
+    if (!isAutoAdvanceQuestion) {
       setAutoAdvancePending(true);
     }
   };

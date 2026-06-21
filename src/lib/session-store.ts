@@ -232,14 +232,14 @@ const defaultState = {
   activeMissions: [
     {
       id: "mission-1",
-      title: "Green Breakfast",
+      title: "Green Plate",
       description: "Choose a plant-based meal",
       emoji: "🥗",
       targetType: "eco_choices" as const,
       targetCount: 1,
       currentCount: 0,
       completed: false,
-      reward: "Sprout badge"
+      reward: "Plant-Based Pro badge"
     },
     {
       id: "mission-2", 
@@ -250,18 +250,18 @@ const defaultState = {
       targetCount: 1,
       currentCount: 0,
       completed: false,
-      reward: "Detective badge"
+      reward: "Carbon Detective badge"
     },
     {
       id: "mission-3",
-      title: "Story Keeper",
-      description: "Complete a full story",
-      emoji: "📖",
-      targetType: "story_complete" as const,
+      title: "Commute Champion",
+      description: "Choose public transit or walk",
+      emoji: "🚇",
+      targetType: "eco_choices" as const,
       targetCount: 1,
       currentCount: 0,
       completed: false,
-      reward: "Explorer badge"
+      reward: "Metro Master badge"
     },
   ],
   achievements: [
@@ -874,11 +874,58 @@ export const useSessionStore = create<SessionState>()(
 
     const activeMissionsRemaining = state.activeMissions.filter(m => !m.completed);
     
+    const combinedMissions = [
+      ...activeMissionsRemaining,
+      ...newMissions
+    ];
+    
+    // Seed default missions if we have fewer than 3
+    if (combinedMissions.length < 3) {
+      const defaults = [
+        {
+          id: `mission-seed-receipt-${Date.now()}`,
+          title: "Receipt Detective",
+          description: "Analyze your first real receipt",
+          emoji: "🔍",
+          targetType: "receipt_upload" as const,
+          targetCount: 1,
+          currentCount: 0,
+          completed: false,
+          reward: "Carbon Detective badge",
+        },
+        {
+          id: `mission-seed-commute-${Date.now()}`,
+          title: "Commute Champion",
+          description: "Choose public transit or walk",
+          emoji: "🚇",
+          targetType: "eco_choices" as const,
+          targetCount: 1,
+          currentCount: 0,
+          completed: false,
+          reward: "Metro Master badge",
+        },
+        {
+          id: `mission-seed-plate-${Date.now()}`,
+          title: "Green Plate",
+          description: "Choose a plant-based meal",
+          emoji: "🥗",
+          targetType: "eco_choices" as const,
+          targetCount: 1,
+          currentCount: 0,
+          completed: false,
+          reward: "Plant-Based Pro badge",
+        }
+      ];
+
+      for (const m of defaults) {
+        if (!combinedMissions.some(cm => cm.title === m.title) && combinedMissions.length < 3) {
+          combinedMissions.push(m);
+        }
+      }
+    }
+
     return {
-      activeMissions: [
-        ...activeMissionsRemaining,
-        ...newMissions.slice(0, 3),
-      ]
+      activeMissions: combinedMissions
     };
   }),
 

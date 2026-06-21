@@ -261,8 +261,8 @@ export default function FutureStoryBento({
                 Thriving Ecosystem
               </div>
               <div style={{ fontSize: 18, fontWeight: 800, color: "#2D7A1F", lineHeight: 1.1, marginTop: 2 }}>
-                {yearlyGreenTonnes.toFixed(1)}{" "}
-                <span style={{ fontSize: 10, fontWeight: 600, color: "#6B8F5E" }}>t</span>
+                {Math.abs(yearlyGreenTonnes).toFixed(1)}{" "}
+                <span style={{ fontSize: 10, fontWeight: 600, color: "#6B8F5E" }}>{yearlyGreenTonnes < 0 ? "t Saved" : "t"}</span>
               </div>
             </div>
           </div>
@@ -306,7 +306,7 @@ export default function FutureStoryBento({
                 marginTop: 2,
               }}
             >
-              {savedTonnes.toFixed(1)}t difference
+              {Math.abs(savedTonnes).toFixed(1)}t difference
             </div>
           )}
         </BentoCard>

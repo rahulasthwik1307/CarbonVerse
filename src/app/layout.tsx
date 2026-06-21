@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AchievementToastManager from "@/components/ui/AchievementToastManager";
+import VerdAssistant from "@/components/ui/VerdAssistant";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -35,6 +36,7 @@ export default function RootLayout({
           {children}
         </TooltipProvider>
         <AchievementToastManager />
+        <VerdAssistant />
       </body>
     </html>
   );
