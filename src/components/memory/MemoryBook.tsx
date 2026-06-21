@@ -1016,60 +1016,119 @@ export default function MemoryBook() {
         {activeTab === "receipts" && (
           <motion.div key="receipts" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
             {/* Redesigned Analyze Receipt Button (Glassmorphic Action Card) */}
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 24 }}>
               <motion.div
-                whileHover={{ scale: 1.015, translateY: -2, boxShadow: "0 8px 24px rgba(74, 124, 47, 0.08)" }}
+                whileHover="hover"
                 whileTap={{ scale: 0.985 }}
                 onClick={() => router.push("/detective")}
                 style={{
-                  background: "rgba(255, 255, 255, 0.65)",
-                  backdropFilter: "blur(12px)",
-                  border: "1.5px solid rgba(184, 212, 168, 0.5)",
-                  borderRadius: 20,
-                  padding: "16px 20px",
+                  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 248, 231, 0.85) 100%)",
+                  backdropFilter: "blur(16px)",
+                  border: "2px solid rgba(184, 212, 168, 0.6)",
+                  borderRadius: 24,
+                  padding: "6px",
                   cursor: "pointer",
+                  boxShadow: "0 6px 16px rgba(45, 80, 22, 0.04)",
+                  transition: "box-shadow 0.3s ease, border-color 0.3s ease",
+                  overflow: "hidden"
+                }}
+              >
+                <div style={{
+                  background: "rgba(255, 255, 255, 0.9)",
+                  border: "1px solid rgba(184, 212, 168, 0.4)",
+                  borderRadius: 18,
+                  padding: "16px 20px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  gap: 12,
-                  boxShadow: "0 4px 12px rgba(45, 80, 22, 0.03)",
-                  transition: "all 0.2s ease"
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    background: "rgba(74, 124, 47, 0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 20,
-                    color: "#4A7C2F",
-                    border: "1px solid rgba(184, 212, 168, 0.4)"
-                  }}>
-                    🔍
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2, textAlign: "left" }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: "#2D5016" }}>
-                      Start a New Carbon Investigation
-                    </span>
-                    <span style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 500 }}>
-                      Analyze a receipt with Verd to reveal item-level emissions insights.
-                    </span>
-                  </div>
-                </div>
-                <div style={{
-                  background: "#4A7C2F",
-                  color: "white",
-                  padding: "6px 14px",
-                  borderRadius: 12,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  boxShadow: "0 2px 6px rgba(74, 124, 47, 0.15)"
+                  gap: 16,
+                  position: "relative"
                 }}>
-                  Upload
+                  {/* Subtle botanical leafy background watermark */}
+                  <div style={{
+                    position: "absolute",
+                    right: 120,
+                    bottom: -15,
+                    fontSize: 54,
+                    opacity: 0.06,
+                    pointerEvents: "none",
+                    userSelect: "none"
+                  }}>
+                    🌿
+                  </div>
+                  
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0, zIndex: 2 }}>
+                    <motion.div 
+                      variants={{
+                        hover: { rotate: [0, -10, 10, -10, 10, 0], scale: 1.1 }
+                      }}
+                      transition={{ duration: 0.5 }}
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 14,
+                        background: "linear-gradient(135deg, rgba(244, 168, 50, 0.15) 0%, rgba(74, 124, 47, 0.15) 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 22,
+                        color: "#2d5016",
+                        border: "1.5px solid rgba(184, 212, 168, 0.6)",
+                        boxShadow: "inset 0 2px 4px rgba(255,255,255,0.8)",
+                        flexShrink: 0
+                      }}
+                    >
+                      🔍
+                    </motion.div>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3, textAlign: "left" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: "#2D5016", letterSpacing: "-0.01em" }}>
+                          New Carbon Investigation
+                        </span>
+                        <span style={{ 
+                          fontSize: 9, 
+                          fontWeight: 800, 
+                          color: "#FFF", 
+                          background: "#F4A832", 
+                          padding: "2px 6px", 
+                          borderRadius: 6,
+                          letterSpacing: "0.05em",
+                          textTransform: "uppercase" 
+                        }}>
+                          Verd OCR
+                        </span>
+                      </div>
+                      <span style={{ fontSize: 12, color: "#6B8F5E", fontWeight: 550, lineHeight: 1.3 }}>
+                        Analyze a shopping or grocery receipt to discover hidden footprint details.
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <motion.div 
+                    variants={{
+                      hover: { scale: 1.05, backgroundColor: "#3f6a27" }
+                    }}
+                    style={{
+                      background: "#4A7C2F",
+                      color: "white",
+                      padding: "8px 18px",
+                      borderRadius: 12,
+                      fontSize: 13,
+                      fontWeight: 850,
+                      boxShadow: "0 4px 10px rgba(74, 124, 47, 0.25)",
+                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      flexShrink: 0,
+                      zIndex: 2,
+                      transition: "background-color 0.2s ease"
+                    }}
+                  >
+                    <span>Investigate</span>
+                    <span style={{ fontSize: 10 }}>⚡</span>
+                  </motion.div>
                 </div>
               </motion.div>
             </div>
