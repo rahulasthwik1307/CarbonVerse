@@ -35,8 +35,8 @@ const InstagramIcon = () => (
 
 const CopyIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+    <path d="M6 2v20" />
   </svg>
 );
 
@@ -138,10 +138,13 @@ export default function MemoryGarden() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [alertText, setAlertText] = useState("");
+  const [showJourneyModal, setShowJourneyModal] = useState(false);
+  const [showInstagramModal, setShowInstagramModal] = useState(false);
 
   const ecoCount = decisions.filter(d => d.impactType === "eco").length;
   const highCount = decisions.filter(d => d.impactType === "high").length;
   const totalDecisions = decisions.length;
+  const moderateCount = totalDecisions - ecoCount - highCount;
 
   // Outcome calculation
   let outcome: "eco" | "moderate" | "high" = "moderate";
@@ -248,63 +251,58 @@ export default function MemoryGarden() {
     return "Nature responded with steady healing, but the recovery remains fragile.";
   };
 
-  // Share Message generation
-  const generateShareMessage = () => {
-    const transport = getTransportReflection();
-    const food = getFoodReflection();
-    const community = getCommunityReflection();
+  const transportRef = getTransportReflection();
+  const foodRef = getFoodReflection();
+  const communityRef = getCommunityReflection();
+
+  // Share Message generation (Standard text shared on social & copied)
+  const generateStoryMessage = () => {
     const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://carbonverse.earth";
     
-    return `🌱 I completed my CarbonVerse journey.
+    return `🌱 My CarbonVerse Journey
 
-Today my choices helped shape a healthier future.
+World Outcome: ${outcomeDetails.title}
 
-${transport.emoji} ${transport.text}
-${food.emoji} ${food.text}
-${community.emoji} ${community.text}
+Today's Choices:
+${transportRef.emoji} ${transportRef.text}
+${foodRef.emoji} ${foodRef.text}
+${communityRef.emoji} ${communityRef.text}
 
-My Memory Garden became a living ecosystem filled with ${
-      outcome === "eco" 
-        ? "wildlife, clean water, and biodiversity" 
-        : outcome === "moderate" 
-          ? "budding plants and returning birds" 
-          : "resilient vegetation striving to adapt"
-    }.
+Every choice shapes the future.
 
 Explore your own future:
 ${shareUrl}
 
 #CarbonVerse
 #ClimateAction
-#Sustainability`;
+#FutureChoices`;
   };
 
+  // Close modals on ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowJourneyModal(false);
+        setShowInstagramModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // Handle Share Click
-  const handleShareClick = (platform: "x" | "linkedin" | "facebook" | "instagram" | "copy") => {
-    const message = generateShareMessage();
+  const handleShareClick = (platform: "x" | "linkedin" | "facebook" | "instagram") => {
+    const storyText = generateStoryMessage();
     const shareUrl = typeof window !== "undefined" ? window.location.origin : "https://carbonverse.earth";
     
-    if (platform === "copy") {
-      navigator.clipboard.writeText(message);
-      setCopied(true);
-      setAlertText("Journey summary copied to clipboard!");
-      setTimeout(() => {
-        setCopied(false);
-        setAlertText("");
-      }, 3000);
-      return;
-    }
-
     if (platform === "instagram") {
-      navigator.clipboard.writeText(message);
-      setAlertText("Caption copied! Open Instagram to share.");
-      setTimeout(() => setAlertText(""), 4000);
+      setShowInstagramModal(true);
       return;
     }
 
     let url = "";
     if (platform === "x") {
-      url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
+      url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(storyText)}`;
     } else if (platform === "linkedin") {
       url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
     } else if (platform === "facebook") {
@@ -312,13 +310,9 @@ ${shareUrl}
     }
 
     if (url) {
-      window.open(url, "_blank", "width=600,height=450,resizable=yes");
+      window.open(url, "_blank", "noopener,noreferrer");
     }
   };
-
-  const transportRef = getTransportReflection();
-  const foodRef = getFoodReflection();
-  const communityRef = getCommunityReflection();
 
   return (
     <DoubleBezelCard
@@ -337,6 +331,13 @@ ${shareUrl}
     >
       <style>{`
         @media (min-width: 1024px) {
+          .garden-header-container {
+            display: grid !important;
+            grid-template-columns: 72fr 28fr !important;
+            gap: 20px !important;
+            width: 100% !important;
+            align-items: center !important;
+          }
           .garden-layout-grid {
             display: grid !important;
             grid-template-columns: 72fr 28fr !important;
@@ -345,6 +346,16 @@ ${shareUrl}
           }
         }
         @media (max-width: 1023px) {
+          .garden-header-container {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+          .play-again-btn {
+            width: 100% !important;
+            justify-content: center !important;
+          }
           .garden-layout-grid {
             display: flex !important;
             flex-direction: column !important;
@@ -370,23 +381,12 @@ ${shareUrl}
             justify-content: center !important;
             width: 100% !important;
           }
-          .copy-button-container {
+          .journey-button-container {
             width: 100% !important;
             align-items: center !important;
           }
-          .copy-button-container button {
+          .journey-button-container button {
             width: 100% !important;
-          }
-        }
-        @media (max-width: 480px) {
-          .garden-header-container {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 12px !important;
-          }
-          .play-again-btn {
-            width: 100% !important;
-            justify-content: center !important;
           }
         }
       `}</style>
@@ -395,14 +395,13 @@ ${shareUrl}
       <div
         className="garden-header-container"
         style={{
-          display: "flex",
-          alignItems: "center",
           width: "100%",
           boxSizing: "border-box",
           paddingBottom: 16,
           borderBottom: "1px solid rgba(184, 212, 168, 0.35)"
         }}
       >
+        {/* Left column above Video */}
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <VerdOrb size={52} mood={outcome === "eco" ? "eco" : outcome === "high" ? "high" : "moderate"} />
           <div style={{ display: "flex", flexDirection: "column" }}>
@@ -412,35 +411,105 @@ ${shareUrl}
             <p style={{ fontSize: 13, color: "#4A7C2F", margin: "3px 0 0 0", fontWeight: 600, lineHeight: 1.2 }}>
               Every choice you made helped nature flourish.
             </p>
+            
+            {/* COMPACT ELEGANT OUTCOME SUMMARY CHIPS */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {ecoCount > 0 && (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "2px 8px",
+                  background: "rgba(76, 175, 80, 0.08)",
+                  border: "1px solid rgba(76, 175, 80, 0.25)",
+                  borderRadius: 12,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#2D5016"
+                }}>
+                  🌱 {ecoCount} Eco Choice{ecoCount !== 1 ? "s" : ""}
+                </div>
+              )}
+              {moderateCount > 0 && (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "2px 8px",
+                  background: "rgba(244, 168, 50, 0.08)",
+                  border: "1px solid rgba(244, 168, 50, 0.25)",
+                  borderRadius: 12,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#2D5016"
+                }}>
+                  ⚖️ {moderateCount} Moderate Choice{moderateCount !== 1 ? "s" : ""}
+                </div>
+              )}
+              {highCount > 0 && (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "2px 8px",
+                  background: "rgba(255, 107, 107, 0.08)",
+                  border: "1px solid rgba(255, 107, 107, 0.25)",
+                  borderRadius: 12,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#2D5016"
+                }}>
+                  🌫️ {highCount} High Carbon Choice{highCount !== 1 ? "s" : ""}
+                </div>
+              )}
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "2px 8px",
+                background: outcome === "eco" ? "rgba(76, 175, 80, 0.12)" : outcome === "high" ? "rgba(255, 107, 107, 0.12)" : "rgba(244, 168, 50, 0.12)",
+                border: `1px solid ${outcome === "eco" ? "rgba(76, 175, 80, 0.3)" : outcome === "high" ? "rgba(255, 107, 107, 0.3)" : "rgba(244, 168, 50, 0.3)"}`,
+                borderRadius: 12,
+                fontSize: 11,
+                fontWeight: 700,
+                color: "#2D5016"
+              }}>
+                {outcome === "eco" ? "🌍" : outcome === "high" ? "🌫️" : "🌱"} {outcomeDetails.title.replace(/^[^\w\s]*/, "").trim()}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Minimal Play Again CTA in Header */}
-        <motion.button
-          className="play-again-btn"
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={() => { resetSession(); router.push("/"); }}
-          style={{
-            padding: "8px 16px",
-            background: "rgba(255, 255, 255, 0.7)",
-            backdropFilter: "blur(12px)",
-            border: "1.5px solid #B8D4A8",
-            borderRadius: 20,
-            fontSize: 13,
-            fontWeight: 700,
-            color: "#2D5016",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            marginLeft: "auto",
-            boxShadow: "0 2px 10px rgba(45, 80, 22, 0.05)",
-            transition: "transform 150ms ease-out"
-          }}
-        >
-          Play Again ↺
-        </motion.button>
+        {/* Right column above Bento Stack (Perfect visual alignment with World Outcome card) */}
+        <div style={{ display: "flex", width: "100%", height: "100%", justifyContent: "flex-end" }}>
+          <motion.button
+            className="play-again-btn"
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => { resetSession(); router.push("/"); }}
+            style={{
+              padding: "10px 18px",
+              background: "rgba(255, 255, 255, 0.75)",
+              backdropFilter: "blur(12px)",
+              border: "1.5px solid #B8D4A8",
+              borderRadius: 20,
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#2D5016",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              width: "100%",
+              maxWidth: 295,
+              boxShadow: "0 2px 10px rgba(45, 80, 22, 0.05)",
+              transition: "transform 150ms ease-out"
+            }}
+          >
+            Play Again ↺
+          </motion.button>
+        </div>
       </div>
 
       {/* BENTO LAYOUT */}
@@ -559,9 +628,9 @@ ${shareUrl}
                   </div>
                   
                   {totalDecisions === 0 ? (
-                     <div style={{ padding: "10px 0", fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
-                       No choices recorded in this run. Start a new chapter! 🌱
-                     </div>
+                    <div style={{ padding: "10px 0", fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
+                      No choices recorded in this run. Start a new chapter! 🌱
+                    </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "#2D5016", fontWeight: 700 }}>
@@ -729,63 +798,410 @@ ${shareUrl}
             </motion.button>
           </div>
 
-          {/* Copy Link Button & Alert Area */}
-          <div className="copy-button-container" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", position: "relative" }}>
+          {/* Primary View Journey Action */}
+          <div className="journey-button-container" style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", position: "relative" }}>
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => handleShareClick("copy")}
+              onClick={() => setShowJourneyModal(true)}
               style={{
-                padding: "10px 18px",
+                padding: "10px 20px",
                 background: "#F4A832",
                 color: "white",
                 borderRadius: 14,
                 border: "none",
-                fontWeight: 700,
-                fontSize: 13,
+                fontWeight: 800,
+                fontSize: 14,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
                 cursor: "pointer",
-                boxShadow: "0 3px 10px rgba(244, 168, 50, 0.25)"
+                boxShadow: "0 3px 12px rgba(244, 168, 50, 0.3)"
               }}
             >
-              <CopyIcon />
-              {copied ? "✓ Copied!" : "Copy Summary & Link"}
+              📖 View My Journey
             </motion.button>
-
-            <AnimatePresence>
-              {alertText && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  style={{
-                    position: "absolute",
-                    top: "100%",
-                    marginTop: 6,
-                    right: 0,
-                    background: "rgba(74, 124, 47, 0.95)",
-                    border: "1px solid rgba(184, 212, 168, 0.8)",
-                    borderRadius: 10,
-                    padding: "6px 12px",
-                    fontSize: 11,
-                    color: "white",
-                    fontWeight: 700,
-                    boxShadow: "0 4px 12px rgba(45, 80, 22, 0.1)",
-                    zIndex: 10,
-                    whiteSpace: "nowrap"
-                  }}
-                >
-                  {alertText}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </motion.div>
 
+      {/* STORY REVEAL MODAL */}
+      <AnimatePresence>
+        {showJourneyModal && (
+          <div
+            onClick={() => setShowJourneyModal(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(45, 80, 22, 0.4)",
+              backdropFilter: "blur(8px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 100,
+              padding: 16
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "rgba(255, 255, 255, 0.95)",
+                border: "2px solid #B8D4A8",
+                borderRadius: 24,
+                boxShadow: "0 20px 50px rgba(45, 80, 22, 0.15)",
+                padding: 28,
+                maxWidth: 500,
+                width: "100%",
+                boxSizing: "border-box",
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                gap: 20
+              }}
+            >
+              {/* Close X Button */}
+              <button
+                onClick={() => setShowJourneyModal(false)}
+                style={{
+                  position: "absolute",
+                  top: 20,
+                  right: 20,
+                  background: "none",
+                  border: "none",
+                  fontSize: 20,
+                  color: "#6B8F5E",
+                  cursor: "pointer",
+                  padding: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                ✕
+              </button>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E" }}>
+                  📖 Your CarbonVerse Story
+                </span>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: "#2D5016", margin: 0 }}>
+                  World Outcome
+                </h2>
+                <div style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: "#2D5016",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: outcome === "eco" ? "rgba(76, 175, 80, 0.08)" : outcome === "high" ? "rgba(255, 107, 107, 0.08)" : "rgba(244, 168, 50, 0.08)",
+                  padding: "6px 12px",
+                  borderRadius: 12,
+                  width: "fit-content",
+                  border: `1px solid ${outcome === "eco" ? "rgba(76, 175, 80, 0.2)" : outcome === "high" ? "rgba(255, 107, 107, 0.2)" : "rgba(244, 168, 50, 0.2)"}`
+                }}>
+                  {outcomeDetails.title}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E" }}>
+                  Today's Choices
+                </span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#2D5016", fontWeight: 700 }}>
+                    <span style={{ fontSize: 18 }}>{transportRef.emoji}</span>
+                    <span>{transportRef.text}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#2D5016", fontWeight: 700 }}>
+                    <span style={{ fontSize: 18 }}>{foodRef.emoji}</span>
+                    <span>{foodRef.text}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#2D5016", fontWeight: 700 }}>
+                    <span style={{ fontSize: 18 }}>{communityRef.emoji}</span>
+                    <span>{communityRef.text}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E" }}>
+                  Reflection
+                </span>
+                <p style={{
+                  fontSize: 14,
+                  color: "#4A7C2F",
+                  fontStyle: "italic",
+                  fontWeight: 600,
+                  lineHeight: 1.5,
+                  margin: 0,
+                  background: "rgba(184, 212, 168, 0.05)",
+                  padding: 12,
+                  borderRadius: 12,
+                  borderLeft: "3px solid #B8D4A8"
+                }}>
+                  {getPoeticReflection()}
+                </p>
+              </div>
+
+              <p style={{ fontSize: 13, color: "#6B8F5E", fontWeight: 600, textAlign: "center", margin: "10px 0 0 0" }}>
+                Small choices shape the future we leave behind.
+              </p>
+
+              <div style={{ display: "flex", gap: 12, marginTop: 10, position: "relative" }}>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(generateStoryMessage());
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2500);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "12px",
+                    background: "#F4A832",
+                    color: "white",
+                    borderRadius: 14,
+                    border: "none",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    boxShadow: "0 3px 10px rgba(244, 168, 50, 0.25)"
+                  }}
+                >
+                  <CopyIcon />
+                  {copied ? "✓ Copied!" : "Copy Story"}
+                </motion.button>
+                
+                <button
+                  onClick={() => setShowJourneyModal(false)}
+                  style={{
+                    padding: "12px 24px",
+                    background: "rgba(255, 255, 255, 0.8)",
+                    border: "1.5px solid #B8D4A8",
+                    borderRadius: 14,
+                    color: "#2D5016",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: "pointer"
+                  }}
+                >
+                  Close
+                </button>
+
+                <AnimatePresence>
+                  {copied && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      style={{
+                        position: "absolute",
+                        bottom: "115%",
+                        left: 0,
+                        right: 0,
+                        background: "rgba(74, 124, 47, 0.95)",
+                        border: "1px solid rgba(184, 212, 168, 0.8)",
+                        borderRadius: 10,
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        color: "white",
+                        fontWeight: 700,
+                        textAlign: "center",
+                        boxShadow: "0 4px 12px rgba(45, 80, 22, 0.1)",
+                        zIndex: 110
+                      }}
+                    >
+                      Journey story copied to clipboard!
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* INSTAGRAM SHARE MODAL */}
+      <AnimatePresence>
+        {showInstagramModal && (
+          <div
+            onClick={() => setShowInstagramModal(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(45, 80, 22, 0.4)",
+              backdropFilter: "blur(8px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 100,
+              padding: 16
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "rgba(255, 255, 255, 0.95)",
+                border: "2px solid #B8D4A8",
+                borderRadius: 24,
+                boxShadow: "0 20px 50px rgba(45, 80, 22, 0.15)",
+                padding: 28,
+                maxWidth: 500,
+                width: "100%",
+                boxSizing: "border-box",
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                gap: 20
+              }}
+            >
+              {/* Close X Button */}
+              <button
+                onClick={() => setShowInstagramModal(false)}
+                style={{
+                  position: "absolute",
+                  top: 20,
+                  right: 20,
+                  background: "none",
+                  border: "none",
+                  fontSize: 20,
+                  color: "#6B8F5E",
+                  cursor: "pointer",
+                  padding: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                ✕
+              </button>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E" }}>
+                  📸 Share to Instagram
+                </span>
+                <h2 style={{ fontSize: 20, fontWeight: 800, color: "#2D5016", margin: 0 }}>
+                  Instagram Caption
+                </h2>
+                <p style={{ fontSize: 13, color: "#4A7C2F", margin: 0, fontWeight: 600 }}>
+                  Paste this caption into Instagram when creating your post.
+                </p>
+              </div>
+
+              <div style={{ position: "relative", width: "100%" }}>
+                <textarea
+                  readOnly
+                  value={generateStoryMessage()}
+                  style={{
+                    width: "100%",
+                    height: 160,
+                    background: "rgba(184, 212, 168, 0.05)",
+                    border: "1px solid rgba(184, 212, 168, 0.5)",
+                    borderRadius: 12,
+                    padding: 12,
+                    fontSize: 12.5,
+                    color: "#2D5016",
+                    fontFamily: "inherit",
+                    resize: "none",
+                    outline: "none",
+                    lineHeight: 1.4
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: 12, position: "relative" }}>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(generateStoryMessage());
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2500);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "12px",
+                    background: "#F4A832",
+                    color: "white",
+                    borderRadius: 14,
+                    border: "none",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    boxShadow: "0 3px 10px rgba(244, 168, 50, 0.25)"
+                  }}
+                >
+                  <CopyIcon />
+                  {copied ? "✓ Copied!" : "Copy Caption"}
+                </motion.button>
+                
+                <button
+                  onClick={() => setShowInstagramModal(false)}
+                  style={{
+                    padding: "12px 24px",
+                    background: "rgba(255, 255, 255, 0.8)",
+                    border: "1.5px solid #B8D4A8",
+                    borderRadius: 14,
+                    color: "#2D5016",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: "pointer"
+                  }}
+                >
+                  Close
+                </button>
+
+                <AnimatePresence>
+                  {copied && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      style={{
+                        position: "absolute",
+                        bottom: "115%",
+                        left: 0,
+                        right: 0,
+                        background: "rgba(74, 124, 47, 0.95)",
+                        border: "1px solid rgba(184, 212, 168, 0.8)",
+                        borderRadius: 10,
+                        padding: "6px 12px",
+                        fontSize: 11,
+                        color: "white",
+                        fontWeight: 700,
+                        textAlign: "center",
+                        boxShadow: "0 4px 12px rgba(45, 80, 22, 0.1)",
+                        zIndex: 110
+                      }}
+                    >
+                      Caption copied to clipboard!
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </DoubleBezelCard>
   );
 }
