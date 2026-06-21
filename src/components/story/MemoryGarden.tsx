@@ -131,6 +131,76 @@ function SkeletonLine({ width, height }: { width: string; height: number }) {
   );
 }
 
+const outcomeCardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25,
+      delay: 0.45
+    }
+  },
+  hover: { 
+    y: -4, 
+    boxShadow: "0 16px 40px rgba(45, 80, 22, 0.18)",
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25
+    }
+  }
+};
+
+const storyCardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25,
+      delay: 0.65
+    }
+  },
+  hover: { 
+    y: -4, 
+    boxShadow: "0 12px 30px rgba(45, 80, 22, 0.12)",
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25
+    }
+  }
+};
+
+const shareCardVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.23, 1, 0.32, 1] as const,
+      delay: 0.8
+    }
+  },
+  hover: { 
+    y: -4, 
+    boxShadow: "0 12px 30px rgba(45, 80, 22, 0.12)",
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25
+    }
+  }
+};
+
 export default function MemoryGarden() {
   const router = useRouter();
   const { decisions, profile, worldState, totalCarbonDelta, resetSession } = useSessionStore();
@@ -334,7 +404,7 @@ ${shareUrl}
       style={{
         width: "100%",
         maxWidth: 1100,
-        margin: "0 auto",
+        margin: "auto",
         height: "auto",
         boxSizing: "border-box"
       }}
@@ -365,7 +435,7 @@ ${shareUrl}
             display: flex !important;
             flex-direction: column !important;
             align-items: flex-start !important;
-            gap: 12px !important;
+            gap: 20px !important;
           }
           .play-again-btn {
             width: 100% !important;
@@ -374,7 +444,7 @@ ${shareUrl}
           .garden-layout-grid {
             display: flex !important;
             flex-direction: column !important;
-            gap: 16px !important;
+            gap: 20px !important;
             width: 100% !important;
           }
           .bento-card-stack {
@@ -383,14 +453,14 @@ ${shareUrl}
           .share-section-container {
             flex-direction: column !important;
             align-items: stretch !important;
-            gap: 16px !important;
+            gap: 20px !important;
             text-align: center !important;
           }
           .share-actions-row {
             flex-direction: column !important;
             align-items: center !important;
             width: 100% !important;
-            gap: 16px !important;
+            gap: 20px !important;
           }
           .social-buttons-grid {
             justify-content: center !important;
@@ -412,7 +482,7 @@ ${shareUrl}
         style={{
           width: "100%",
           boxSizing: "border-box",
-          paddingBottom: 16,
+          paddingBottom: 20,
           borderBottom: "1px solid rgba(184, 212, 168, 0.35)"
         }}
       >
@@ -624,94 +694,131 @@ ${shareUrl}
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 16,
+            gap: 20,
             height: "100%",
             boxSizing: "border-box"
           }}
         >
           {/* Card 1: Future Outcome Card */}
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.45, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-            style={{ flex: 1 }}
+            initial="hidden"
+            animate="visible"
+            whileHover="hover"
+            variants={outcomeCardVariants}
+            style={{ 
+              flex: 1,
+              background: "linear-gradient(135deg, #F0FAF0 0%, #D8ECD0 100%)",
+              border: "1.5px solid rgba(76, 175, 80, 0.35)",
+              borderRadius: 16,
+              padding: 20,
+              boxSizing: "border-box",
+              boxShadow: "0 8px 30px rgba(45, 80, 22, 0.12)",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              cursor: "pointer"
+            }}
           >
-            <InnerBentoPanel style={{ height: "100%", justifyContent: "center" }}>
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E", marginBottom: 6 }}>
-                  World Outcome
-                </div>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: "#2D5016", margin: "0 0 6px 0", display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E", marginBottom: 6 }}>
+                World Outcome
+              </div>
+              <div style={{ position: "relative", width: "fit-content" }}>
+                {/* Subtle glow behind title area */}
+                <div style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: "140%",
+                  height: "140%",
+                  background: "radial-gradient(circle, rgba(244, 168, 50, 0.22) 0%, transparent 70%)",
+                  filter: "blur(6px)",
+                  pointerEvents: "none",
+                  zIndex: 0
+                }} />
+                <h2 style={{ position: "relative", zIndex: 1, fontSize: 18, fontWeight: 800, color: "#2D5016", margin: "0 0 6px 0", display: "flex", alignItems: "center", gap: 6 }}>
                   {outcomeDetails.title}
                 </h2>
-                <p style={{ fontSize: 13, color: "#4A7C2F", margin: 0, lineHeight: 1.4, fontWeight: 500 }}>
-                  {outcomeDetails.desc}
-                </p>
               </div>
-            </InnerBentoPanel>
+              <p style={{ fontSize: 13, color: "#4A7C2F", margin: 0, lineHeight: 1.4, fontWeight: 500 }}>
+                {outcomeDetails.desc}
+              </p>
+            </div>
           </motion.div>
 
           {/* Card 2: Story Reflection Card */}
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: 0.65, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-            style={{ flex: 1.5 }}
+            initial="hidden"
+            animate="visible"
+            whileHover="hover"
+            variants={storyCardVariants}
+            style={{ 
+              flex: 1.5,
+              background: "linear-gradient(135deg, #FFF8E7 0%, #FFF3D6 100%)",
+              border: "1.5px solid rgba(184, 212, 168, 0.35)",
+              borderRadius: 16,
+              padding: 20,
+              boxSizing: "border-box",
+              boxShadow: "0 4px 20px rgba(45, 80, 22, 0.05)",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              cursor: "pointer"
+            }}
           >
-            <InnerBentoPanel style={{ height: "100%" }}>
-              <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E", marginBottom: 12 }}>
-                    Today's Story
-                  </div>
-                  
-                  {totalDecisions === 0 ? (
-                    <div style={{ padding: "10px 0", fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
-                      No choices recorded in this run. Start a new chapter! 🌱
-                    </div>
-                  ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "#2D5016", fontWeight: 700 }}>
-                        <span style={{ fontSize: 16 }}>{transportRef.emoji}</span>
-                        <span>{transportRef.text}</span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "#2D5016", fontWeight: 700 }}>
-                        <span style={{ fontSize: 16 }}>{foodRef.emoji}</span>
-                        <span>{foodRef.text}</span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "#2D5016", fontWeight: 700 }}>
-                        <span style={{ fontSize: 16 }}>{communityRef.emoji}</span>
-                        <span>{communityRef.text}</span>
-                      </div>
-                    </div>
-                  )}
+            <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E", marginBottom: 12 }}>
+                  Today's Story
                 </div>
                 
-                <div style={{ 
-                  borderTop: "1px dashed rgba(184, 212, 168, 0.4)", 
-                  paddingTop: 12, 
-                  marginTop: 12
-                }}>
-                  {loading ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      <SkeletonLine width="90%" height={12} />
-                      <SkeletonLine width="60%" height={12} />
+                {totalDecisions === 0 ? (
+                  <div style={{ padding: "10px 0", fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
+                    No choices recorded in this run. Start a new chapter! 🌱
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "#2D5016", fontWeight: 700 }}>
+                      <span style={{ fontSize: 16 }}>{transportRef.emoji}</span>
+                      <span>{transportRef.text}</span>
                     </div>
-                  ) : (
-                    <p style={{ 
-                      fontSize: 13, 
-                      color: "#4A7C2F", 
-                      fontStyle: "italic", 
-                      fontWeight: 600,
-                      lineHeight: 1.4,
-                      margin: 0
-                    }}>
-                      {getPoeticReflection()}
-                    </p>
-                  )}
-                </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "#2D5016", fontWeight: 700 }}>
+                      <span style={{ fontSize: 16 }}>{foodRef.emoji}</span>
+                      <span>{foodRef.text}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, color: "#2D5016", fontWeight: 700 }}>
+                      <span style={{ fontSize: 16 }}>{communityRef.emoji}</span>
+                      <span>{communityRef.text}</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            </InnerBentoPanel>
+              
+              <div style={{ 
+                borderTop: "1px dashed rgba(184, 212, 168, 0.4)", 
+                paddingTop: 12, 
+                marginTop: 12
+              }}>
+                {loading ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <SkeletonLine width="90%" height={12} />
+                    <SkeletonLine width="60%" height={12} />
+                  </div>
+                ) : (
+                  <p style={{ 
+                    fontSize: 13, 
+                    color: "#4A7C2F", 
+                    fontStyle: "italic", 
+                    fontWeight: 600,
+                    lineHeight: 1.4,
+                    margin: 0
+                  }}>
+                    {getPoeticReflection()}
+                  </p>
+                )}
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>
@@ -719,28 +826,31 @@ ${shareUrl}
       {/* SHARE SECTION */}
       <motion.div
         className="share-section-container"
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8, duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+        initial="hidden"
+        animate="visible"
+        whileHover="hover"
+        variants={shareCardVariants}
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "rgba(184, 212, 168, 0.08)",
-          border: "1.5px solid rgba(184, 212, 168, 0.25)",
+          background: "rgba(255, 255, 255, 0.45)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          border: "1.5px solid rgba(184, 212, 168, 0.55)",
           borderRadius: 20,
-          padding: "16px 20px",
+          padding: "24px 20px",
           width: "100%",
           boxSizing: "border-box",
-          marginTop: 8
+          boxShadow: "0 4px 20px rgba(45, 80, 22, 0.05)"
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#6B8F5E" }}>
             Share Garden
           </span>
-          <span style={{ fontSize: 13, color: "#4A7C2F", fontWeight: 600 }}>
-            Invite others to rewrite their future and explore their own Memory Garden.
+          <span style={{ fontSize: 13, color: "#1C3A13", fontWeight: 700, letterSpacing: "-0.01em" }}>
+            A better future started with small choices. Pass it forward. 🌱
           </span>
         </div>
 

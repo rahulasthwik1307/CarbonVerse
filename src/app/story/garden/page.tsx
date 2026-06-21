@@ -14,27 +14,34 @@ export default function GardenPage() {
           inset: 0, 
           zIndex: 20,
           scrollbarWidth: "none",
-          padding: "24px 16px"
+          padding: "32px 16px 48px 16px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          overflowY: "auto"
         }} 
         className="garden-scroll-container"
       >
         <style>{`
           div::-webkit-scrollbar { display: none; }
           
-          /* Handle vertical height constraints: */
-          @media (min-height: 820px) {
+          /* Desktop and laptop viewports: */
+          @media (min-width: 1024px) {
             .garden-scroll-container {
               display: flex !important;
+              flex-direction: column !important;
               align-items: center !important;
-              justify-content: center !important;
-              overflow-y: hidden !important;
+              justify-content: flex-start !important;
+              overflow-y: auto !important;
             }
           }
-          @media (max-height: 819px) {
+          /* Smaller responsive layouts: */
+          @media (max-width: 1023px) {
             .garden-scroll-container {
               display: block !important;
               overflow-y: auto !important;
-              /* Generous bottom padding when scrollable so the border never clips */
+              padding-top: 32px !important;
               padding-bottom: 48px !important;
             }
           }
