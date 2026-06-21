@@ -332,20 +332,7 @@ export default function ChapterView() {
           setThinkingPhase("idle");
         }, 1800);
       } else {
-        const { decisions, totalCarbonDelta, worldState, addStoryToMemoryBook, updateMissionProgress, checkAndUnlockAchievements, generateNewMissions } = useSessionStore.getState();
-        
-        addStoryToMemoryBook({
-          chapterNumber: chapter,
-          decisions: decisions.map((d, i) => ({
-            moment: ["breakfast","commute","lunch",
-                     "shopping","dinner","wind-down"][i] || "activity",
-            choice: d.choice,
-            impactType: d.impactType,
-            carbonKg: d.carbonDelta,
-          })),
-          totalCarbonKg: totalCarbonDelta,
-          planetMood: worldState.planetMood,
-        });
+        const { updateMissionProgress, checkAndUnlockAchievements, generateNewMissions } = useSessionStore.getState();
 
         updateMissionProgress("story_complete");
         checkAndUnlockAchievements();

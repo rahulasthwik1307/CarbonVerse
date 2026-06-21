@@ -50,6 +50,7 @@ interface SessionState {
   // Completed story snapshot for persistence across refresh/navigation
   storyCompleted: boolean;
   completedStoryData: CompletedStoryData | null;
+  storySessionId: string | null;
 
   // Cached outcomes so back-navigation doesn't regenerate
   futureOutcome: { storyState: string; videoType: string } | null;
@@ -72,6 +73,7 @@ interface SessionState {
       }>;
       totalCarbonKg: number;
       planetMood: string;
+      storySessionId?: string | null;
     }>;
     receipts: Array<{
       id: string;
@@ -205,6 +207,7 @@ const defaultState = {
   isOnboarded: false,
   storyCompleted: false,
   completedStoryData: null,
+  storySessionId: null as string | null,
   futureOutcome: null,
   gardenOutcome: null,
   _hasHydrated: false,
@@ -402,6 +405,11 @@ export const useSessionStore = create<SessionState>()(
       advanceChapter: () => set((state) => ({ currentChapter: state.currentChapter + 1 })),
 
   applyDecision: (choice, impactType, carbonDelta) => set((state) => {
+    let storySessionId = state.storySessionId;
+    if (!storySessionId) {
+      storySessionId = crypto.randomUUID();
+    }
+
     let { skyQuality, treeDensity, trafficLevel, birdCount, greenCoverage } = state.worldState;
 
     if (impactType === "eco") {
@@ -507,6 +515,7 @@ export const useSessionStore = create<SessionState>()(
 
     return {
       decisions: newDecisions,
+      storySessionId,
       totalCarbonDelta: state.totalCarbonDelta + carbonDelta,
       worldState: {
         skyQuality,
@@ -537,6 +546,7 @@ export const useSessionStore = create<SessionState>()(
 
   resetSession: () => set((state) => ({ 
     ...defaultState,
+    storySessionId: crypto.randomUUID(),
     _hasHydrated: true, // keep hydrated after reset
     isOnboarded: state.isOnboarded, // keep onboarding status
     profile: state.profile, // keep user profile
@@ -567,6 +577,24 @@ export const useSessionStore = create<SessionState>()(
   setHasHydrated: (v) => set({ _hasHydrated: v }),
 
   addStoryToMemoryBook: (story) => set((state) => {
+    // 1. Session ID check
+    if (story.storySessionId && state.memoryBook.stories.some(s => s.storySessionId === story.storySessionId)) {
+      console.log(`[Store] Story for session ${story.storySessionId} already saved. Skipping duplicate save.`);
+      return {};
+    }
+
+    // 2. Safety time-based duplicate check (last 15 seconds with same carbon)
+    const now = new Date();
+    const isRecentDuplicate = state.memoryBook.stories.some(s => {
+      const timeDiff = Math.abs(now.getTime() - new Date(s.date).getTime()) < 15000;
+      const sameCarbon = s.totalCarbonKg === story.totalCarbonKg;
+      return timeDiff && sameCarbon;
+    });
+    if (isRecentDuplicate) {
+      console.log("[Store] Identical story carbon saved within 15 seconds. Skipping duplicate save.");
+      return {};
+    }
+
     const newStory = {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),

@@ -204,11 +204,80 @@ const shareCardVariants = {
   }
 };
 
+function getDecisionMoment(choice: string): string {
+  const norm = choice.toLowerCase().trim();
+
+  // Chapter 1:
+  // - Plant-based meal / Local dhaba / Delivery burger -> breakfast
+  if (
+    norm.includes("plant") ||
+    norm.includes("dhaba") ||
+    norm.includes("burger")
+  ) {
+    return "breakfast";
+  }
+
+  // - Walk or cycle / Take the metro / Book a cab -> commute
+  if (
+    norm.includes("walk") ||
+    norm.includes("cycle") ||
+    norm.includes("metro") ||
+    norm.includes("cab")
+  ) {
+    return "commute";
+  }
+
+  // - Home-cooked tiffin / Office canteen / Food delivery app -> lunch
+  if (
+    norm.includes("tiffin") ||
+    norm.includes("canteen") ||
+    norm.includes("delivery app")
+  ) {
+    return "lunch";
+  }
+
+  // Chapter 2:
+  // - Local kirana store / Order online / Drive to the mall -> shopping
+  if (
+    norm.includes("kirana") ||
+    norm.includes("online") ||
+    norm.includes("mall")
+  ) {
+    return "shopping";
+  }
+
+  // - Cook at home / Order vegetarian / Order meat dish -> dinner
+  if (
+    norm.includes("cook") ||
+    norm.includes("vegetarian") ||
+    norm.includes("meat")
+  ) {
+    return "dinner";
+  }
+
+  // - Read a book / Watch a documentary / Game all night / Read or meditate / Stream a show -> wind-down
+  if (
+    norm.includes("book") ||
+    norm.includes("documentary") ||
+    norm.includes("game") ||
+    norm.includes("read") ||
+    norm.includes("meditate") ||
+    norm.includes("stream") ||
+    norm.includes("show")
+  ) {
+    return "wind-down";
+  }
+
+  // Default fallback (Never return 'food' or 'other')
+  return "wind-down";
+}
+
 export default function MemoryGarden() {
   const router = useRouter();
   const {
     decisions, profile, worldState, totalCarbonDelta, resetSession,
     storyCompleted, gardenOutcome, setGardenOutcome, memoryBook,
+    addStoryToMemoryBook, storySessionId
   } = useSessionStore();
 
   // Check if user has a valid completed story
@@ -316,6 +385,31 @@ export default function MemoryGarden() {
     }, 8000);
     return () => clearTimeout(safetyTimeout);
   }, [hasCompletedStory, videoReady]);
+
+  // Save Completed Story to Memory Book once on Garden page load
+  useEffect(() => {
+    if (hasCompletedStory) {
+      console.log(
+        "MEMORY STORY",
+        decisions.map(d => ({
+          choice: d.choice,
+          moment: getDecisionMoment(d.choice)
+        }))
+      );
+      addStoryToMemoryBook({
+        chapterNumber: 2,
+        decisions: decisions.map(d => ({
+          moment: getDecisionMoment(d.choice),
+          choice: d.choice,
+          impactType: d.impactType,
+          carbonKg: d.carbonDelta,
+        })),
+        totalCarbonKg: totalCarbonDelta,
+        planetMood: worldState.planetMood,
+        storySessionId: storySessionId
+      });
+    }
+  }, [hasCompletedStory, decisions, totalCarbonDelta, worldState.planetMood, storySessionId, addStoryToMemoryBook]);
 
   // Decision lookups for Story Reflection
   const getTransportReflection = () => {
