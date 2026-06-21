@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@lottiefiles/dotlottie-react": "^0.19.4",
@@ -40,9 +42,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.184.1",
+    "@vitest/coverage-v8": "^4.1.9",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   }
 }
