@@ -2,6 +2,7 @@
 import MemoryBook from "@/components/memory/MemoryBook"
 import LandingWorld from "@/components/world/LandingWorld"
 import MemoryBookButton from "@/components/ui/MemoryBookButton"
+import { Suspense } from "react";
 
 export default function MemoryPage() {
   return (
@@ -13,7 +14,9 @@ export default function MemoryPage() {
         padding:"24px 16px 80px"
       }}>
         <style>{`div::-webkit-scrollbar{display:none}`}</style>
-        <MemoryBook />
+        <Suspense fallback={<div />}>
+          <MemoryBook />
+        </Suspense>
       </div>
       <MemoryBookButton />
     </main>

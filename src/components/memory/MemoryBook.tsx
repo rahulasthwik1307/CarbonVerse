@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSessionStore } from "@/lib/session-store";
 import VerdOrb from "@/components/ui/VerdOrb";
 import VerdActionCoach from "../coach/VerdActionCoach";
@@ -217,8 +217,16 @@ type Tab = "stories" | "receipts" | "totals" | "coach";
 
 export default function MemoryBook() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { memoryBook, activeMissions, achievements, totalCarbonDelta, deleteReceipt, worldState } = useSessionStore();
   const [activeTab, setActiveTab] = useState<Tab>("stories");
+
+  useEffect(() => {
+    const tabParam = searchParams?.get("tab");
+    if (tabParam && ["stories", "receipts", "totals", "coach"].includes(tabParam)) {
+      setActiveTab(tabParam as Tab);
+    }
+  }, [searchParams]);
   const [expandedStoryId, setExpandedStoryId] = useState<string | null>(null);
   const [expandedReceiptId, setExpandedReceiptId] = useState<string | null>(null);
   const [deletingReceiptId, setDeletingReceiptId] = useState<string | null>(null);
@@ -452,17 +460,54 @@ export default function MemoryBook() {
         </h3>
         
         {activeList.length === 0 ? (
-          <div style={{
-            textAlign: "center",
-            padding: "16px 8px",
-            color: "#6B8F5E",
-            fontStyle: "italic",
-            fontSize: 13,
-            background: "rgba(255,255,255,0.4)",
-            borderRadius: 16,
-            border: "1px dashed rgba(184,212,168,0.4)"
-          }}>
-            All clear! Visit the Coach to add more. 💡
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[
+              { id: "starter-1", emoji: "🌱", title: "Green Plate", description: "Choose a plant-based meal", progress: 0, target: 1 },
+              { id: "starter-2", emoji: "🚶", title: "Walk Short Trips", description: "Walk for a trip under 1km", progress: 0, target: 1 },
+              { id: "starter-3", emoji: "🛒", title: "Local Buyer", description: "Support local stores", progress: 0, target: 1 }
+            ].map((mission) => (
+              <motion.div
+                key={mission.id}
+                whileHover={{ scale: 1.01 }}
+                style={{
+                  background: "#FFF",
+                  border: "1px dashed rgba(184,212,168,0.5)",
+                  borderRadius: 16,
+                  padding: "10px 12px",
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  boxShadow: "0 2px 8px rgba(45,80,22,0.02)"
+                }}
+              >
+                <div style={{ fontSize: 24, flexShrink: 0 }}>{mission.emoji}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                    <h4 style={{ margin: 0, color: "#2D5016", fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {mission.title}
+                    </h4>
+                    <span style={{ 
+                      fontSize: 9, 
+                      fontWeight: 700, 
+                      color: "#6B8F5E", 
+                      background: "rgba(107,143,94,0.1)", 
+                      padding: "2px 6px", 
+                      borderRadius: 6,
+                      flexShrink: 0
+                    }}>
+                      STARTER
+                    </span>
+                  </div>
+                  <p style={{ margin: "2px 0 0 0", color: "#6B8F5E", fontSize: 11, lineHeight: 1.3 }}>
+                    {mission.description}
+                  </p>
+                  
+                  <div style={{ marginTop: 6, height: 4, background: "rgba(184,212,168,0.2)", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{ width: "0%", height: "100%", background: "#4A7C2F", borderRadius: 2 }} />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

@@ -209,7 +209,7 @@ function TypewriterText({ text, onComplete }: { text: string; onComplete?: () =>
         clearInterval(interval);
         onComplete?.();
       }
-    }, 25);
+    }, 12);
     return () => clearInterval(interval);
   }, [text]);
   return <span>{displayedText}</span>;
@@ -363,11 +363,11 @@ export default function ChapterView() {
 
   const handleTypewriterComplete = () => {
     if (isAutoAdvanceQuestion) {
-      // Auto-advance: pause 1800ms so user can read Verd's insight, then proceed
+      // Auto-advance: pause 500ms so user can read Verd's insight, then proceed
       if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
       autoAdvanceTimerRef.current = setTimeout(() => {
         advanceToNextRef.current();
-      }, 1800);
+      }, 500);
     } else {
       // Chapter-end question (Q3, Q6): reveal the manual CTA button
       setAutoAdvancePending(true);
@@ -728,36 +728,52 @@ export default function ChapterView() {
                             <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
                           </filter>
                         </defs>
-                        {/* Dashed track (background) */}
-                        <path
-                          d={idx === 0 ? "M 0,12 Q 50%,0 100%,12" : "M 0,12 Q 50%,24 100%,12"}
-                          stroke="rgba(184, 212, 168, 0.45)"
-                          strokeWidth="2"
-                          strokeDasharray="5 5"
-                          fill="none"
-                        />
-                        {/* Animated fill line */}
-                        <motion.path
-                          d={idx === 0 ? "M 0,12 Q 50%,0 100%,12" : "M 0,12 Q 50%,24 100%,12"}
-                          stroke="#4CAF50"
+                        {/* Solid background line (track) */}
+                        <line
+                          x1="0"
+                          y1="12"
+                          x2="100%"
+                          y2="12"
+                          stroke="rgba(74, 124, 47, 0.15)"
                           strokeWidth="3"
                           strokeLinecap="round"
-                          fill="none"
+                        />
+                        {/* Animated fill line */}
+                        <motion.line
+                          x1="0"
+                          y1="12"
+                          x2="100%"
+                          y2="12"
+                          stroke="#4A7C2F"
+                          strokeWidth="3"
+                          strokeLinecap="round"
                           filter={lineProgress === 1 ? `url(#glow-line-${idx})` : undefined}
                           initial={{ pathLength: 0 }}
                           animate={{ pathLength: lineProgress }}
                           transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
                         />
-                        {/* Traveling glow pulse dot along midpoint of completed line */}
+                        {/* Gentle glow sweep on complete */}
                         {lineProgress === 1 && (
-                          <motion.circle
-                            r="3.5"
-                            fill="#F4A832"
+                          <motion.line
+                            x1="0"
+                            y1="12"
+                            x2="100%"
+                            y2="12"
+                            stroke="#F4A832"
+                            strokeWidth="3.5"
+                            strokeLinecap="round"
                             filter={`url(#glow-line-${idx})`}
-                            cx="50%"
-                            cy={idx === 0 ? 5 : 19}
-                            animate={{ scale: [0.8, 1.6, 0.8], opacity: [0.6, 1, 0.6] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                            animate={{ 
+                              pathLength: [0, 0.3, 0],
+                              pathOffset: [0, 0.7, 1],
+                              opacity: [0, 0.9, 0]
+                            }}
+                            transition={{ 
+                              duration: 2.2, 
+                              repeat: Infinity, 
+                              ease: "easeInOut",
+                              repeatDelay: 1
+                            }}
                           />
                         )}
                       </svg>

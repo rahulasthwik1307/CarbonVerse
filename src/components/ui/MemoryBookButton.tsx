@@ -98,13 +98,13 @@ export default function MemoryBookButton() {
         zIndex: 200,
         display: "flex",
         alignItems: "center",
-        gap: isStoryPage ? 4 : 8,
+        gap: isStoryPage ? 6 : 10,
         background: "rgba(255, 255, 255, 0.88)",
         backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)",
         border: "1.5px solid rgba(184, 212, 168, 0.6)",
         borderRadius: 999,
-        padding: isStoryPage ? "5px 8px" : "6px 12px",
+        padding: isStoryPage ? "6px 10px" : "8px 14px",
         boxShadow: "0 4px 20px rgba(45, 80, 22, 0.14)",
         transition: "padding 200ms ease-out",
       }}
@@ -123,8 +123,8 @@ export default function MemoryBookButton() {
               ? `1.5px solid ${item.activeBorder}`
               : "1.5px solid transparent",
             borderRadius: 999,
-            padding: isStoryPage ? "6px 8px" : "8px 16px",
-            fontSize: 13,
+            padding: isStoryPage ? "8px 12px" : "10px 20px",
+            fontSize: 14,
             fontWeight: 700,
             color: item.isActive ? item.activeTextColor : "#4A7C2F",
             display: "flex",
@@ -140,7 +140,7 @@ export default function MemoryBookButton() {
           }}
         >
           {/* Emoji — always visible */}
-          <span style={{ fontSize: 14, lineHeight: 1 }}>{item.emoji}</span>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>{item.emoji}</span>
 
           {/* Label — shown on non-story pages always, on story pages only on hover */}
           <AnimatePresence>
@@ -164,7 +164,7 @@ export default function MemoryBookButton() {
       <div
         style={{
           width: 1.5,
-          height: 16,
+          height: 20,
           background: "rgba(184, 212, 168, 0.5)",
           margin: isStoryPage ? "0 2px" : "0 4px",
           flexShrink: 0,
@@ -187,8 +187,8 @@ export default function MemoryBookButton() {
           background: "transparent",
           border: "1.5px solid transparent",
           borderRadius: 999,
-          padding: isStoryPage ? "6px 8px" : "8px 14px",
-          fontSize: 13,
+          padding: isStoryPage ? "8px 12px" : "10px 18px",
+          fontSize: 14,
           fontWeight: 700,
           color: "#6B8F5E",
           display: "flex",
@@ -201,7 +201,7 @@ export default function MemoryBookButton() {
           whiteSpace: "nowrap",
         }}
       >
-        <span style={{ fontSize: 14, lineHeight: 1 }}>🚪</span>
+        <span style={{ fontSize: 16, lineHeight: 1 }}>🚪</span>
         <AnimatePresence>
           {(!isStoryPage || hoveredItem === "logout") && (
             <motion.span
