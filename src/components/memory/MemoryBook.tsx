@@ -468,16 +468,55 @@ export default function MemoryBook() {
   };
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+      style={{
+        maxWidth: 680,
+        margin: "0 auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: 20,
+        background: "rgba(255, 255, 255, 0.88)",
+        border: "1px solid rgba(184, 212, 168, 0.6)",
+        borderRadius: 32,
+        boxShadow: "0 20px 50px rgba(45, 80, 22, 0.12)",
+        backdropFilter: "blur(16px)",
+        position: "relative",
+        zIndex: 10
+      }}
+      className="w-full p-5 md:p-8"
+    >
       {/* HEADER */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: "center", marginBottom: 8 }}>
-        <VerdOrb size={48} mood="eco" />
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#2D5016", marginTop: 12 }}>Carbon Memory Book 📖</h1>
-        <p style={{ color: "#4A7C2F", fontSize: 15 }}>Your complete sustainability journey</p>
-      </motion.div>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, borderBottom: "1px solid rgba(184, 212, 168, 0.3)", paddingBottom: 16 }}>
+        <motion.div
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          style={{ flexShrink: 0 }}
+        >
+          <VerdOrb size={64} mood="eco" />
+        </motion.div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "#2D5016", margin: 0, letterSpacing: "-0.01em" }}>
+            Carbon Memory Book 📖
+          </h1>
+          <p style={{ color: "#4A7C2F", fontSize: 14, margin: 0, fontWeight: 500 }}>
+            Your complete sustainability journey
+          </p>
+        </div>
+      </div>
 
       {/* TABS */}
-      <div style={{ display: "flex", gap: 8, padding: 4, background: "rgba(255,255,255,0.4)", backdropFilter: "blur(8px)", borderRadius: 20 }}>
+      <div style={{ 
+        display: "flex", 
+        gap: 6, 
+        padding: 4, 
+        background: "rgba(74, 124, 47, 0.05)", 
+        border: "1px solid rgba(184, 212, 168, 0.3)", 
+        borderRadius: 20,
+        marginBottom: 4
+      }}>
         {(["stories", "receipts", "totals", "coach"] as const).map(tab => (
           <button
             key={tab}
@@ -490,7 +529,7 @@ export default function MemoryBook() {
               fontSize: 14,
               fontWeight: 600,
               cursor: "pointer",
-              background: activeTab === tab ? "#4A7C2F" : "transparent",
+              background: "transparent",
               color: activeTab === tab ? "white" : "#6B8F5E",
               position: "relative",
               transition: "all 0.2s"
@@ -499,7 +538,14 @@ export default function MemoryBook() {
             {activeTab === tab && (
               <motion.div
                 layoutId="activeTab"
-                style={{ position: "absolute", inset: 0, borderRadius: 16, background: "#4A7C2F", zIndex: -1 }}
+                style={{ 
+                  position: "absolute", 
+                  inset: 0, 
+                  borderRadius: 16, 
+                  background: "#4A7C2F", 
+                  zIndex: -1,
+                  boxShadow: "0 4px 12px rgba(74,124,47,0.15)"
+                }}
               />
             )}
             <span style={{ position: "relative", zIndex: 1 }}>
@@ -1114,6 +1160,6 @@ export default function MemoryBook() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
