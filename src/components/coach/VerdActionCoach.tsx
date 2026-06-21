@@ -18,15 +18,15 @@ type Action = {
 const ACTION_BANKS: Record<string, Omit<Action, "id">[]> = {
   Transport: [
     { title: "Walk short trips under 1km", saving: "5kg CO₂", difficulty: "Easy", reason: "Transport is your biggest source.", emoji: "🚶", category: "Transport" },
-    { title: "Take public transit to work", saving: "8kg CO₂", difficulty: "Medium", reason: "Reduces personal footprint significantly.", emoji: "🚆", category: "Transport" },
+    { title: "Take public transit to work", saving: "8kg CO₂", difficulty: "Medium", reason: "Reduces transport emissions.", emoji: "🚆", category: "Transport" },
     { title: "Combine errands into one trip", saving: "3kg CO₂", difficulty: "Easy", reason: "Avoids multiple cold-engine starts.", emoji: "🚗", category: "Transport" },
     { title: "Carpool with a colleague", saving: "6kg CO₂", difficulty: "Medium", reason: "Halves your commuting emissions.", emoji: "🤝", category: "Transport" },
   ],
   Food: [
-    { title: "Choose a plant-based breakfast", saving: "3kg CO₂", difficulty: "Easy", reason: "Food contributes highly to your footprint.", emoji: "🥗", category: "Food" },
-    { title: "Have a meatless dinner", saving: "5kg CO₂", difficulty: "Medium", reason: "Beef and lamb have the highest emissions.", emoji: "🥦", category: "Food" },
-    { title: "Buy local produce", saving: "2kg CO₂", difficulty: "Easy", reason: "Reduces transportation emissions for food.", emoji: "🛒", category: "Food" },
-    { title: "Only buy what you will eat", saving: "4kg CO₂", difficulty: "Medium", reason: "Food waste in landfills produces methane.", emoji: "🗑️", category: "Food" },
+    { title: "Choose a plant-based breakfast", saving: "3kg CO₂", difficulty: "Easy", reason: "Food contributes highly to footprint.", emoji: "🥗", category: "Food" },
+    { title: "Have a meatless dinner", saving: "5kg CO₂", difficulty: "Medium", reason: "Beef and lamb have highest emissions.", emoji: "🥦", category: "Food" },
+    { title: "Buy local produce", saving: "2kg CO₂", difficulty: "Easy", reason: "Reduces food transit emissions.", emoji: "🛒", category: "Food" },
+    { title: "Only buy what you will eat", saving: "4kg CO₂", difficulty: "Medium", reason: "Food waste produces methane.", emoji: "🗑️", category: "Food" },
   ],
   Shopping: [
     { title: "Wait 24h before buying", saving: "10kg CO₂", difficulty: "Medium", reason: "Shopping emissions are increasing.", emoji: "⏳", category: "Shopping" },
@@ -49,7 +49,7 @@ const getCategoryStyles = (category: string) => {
         bg: "#E6F4F1",
         border: "#B8E0D7",
         text: "#2D8273",
-        pillBg: "rgba(45, 130, 115, 0.1)",
+        pillBg: "rgba(45, 130, 115, 0.08)",
         pillText: "#2D8273"
       };
     case "Food":
@@ -57,7 +57,7 @@ const getCategoryStyles = (category: string) => {
         bg: "#F0FAF0",
         border: "#B8D4A8",
         text: "#4A7C2F",
-        pillBg: "rgba(74, 124, 47, 0.1)",
+        pillBg: "rgba(74, 124, 47, 0.08)",
         pillText: "#4A7C2F"
       };
     case "Shopping":
@@ -65,7 +65,7 @@ const getCategoryStyles = (category: string) => {
         bg: "#FFF7E6",
         border: "#FCD7A1",
         text: "#9E5F13",
-        pillBg: "rgba(244, 168, 50, 0.15)",
+        pillBg: "rgba(244, 168, 50, 0.1)",
         pillText: "#9E5F13"
       };
     case "Electricity":
@@ -73,7 +73,7 @@ const getCategoryStyles = (category: string) => {
         bg: "#FFFBEA",
         border: "#FFE299",
         text: "#A87900",
-        pillBg: "rgba(244, 168, 50, 0.15)",
+        pillBg: "rgba(244, 168, 50, 0.1)",
         pillText: "#A87900"
       };
     default:
@@ -81,7 +81,7 @@ const getCategoryStyles = (category: string) => {
         bg: "#FFFFFF",
         border: "#B8D4A8",
         text: "#2D5016",
-        pillBg: "rgba(74, 124, 47, 0.1)",
+        pillBg: "rgba(74, 124, 47, 0.08)",
         pillText: "#2D5016"
       };
   }
@@ -193,15 +193,45 @@ export default function VerdActionCoach() {
     return "Electricity choices are driving most of your footprint right now.";
   };
 
+  const getQuestMeta = (quest: any) => {
+    let category: "Transport" | "Food" | "Shopping" | "Electricity" = "Transport";
+    let difficulty = "Easy";
+    let saving = quest.saving || "CO₂";
+    
+    for (const cat of Object.keys(ACTION_BANKS)) {
+      const found = ACTION_BANKS[cat].find(a => a.title.toLowerCase() === quest.title.toLowerCase());
+      if (found) {
+        category = cat as any;
+        difficulty = found.difficulty;
+        saving = found.saving;
+        break;
+      }
+    }
+
+    if (quest.emoji === "🥗" || quest.emoji === "🥦" || quest.emoji === "🍔") {
+      category = "Food";
+    } else if (quest.emoji === "🛒" || quest.emoji === "🛍️" || quest.emoji === "♻️") {
+      category = "Shopping";
+    } else if (quest.emoji === "🔌" || quest.emoji === "❄️" || quest.emoji === "☀️") {
+      category = "Electricity";
+    }
+    
+    if (quest.reward && quest.reward.startsWith("Save ")) {
+      saving = quest.reward.replace("Save ", "");
+    }
+
+    return { category, difficulty, saving };
+  };
+
   const handleAcceptSingle = (id: string) => {
     acceptCoachPlan([id]);
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 40 }}>
-      {/* Premium Verd Hero Card */}
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingBottom: 24 }}>
+      {/* Premium Compact Verd Hero Card (No Orb icon per Part 1) */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         style={{
@@ -209,29 +239,22 @@ export default function VerdActionCoach() {
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
           border: "1px solid rgba(184, 212, 168, 0.6)",
-          borderRadius: 24,
-          padding: 24,
-          boxShadow: "0 8px 32px rgba(45, 80, 22, 0.05)",
+          borderRadius: 20,
+          padding: "16px 20px",
+          boxShadow: "0 8px 32px rgba(45, 80, 22, 0.04)",
           display: "flex",
-          gap: 20,
-          alignItems: "center",
+          flexDirection: "column",
+          gap: 6,
+          minHeight: 90,
+          justifyContent: "center",
         }}
       >
-        <motion.div
-          animate={{ y: [0, -6, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          style={{ flexShrink: 0 }}
-        >
-          <VerdOrb size={72} mood={showEmptyState ? "eco" : "thinking"} />
-        </motion.div>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ margin: "0 0 6px 0", color: "#F4A832", fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
-            Verd's Daily Guidance
-          </h3>
-          <p style={{ margin: 0, color: "#2D5016", fontSize: 16, lineHeight: 1.5, fontWeight: 600 }}>
-            "{getVerdGuidance()}"
-          </p>
-        </div>
+        <h3 style={{ margin: 0, color: "#F4A832", fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, display: "flex", alignItems: "center", gap: 6 }}>
+          🌱 Verd's Daily Guidance
+        </h3>
+        <p style={{ margin: 0, color: "#2D5016", fontSize: 14, lineHeight: 1.4, fontWeight: 600, fontStyle: "italic" }}>
+          "{getVerdGuidance()}"
+        </p>
       </motion.div>
 
       {/* Main Content */}
@@ -239,258 +262,248 @@ export default function VerdActionCoach() {
         {showEmptyState ? (
           <motion.div
             key="completion"
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            exit={{ opacity: 0, scale: 0.97 }}
             style={{
               background: "rgba(255, 255, 255, 0.85)",
-              borderRadius: 24,
-              padding: "48px 24px",
+              borderRadius: 20,
+              padding: "36px 20px",
               textAlign: "center",
               border: "1px solid rgba(184, 212, 168, 0.6)",
-              boxShadow: "0 12px 40px rgba(45, 80, 22, 0.05)",
+              boxShadow: "0 8px 32px rgba(45, 80, 22, 0.04)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 20
+              gap: 16
             }}
           >
-            <div style={{ position: "relative", width: 100, height: 100 }}>
+            <div style={{ position: "relative", width: 80, height: 80 }}>
               <motion.div
-                animate={{ 
-                  y: [-10, -30, -10],
-                  x: [-10, 10, -10],
-                  opacity: [0, 1, 0],
-                  scale: [0.8, 1.2, 0.8]
-                }}
+                animate={{ y: [-5, -20, -5], x: [-8, 8, -8], opacity: [0, 1, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                style={{ position: "absolute", top: 0, left: 10, fontSize: 24 }}
+                style={{ position: "absolute", top: 0, left: 10, fontSize: 20 }}
               >
                 🍃
               </motion.div>
               <motion.div
-                animate={{ 
-                  y: [-5, -25, -5],
-                  x: [10, -10, 10],
-                  opacity: [0, 0.8, 0],
-                  scale: [0.6, 1, 0.6]
-                }}
+                animate={{ y: [-3, -15, -3], x: [8, -8, 8], opacity: [0, 0.8, 0] }}
                 transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                style={{ position: "absolute", top: 10, right: 10, fontSize: 20 }}
+                style={{ position: "absolute", top: 10, right: 10, fontSize: 18 }}
               >
                 ✨
               </motion.div>
-              <motion.div
-                animate={{ 
-                  y: [-15, -35, -15],
-                  x: [-5, 5, -5],
-                  opacity: [0, 0.9, 0],
-                  scale: [0.7, 1.1, 0.7]
-                }}
-                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                style={{ position: "absolute", top: 20, left: "40%", fontSize: 18 }}
-              >
-                🌱
-              </motion.div>
               
               <motion.div
-                animate={{ scale: [1, 1.08, 1], rotate: [0, 5, -5, 0] }}
+                animate={{ scale: [1, 1.06, 1], rotate: [0, 4, -4, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                style={{ fontSize: 64, filter: "drop-shadow(0 4px 12px rgba(76, 175, 80, 0.2))" }}
+                style={{ fontSize: 52, filter: "drop-shadow(0 4px 10px rgba(76, 175, 80, 0.15))" }}
               >
                 🏆
               </motion.div>
             </div>
 
-            <h2 style={{ margin: 0, color: "#2D5016", fontSize: 22, fontWeight: 800 }}>🌱 All Missions Completed</h2>
-            <p style={{ margin: 0, color: "#4A7C2F", fontSize: 15, lineHeight: 1.6, maxWidth: 420 }}>
-              You've completed every active mission.
+            <h2 style={{ margin: 0, color: "#2D5016", fontSize: 20, fontWeight: 800 }}>🌱 All Missions Completed</h2>
+            <p style={{ margin: 0, color: "#4A7C2F", fontSize: 14, lineHeight: 1.5, maxWidth: 360 }}>
+              You've completed every active quest.
               Verd will prepare new recommendations after your next story or receipt analysis.
             </p>
           </motion.div>
         ) : (
           <motion.div
-            key="dashboard"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            key="quests-container"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            style={{ display: "flex", flexDirection: "column", gap: 24 }}
+            style={{
+              background: "rgba(255, 255, 255, 0.85)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(184, 212, 168, 0.5)",
+              borderRadius: 24,
+              padding: 20,
+              boxShadow: "0 8px 32px rgba(45, 80, 22, 0.04)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
           >
-            {/* Active Missions (Things you can do right now) */}
-            {activeUnfinishedMissions.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <h2 style={{ margin: 0, color: "#2D5016", fontSize: 20, fontWeight: 700 }}>🎯 Active Missions</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  {activeUnfinishedMissions.map((mission) => (
+            {/* Header section with counts */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 4, borderBottom: "1px solid rgba(184, 212, 168, 0.3)" }}>
+              <h2 style={{ margin: 0, color: "#2D5016", fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                🌱 Verd's Quests
+              </h2>
+              <div style={{ display: "flex", gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#4A7C2F", background: "rgba(74, 124, 47, 0.08)", padding: "2px 8px", borderRadius: 6 }}>
+                  {activeUnfinishedMissions.length} Active
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#F4A832", background: "rgba(244, 168, 50, 0.1)", padding: "2px 8px", borderRadius: 6 }}>
+                  {pendingRecommendations.length} Suggested
+                </span>
+              </div>
+            </div>
+
+            {/* Combined Quest Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AnimatePresence mode="popLayout">
+                {/* 1. Active Quests */}
+                {activeUnfinishedMissions.map((quest) => {
+                  const meta = getQuestMeta(quest);
+                  const theme = getCategoryStyles(meta.category);
+                  
+                  return (
                     <motion.div
                       layout
-                      key={mission.id}
-                      initial={{ opacity: 0, scale: 0.98 }}
-                      animate={{ opacity: 1, scale: 1 }}
+                      key={quest.id}
+                      initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ 
+                        scale: 0.95, 
+                        opacity: 0, 
+                        filter: "brightness(1.1) drop-shadow(0 0 8px rgba(76, 175, 80, 0.4))"
+                      }}
+                      whileHover={{ y: -2, boxShadow: "0 6px 16px rgba(45, 80, 22, 0.04)" }}
                       transition={{ type: "spring", stiffness: 300, damping: 25 }}
                       style={{
-                        background: "#FFF",
-                        border: "1px solid #B8D4A8",
-                        borderRadius: 20,
-                        padding: 18,
-                        boxShadow: "0 4px 16px rgba(45, 80, 22, 0.03)",
+                        background: theme.bg,
+                        border: `1.5px solid ${theme.border}`,
+                        borderRadius: 16,
+                        padding: 16,
                         display: "flex",
-                        gap: 16,
-                        alignItems: "center",
+                        flexDirection: "column",
+                        gap: 8,
+                        position: "relative",
+                        minHeight: 105,
+                        justifyContent: "space-between",
                       }}
                     >
-                      <div style={{ 
-                        width: 48, 
-                        height: 48, 
-                        borderRadius: "50%", 
-                        background: "rgba(74, 124, 47, 0.08)", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "center", 
-                        fontSize: 24,
-                        flexShrink: 0
-                      }}>
-                        {mission.emoji}
+                      {/* Quest Header */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div style={{ display: "flex", gap: 10, alignItems: "center", paddingRight: 80 }}>
+                          <span style={{ fontSize: 22, lineHeight: 1 }}>{quest.emoji}</span>
+                          <h4 style={{ margin: 0, color: "#2D5016", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>
+                            {quest.title}
+                          </h4>
+                        </div>
+                        {/* Status Stamp */}
+                        <div style={{ position: "absolute", top: 16, right: 16 }}>
+                          <span style={{ 
+                            fontSize: 10, 
+                            fontWeight: 800, 
+                            color: "#2E7D32", 
+                            background: "#E8F5E9", 
+                            padding: "3px 8px", 
+                            borderRadius: 6,
+                            border: "1px solid rgba(46, 125, 50, 0.15)"
+                          }}>
+                            Active
+                          </span>
+                        </div>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: "0 0 4px 0", color: "#2D5016", fontSize: 16, fontWeight: 700 }}>
-                          {mission.title}
-                        </h4>
-                        <p style={{ margin: 0, color: "#6B8F5E", fontSize: 13, fontWeight: 500 }}>
-                          {mission.description}
-                        </p>
+
+                      {/* Quest Sub-details */}
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: theme.text, background: theme.pillBg, padding: "2px 6px", borderRadius: 4 }}>
+                          Save ~{meta.saving}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: meta.difficulty === "Easy" ? "#4A7C2F" : meta.difficulty === "Medium" ? "#F4A832" : "#D95D39", background: "rgba(0,0,0,0.03)", padding: "2px 6px", borderRadius: 4 }}>
+                          {meta.difficulty}
+                        </span>
                       </div>
-                      <div style={{ 
-                        fontSize: 11, 
-                        fontWeight: 700, 
-                        color: "#8B6914", 
-                        background: "rgba(244, 168, 50, 0.15)", 
-                        padding: "4px 8px", 
-                        borderRadius: 999 
-                      }}>
-                        {mission.reward}
-                      </div>
+
+                      {/* Explanation Sentence (No Why Verd Recommends header, 1 line max) */}
+                      <p style={{ margin: 0, color: "#6B8F5E", fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {quest.description}
+                      </p>
                     </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  );
+                })}
 
-            {/* Recommendations (Available Quests) */}
-            {visibleRecommendations.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <h2 style={{ margin: 0, color: "#2D5016", fontSize: 20, fontWeight: 700 }}>✨ Recommended Quests</h2>
-                
-                {isGenerating ? (
-                  [1, 2].map(i => (
-                    <div 
-                      key={i}
-                      style={{ 
-                        height: 160, 
-                        background: "#E8F5E3", 
-                        borderRadius: 20,
-                        animation: "pulse 1.5s infinite" 
+                {/* 2. Suggested Quests */}
+                {pendingRecommendations.map((quest) => {
+                  const meta = getQuestMeta(quest);
+                  const theme = getCategoryStyles(meta.category);
+                  const isAccepted = isActionAccepted(quest.id);
+
+                  return (
+                    <motion.div
+                      layout
+                      key={quest.id}
+                      initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      whileHover={{ y: -2, boxShadow: "0 6px 16px rgba(45, 80, 22, 0.04)" }}
+                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                      style={{
+                        background: theme.bg,
+                        border: `1.5px solid ${theme.border}`,
+                        borderRadius: 16,
+                        padding: 16,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                        position: "relative",
+                        minHeight: 105,
+                        justifyContent: "space-between",
                       }}
-                    />
-                  ))
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    {visibleRecommendations.map((action) => {
-                      const isAccepted = isActionAccepted(action.id);
-                      const theme = getCategoryStyles(action.category);
-                      
-                      return (
-                        <motion.div
-                          layout
-                          key={action.id}
-                          initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                          style={{
-                            background: theme.bg,
-                            border: `2px solid ${theme.border}`,
-                            borderRadius: 24,
-                            padding: 20,
-                            boxShadow: "0 6px 20px rgba(45, 80, 22, 0.03)",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 14,
-                            transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                          }}
-                        >
-                          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                            <div style={{ 
-                              width: 56, 
-                              height: 56, 
-                              borderRadius: "50%", 
-                              background: "#FFF", 
-                              border: `1px solid ${theme.border}`,
-                              display: "flex", 
-                              alignItems: "center", 
-                              justifyContent: "center", 
-                              fontSize: 30,
-                              flexShrink: 0
-                            }}>
-                              {action.emoji}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <h4 style={{ margin: "0 0 6px 0", color: "#2D5016", fontSize: 17, fontWeight: 800 }}>
-                                {action.title}
-                              </h4>
-                              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: theme.text, background: theme.pillBg, padding: "4px 10px", borderRadius: 999 }}>
-                                  Save ~{action.saving}
-                                </span>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: action.difficulty === "Easy" ? "#4A7C2F" : action.difficulty === "Medium" ? "#F4A832" : "#D95D39", background: "rgba(0,0,0,0.04)", padding: "4px 10px", borderRadius: 999 }}>
-                                  {action.difficulty}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div style={{ background: "rgba(255, 255, 255, 0.5)", padding: "12px 16px", borderRadius: 16, border: "1px solid rgba(255,255,255,0.3)" }}>
-                            <strong style={{ color: "#F4A832", fontSize: 11, display: "block", marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>Why Verd recommends it:</strong>
-                            <span style={{ color: "#2D5016", fontSize: 14, fontWeight: 500 }}>{action.reason}</span>
-                          </div>
+                    >
+                      {/* Quest Header */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div style={{ display: "flex", gap: 10, alignItems: "center", paddingRight: 90 }}>
+                          <span style={{ fontSize: 22, lineHeight: 1 }}>{quest.emoji}</span>
+                          <h4 style={{ margin: 0, color: "#2D5016", fontSize: 14, fontWeight: 700, lineHeight: 1.2 }}>
+                            {quest.title}
+                          </h4>
+                        </div>
+                        {/* Compact Action Area (Top Right) */}
+                        <div style={{ position: "absolute", top: 14, right: 16 }}>
+                          <motion.button
+                            disabled={isAccepted}
+                            onClick={() => handleAcceptSingle(quest.id)}
+                            whileTap={{ scale: isAccepted ? 1 : 0.95 }}
+                            style={{
+                              padding: "4px 10px",
+                              borderRadius: 6,
+                              fontSize: 10,
+                              fontWeight: 800,
+                              cursor: isAccepted ? "default" : "pointer",
+                              background: isAccepted ? "#E8F5E9" : "#F4A832",
+                              color: isAccepted ? "#2D5016" : "#FFF",
+                              border: "none",
+                              boxShadow: isAccepted ? "none" : "0 2px 6px rgba(244, 168, 50, 0.2)",
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            {isAccepted ? "✓ Added" : "Accept"}
+                          </motion.button>
+                        </div>
+                      </div>
 
-                          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
-                            <motion.button
-                              disabled={isAccepted}
-                              onClick={() => handleAcceptSingle(action.id)}
-                              whileTap={{ scale: isAccepted ? 1 : 0.97 }}
-                              style={{
-                                padding: "10px 20px",
-                                borderRadius: 14,
-                                fontSize: 13,
-                                fontWeight: 700,
-                                cursor: isAccepted ? "default" : "pointer",
-                                background: isAccepted ? "#E8F5E9" : "#F4A832",
-                                color: isAccepted ? "#2D5016" : "#FFF",
-                                border: "none",
-                                boxShadow: isAccepted ? "none" : "0 4px 14px rgba(244, 168, 50, 0.25)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                                transition: "all 0.2s cubic-bezier(0.23, 1, 0.32, 1)",
-                              }}
-                            >
-                              {isAccepted ? "✓ Added To Journey" : "Accept Mission"}
-                            </motion.button>
-                          </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+                      {/* Quest Sub-details */}
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: theme.text, background: theme.pillBg, padding: "2px 6px", borderRadius: 4 }}>
+                          Save ~{meta.saving}
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: meta.difficulty === "Easy" ? "#4A7C2F" : meta.difficulty === "Medium" ? "#F4A832" : "#D95D39", background: "rgba(0,0,0,0.03)", padding: "2px 6px", borderRadius: 4 }}>
+                          {meta.difficulty}
+                        </span>
+                      </div>
+
+                      {/* Explanation Sentence (No Why Verd Recommends header, 1 line max) */}
+                      <p style={{ margin: 0, color: "#6B8F5E", fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {quest.reason}
+                      </p>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Manual Refresh Button */}
       {(!activeUnfinishedMissions.length) && (
-        <div style={{ textAlign: "center", marginTop: 8 }}>
+        <div style={{ textAlign: "center", marginTop: 4 }}>
           <button 
             onClick={() => generatePlan(true)} 
             disabled={isGenerating}
@@ -498,7 +511,7 @@ export default function VerdActionCoach() {
               background: "transparent", 
               border: "none", 
               color: "#6B8F5E", 
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 600, 
               cursor: isGenerating ? "not-allowed" : "pointer", 
               textDecoration: "underline",
