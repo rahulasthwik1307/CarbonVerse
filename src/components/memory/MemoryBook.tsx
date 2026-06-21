@@ -7,6 +7,212 @@ import { useSessionStore } from "@/lib/session-store";
 import VerdOrb from "@/components/ui/VerdOrb";
 import VerdActionCoach from "../coach/VerdActionCoach";
 
+const moodThemes: Record<string, { bg: string; border: string; text: string; emoji: string; title: string; connectorEmoji: string }> = {
+  "Thriving": {
+    bg: "linear-gradient(135deg, rgba(240, 253, 244, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(76, 175, 80, 0.35)",
+    text: "#2D7A1F",
+    emoji: "🌸",
+    title: "Thriving Future",
+    connectorEmoji: "🌸"
+  },
+  "Recovering": {
+    bg: "linear-gradient(135deg, rgba(240, 250, 240, 0.85) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(184, 212, 168, 0.6)",
+    text: "#4A7C2F",
+    emoji: "🌱",
+    title: "Recovering Future",
+    connectorEmoji: "🌿"
+  },
+  "Stable": {
+    bg: "linear-gradient(135deg, rgba(245, 248, 242, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(184, 212, 168, 0.45)",
+    text: "#4A7C2F",
+    emoji: "🌿",
+    title: "Stable Future",
+    connectorEmoji: "🌱"
+  },
+  "Under Stress": {
+    bg: "linear-gradient(135deg, rgba(254, 243, 199, 0.8) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(244, 168, 50, 0.35)",
+    text: "#B8860B",
+    emoji: "⚠️",
+    title: "Under Stress Future",
+    connectorEmoji: "🍂"
+  },
+  "Critical Future": {
+    bg: "linear-gradient(135deg, rgba(254, 226, 226, 0.85) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(239, 68, 68, 0.35)",
+    text: "#A0401A",
+    emoji: "🔥",
+    title: "Critical Future",
+    connectorEmoji: "🪨"
+  }
+};
+
+const getMoodTheme = (mood: string) => {
+  const normalized = mood ? mood.trim() : "Stable";
+  if (moodThemes[normalized]) return moodThemes[normalized];
+  if (normalized.includes("Stress")) return moodThemes["Under Stress"];
+  if (normalized.includes("Critical")) return moodThemes["Critical Future"];
+  if (normalized.includes("Thriv")) return moodThemes["Thriving"];
+  if (normalized.includes("Recov")) return moodThemes["Recovering"];
+  return moodThemes["Stable"];
+};
+
+const getMomentEmoji = (moment: string, choice: string) => {
+  const lowerChoice = choice.toLowerCase();
+  const lowerMoment = moment.toLowerCase();
+  
+  if (lowerMoment === "breakfast") {
+    if (lowerChoice.includes("plant") || lowerChoice.includes("vegan") || lowerChoice.includes("oat") || lowerChoice.includes("fruit")) return "🥗";
+    if (lowerChoice.includes("egg") || lowerChoice.includes("toast")) return "🍳";
+    return "🥣";
+  }
+  if (lowerMoment === "commute") {
+    if (lowerChoice.includes("metro") || lowerChoice.includes("train") || lowerChoice.includes("subway")) return "🚇";
+    if (lowerChoice.includes("walk") || lowerChoice.includes("foot")) return "🚶";
+    if (lowerChoice.includes("cycle") || lowerChoice.includes("bike")) return "🚲";
+    if (lowerChoice.includes("carpool") || lowerChoice.includes("cab") || lowerChoice.includes("taxi")) return "🚕";
+    return "🚗";
+  }
+  if (lowerMoment === "lunch") {
+    if (lowerChoice.includes("plant") || lowerChoice.includes("veg") || lowerChoice.includes("salad")) return "🥗";
+    if (lowerChoice.includes("tiffin") || lowerChoice.includes("home")) return "🍱";
+    return "🍲";
+  }
+  if (lowerMoment === "shopping") {
+    if (lowerChoice.includes("kirana") || lowerChoice.includes("local") || lowerChoice.includes("corner")) return "🏪";
+    if (lowerChoice.includes("mall") || lowerChoice.includes("supermarket")) return "🛒";
+    return "🛍️";
+  }
+  if (lowerMoment === "dinner") {
+    if (lowerChoice.includes("plant") || lowerChoice.includes("veg") || lowerChoice.includes("paneer")) return "🍛";
+    if (lowerChoice.includes("meat") || lowerChoice.includes("chicken") || lowerChoice.includes("steak")) return "🥩";
+    return "🥘";
+  }
+  if (lowerMoment === "wind-down") {
+    if (lowerChoice.includes("book") || lowerChoice.includes("read")) return "📚";
+    if (lowerChoice.includes("meditate") || lowerChoice.includes("yoga")) return "🧘";
+    if (lowerChoice.includes("stream") || lowerChoice.includes("tv") || lowerChoice.includes("movie") || lowerChoice.includes("screen")) return "📺";
+    return "😴";
+  }
+  return "✨";
+};
+
+const getGardenSnapshot = (decisions: Array<{ impactType: "eco" | "moderate" | "high" }>) => {
+  const ecoCount = decisions.filter(d => d.impactType === "eco").length;
+  const highCount = decisions.filter(d => d.impactType === "high").length;
+  
+  if (ecoCount >= 5) return ["🌳", "🌸", "🦋"];
+  if (ecoCount >= 3) return ["🌱", "🌱", "🌸"];
+  if (highCount >= 4) return ["🍂", "🪨", "🪨"];
+  if (highCount >= 2) return ["🌱", "🪨", "🪨"];
+  return ["🌿", "🌱", "🌿"];
+};
+
+const receiptThemes: Record<string, { bg: string; border: string; text: string; emoji: string; title: string }> = {
+  "food": {
+    bg: "linear-gradient(135deg, rgba(240, 248, 235, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(184, 212, 168, 0.5)",
+    text: "#4A7C2F",
+    emoji: "🍲",
+    title: "Food Impact"
+  },
+  "restaurant": {
+    bg: "linear-gradient(135deg, rgba(255, 248, 230, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(244, 168, 50, 0.35)",
+    text: "#A06000",
+    emoji: "🍽️",
+    title: "Dining Impact"
+  },
+  "grocery": {
+    bg: "linear-gradient(135deg, rgba(240, 250, 245, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(123, 198, 126, 0.4)",
+    text: "#2D7A1F",
+    emoji: "🥦",
+    title: "Grocery Impact"
+  },
+  "electricity": {
+    bg: "linear-gradient(135deg, rgba(235, 248, 250, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(118, 180, 189, 0.4)",
+    text: "#1D5D66",
+    emoji: "⚡",
+    title: "Electricity Impact"
+  },
+  "fuel": {
+    bg: "linear-gradient(135deg, rgba(255, 240, 230, 0.85) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(244, 130, 50, 0.35)",
+    text: "#A0401A",
+    emoji: "⛽",
+    title: "Fuel Impact"
+  },
+  "shopping": {
+    bg: "linear-gradient(135deg, rgba(242, 240, 250, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%)",
+    border: "rgba(180, 168, 212, 0.4)",
+    text: "#52447C",
+    emoji: "🛍️",
+    title: "Shopping Impact"
+  }
+};
+
+const getReceiptTheme = (type: string) => {
+  const normalized = type ? type.toLowerCase().trim() : "food";
+  if (receiptThemes[normalized]) return receiptThemes[normalized];
+  if (normalized.includes("rest") || normalized.includes("dine") || normalized.includes("dining")) return receiptThemes["restaurant"];
+  if (normalized.includes("groc")) return receiptThemes["grocery"];
+  if (normalized.includes("elec") || normalized.includes("util") || normalized.includes("power")) return receiptThemes["electricity"];
+  if (normalized.includes("fuel") || normalized.includes("gas") || normalized.includes("travel") || normalized.includes("trans")) return receiptThemes["fuel"];
+  if (normalized.includes("shop") || normalized.includes("retail") || normalized.includes("buy")) return receiptThemes["shopping"];
+  return receiptThemes["food"];
+};
+
+const getItemEmoji = (name: string) => {
+  const norm = name.toLowerCase();
+  if (norm.includes("paneer") || norm.includes("cheese") || norm.includes("butter")) return "🧀";
+  if (norm.includes("biryani") || norm.includes("rice") || norm.includes("pulao")) return "🍛";
+  if (norm.includes("noodle") || norm.includes("chow")) return "🍜";
+  if (norm.includes("milk") || norm.includes("dairy")) return "🥛";
+  if (norm.includes("vegetable") || norm.includes("veg") || norm.includes("salad") || norm.includes("spinach") || norm.includes("paneer salad")) return "🥗";
+  if (norm.includes("petrol") || norm.includes("fuel") || norm.includes("gas") || norm.includes("diesel")) return "⛽";
+  if (norm.includes("electric") || norm.includes("bill") || norm.includes("power")) return "⚡";
+  if (norm.includes("apple") || norm.includes("fruit") || norm.includes("banana")) return "🍎";
+  if (norm.includes("water") || norm.includes("soda") || norm.includes("drink")) return "🥤";
+  if (norm.includes("bread") || norm.includes("naan") || norm.includes("roti")) return "🍞";
+  if (norm.includes("hotel") || norm.includes("stay") || norm.includes("room")) return "🏨";
+  return "📦";
+};
+
+const DoubleBezelCard = ({ children, style = {}, onClick, whileHover }: { children: React.ReactNode; style?: React.CSSProperties; onClick?: () => void; whileHover?: import("framer-motion").VariantLabels | import("framer-motion").TargetAndTransition }) => {
+  return (
+    <motion.div
+      whileHover={whileHover}
+      onClick={onClick}
+      style={{
+        background: "rgba(240, 250, 240, 0.4)",
+        border: "1px solid rgba(184, 212, 168, 0.4)",
+        borderRadius: 24,
+        padding: 6,
+        cursor: onClick ? "pointer" : "default",
+        ...style
+      }}
+    >
+      <div style={{
+        background: "white",
+        border: "1px solid rgba(184, 212, 168, 0.7)",
+        borderRadius: 18,
+        padding: 16,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between"
+      }}>
+        {children}
+      </div>
+    </motion.div>
+  );
+};
+
 type Tab = "stories" | "receipts" | "totals" | "coach";
 
 export default function MemoryBook() {
@@ -145,35 +351,7 @@ export default function MemoryBook() {
   };
   const verdReflection = getVerdReflection();
 
-  const DoubleBezelCard = ({ children, style = {}, onClick, whileHover }: { children: React.ReactNode; style?: React.CSSProperties; onClick?: () => void; whileHover?: any }) => {
-    return (
-      <motion.div
-        whileHover={whileHover}
-        onClick={onClick}
-        style={{
-          background: "rgba(240, 250, 240, 0.4)",
-          border: "1px solid rgba(184, 212, 168, 0.4)",
-          borderRadius: 24,
-          padding: 6,
-          cursor: onClick ? "pointer" : "default",
-          ...style
-        }}
-      >
-        <div style={{
-          background: "white",
-          border: "1px solid rgba(184, 212, 168, 0.7)",
-          borderRadius: 18,
-          padding: 16,
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between"
-        }}>
-          {children}
-        </div>
-      </motion.div>
-    );
-  };
+
 
   const renderJourneyHighlights = () => {
     return (
@@ -350,7 +528,7 @@ export default function MemoryBook() {
     );
   };
 
-  const renderTimelineEvent = (evt: any, isCompact: boolean = false) => {
+  const renderTimelineEvent = (evt: { id: string; date: string; type: string; title: string; carbonDelta?: number }, isCompact: boolean = false) => {
     const isEco = evt.carbonDelta && evt.carbonDelta < 0;
     const isHigh = evt.carbonDelta && evt.carbonDelta > 0;
     const color = evt.type === "achievement_earned" ? "#F4A832" : isEco ? "#4CAF50" : isHigh ? "#A0401A" : "#4A7C2F";
@@ -571,51 +749,152 @@ export default function MemoryBook() {
                 </button>
               </div>
             ) : (
-              <div style={{ position: "relative", paddingLeft: 20 }}>
-                {/* Vertical line */}
-                <div style={{ position: "absolute", left: 6, top: 20, bottom: 0, width: 2, background: "rgba(74,124,47,0.3)" }} />
-                
-                <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-                  {[...memoryBook.stories].reverse().map((story, i) => {
-                    const isExpanded = expandedStoryId === story.id;
-                    return (
-                      <motion.div
-                        key={story.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.15 }}
-                        style={{ position: "relative" }}
-                      >
-                        {/* Dot */}
-                        <div style={{ position: "absolute", left: -20, top: 24, width: 12, height: 12, borderRadius: 6, background: "#4A7C2F", border: "2px solid #FFF8E7", zIndex: 2 }} />
-                        
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", marginBottom: 8, paddingLeft: 4 }}>
-                          {formatDate(story.date)}
+              <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                {[...memoryBook.stories].reverse().map((story, i, arr) => {
+                  const isExpanded = expandedStoryId === story.id;
+                  const theme = getMoodTheme(story.planetMood);
+                  
+                  // Emojis for preview strip
+                  const previewEmojis = story.decisions.slice(0, 3).map(d => getMomentEmoji(d.moment, d.choice));
+                  
+                  // Garden memory emojis
+                  const gardenEmojis = getGardenSnapshot(story.decisions);
+                  
+                  // Carbon Impact pill elements
+                  const isEco = story.totalCarbonKg <= 0;
+                  const impactLabel = isEco 
+                    ? `Saved ${Math.abs(story.totalCarbonKg)} kg CO₂` 
+                    : `+${story.totalCarbonKg} kg CO₂`;
+                  const impactEmoji = isEco ? "🌿" : "🔥";
+                  const impactBg = isEco ? "rgba(76, 175, 80, 0.12)" : "rgba(244, 168, 50, 0.12)";
+                  const impactColor = isEco ? "#2D7A1F" : "#A0401A";
+                  const impactBorder = isEco ? "rgba(76, 175, 80, 0.25)" : "rgba(244, 168, 50, 0.25)";
+                  
+                  return (
+                    <motion.div
+                      key={story.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.12, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                      style={{ display: "flex", gap: 16 }}
+                    >
+                      {/* Softer progression connector */}
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 28, flexShrink: 0 }}>
+                        <div style={{ 
+                          width: 2, 
+                          flex: "0 0 16px", 
+                          background: i === 0 ? "transparent" : "rgba(184, 212, 168, 0.5)" 
+                        }} />
+                        <div style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: "50%",
+                          background: "white",
+                          border: `1.5px solid ${theme.border}`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 13,
+                          boxShadow: "0 2px 8px rgba(45,80,22,0.06)",
+                          zIndex: 2
+                        }}>
+                          {theme.connectorEmoji}
+                        </div>
+                        <div style={{ 
+                          width: 2, 
+                          flex: 1, 
+                          background: i === arr.length - 1 ? "transparent" : "rgba(184, 212, 168, 0.5)" 
+                        }} />
+                      </div>
+                      
+                      {/* Story Card */}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#6B8F5E", marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span>{formatDate(story.date)}</span>
+                          <span style={{ fontSize: 11, color: "rgba(45,80,22,0.4)" }}>Carbon Story #{arr.length - i}</span>
                         </div>
                         
                         <motion.div
                           layout
-                          whileHover={{ scale: 1.01 }}
+                          whileHover={{ scale: 1.015, translateY: -2, boxShadow: "0 8px 24px rgba(45,80,22,0.06)" }}
                           onClick={() => setExpandedStoryId(isExpanded ? null : story.id)}
-                          style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", borderRadius: 16, padding: 20, cursor: "pointer", border: "1px solid rgba(184,212,168,0.5)" }}
+                          style={{ 
+                            background: theme.bg, 
+                            backdropFilter: "blur(12px)", 
+                            borderRadius: 20, 
+                            padding: "20px 24px", 
+                            cursor: "pointer", 
+                            border: `1.5px solid ${theme.border}`,
+                            transition: "box-shadow 0.3s ease, border-color 0.3s ease"
+                          }}
                         >
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                              <span style={{ fontSize: 12, fontWeight: 700, background: "#4A7C2F", color: "white", padding: "4px 8px", borderRadius: 8 }}>
-                                Carbon Story #{memoryBook.stories.length - i}
-                              </span>
-                              <span style={{ fontSize: 13, background: "rgba(74, 124, 47, 0.1)", color: "#4A7C2F", padding: "4px 8px", borderRadius: 12 }}>{story.planetMood}</span>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                            {/* Left Side: Title and Garden Memory */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <span style={{ fontSize: 18, fontWeight: 800, color: "#2D5016", letterSpacing: "-0.01em" }}>
+                                  {theme.emoji} {theme.title}
+                                </span>
+                              </div>
+                              
+                              {/* Garden Memory Snapshot & Story Preview Emojis */}
+                              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                                {/* Garden Snapshot */}
+                                <div style={{ 
+                                  display: "flex", 
+                                  alignItems: "center", 
+                                  gap: 4, 
+                                  background: "rgba(255, 255, 255, 0.6)",
+                                  border: "1px solid rgba(184, 212, 168, 0.3)",
+                                  padding: "2px 8px",
+                                  borderRadius: 8,
+                                  fontSize: 11
+                                }}>
+                                  <span style={{ color: "#6B8F5E", fontWeight: 700, fontSize: 9, marginRight: 2 }}>GARDEN:</span>
+                                  {gardenEmojis.map((e, ei) => <span key={ei}>{e}</span>)}
+                                </div>
+                                
+                                {/* Memory strip preview */}
+                                <div style={{ 
+                                  display: "flex", 
+                                  alignItems: "center", 
+                                  gap: 4, 
+                                  background: "rgba(255, 255, 255, 0.6)",
+                                  border: "1px solid rgba(184, 212, 168, 0.3)",
+                                  padding: "2px 8px",
+                                  borderRadius: 8,
+                                  fontSize: 11
+                                }}>
+                                  <span style={{ color: "#6B8F5E", fontWeight: 700, fontSize: 9, marginRight: 2 }}>JOURNEY:</span>
+                                  {previewEmojis.map((e, ei) => <span key={ei}>{e}</span>)}
+                                </div>
+                              </div>
                             </div>
+                            
+                            {/* Right Side: Carbon pill and Toggle action */}
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                              <div style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                                {isExpanded ? "Hide Details" : "View Details"}
+                              {/* Carbon impact pill */}
+                              <div style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                padding: "6px 12px",
+                                borderRadius: 999,
+                                background: impactBg,
+                                color: impactColor,
+                                border: `1.5px solid ${impactBorder}`,
+                                fontSize: 12,
+                                fontWeight: 800,
+                                boxShadow: "0 2px 6px rgba(45,80,22,0.02)"
+                              }}>
+                                <span>{impactEmoji}</span>
+                                <span>{impactLabel}</span>
+                              </div>
+                              
+                              <div style={{ fontSize: 11, color: "#4A7C2F", fontWeight: 700, display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.8)", border: "1px solid rgba(184,212,168,0.4)", padding: "6px 12px", borderRadius: 12 }}>
+                                <span>{isExpanded ? "📖 Close Memory" : "📖 Revisit Memory"}</span>
                                 <motion.span animate={{ rotate: isExpanded ? 180 : 0 }} style={{ display: "inline-block" }}>▼</motion.span>
                               </div>
-                              <span style={{ fontWeight: 800, fontSize: 18, color: story.totalCarbonKg <= 0 ? "#2D7A1F" : "#A0401A" }}>
-                                {story.totalCarbonKg <= 0 
-                                  ? `Saved ${Math.abs(story.totalCarbonKg)} kg CO₂` 
-                                  : `+${story.totalCarbonKg} kg CO₂`}
-                              </span>
                             </div>
                           </div>
                           
@@ -635,29 +914,83 @@ export default function MemoryBook() {
                                     const renderDecisions = (title: string, decs: typeof story.decisions) => {
                                       if (decs.length === 0) return null;
                                       return (
-                                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                          <div style={{ fontSize: 12, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase" }}>{title}</div>
-                                          {decs.map((d, di) => {
-                                            const emoji = d.moment === "breakfast" ? "🌅" : d.moment === "commute" ? "🌆" : d.moment === "lunch" ? "🌞" : d.moment === "shopping" ? "🌇" : d.moment === "dinner" ? "🌙" : d.moment === "wind-down" ? "😴" : "✨";
-                                            return (
-                                              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: di * 0.05 }} key={di} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
-                                                <span>{emoji}</span>
-                                                <span style={{ fontSize: 12, fontWeight: 600, color: "#6B8F5E", width: 64, textTransform: "capitalize" }}>{d.moment}</span>
-                                                <span style={{ flex: 1, color: "#2D5016", fontWeight: 500 }}>{d.choice}</span>
-                                                <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 6, background: d.impactType === "eco" ? "rgba(74,124,47,0.1)" : d.impactType === "moderate" ? "rgba(244,168,50,0.15)" : "rgba(160,64,26,0.1)", color: d.impactType === "eco" ? "#4A7C2F" : d.impactType === "moderate" ? "#A06000" : "#A0401A" }}>
-                                                  {d.impactType.toUpperCase()}
-                                                </span>
-                                              </motion.div>
-                                            );
-                                          })}
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                          <div style={{ 
+                                            fontSize: 12, 
+                                            fontWeight: 700, 
+                                            color: "#4A7C2F", 
+                                            borderBottom: "1px dashed rgba(184, 212, 168, 0.4)",
+                                            paddingBottom: 4,
+                                            marginTop: 6
+                                          }}>
+                                            {title}
+                                          </div>
+                                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                            {decs.map((d, di) => {
+                                              const emoji = getMomentEmoji(d.moment, d.choice);
+                                              
+                                              let impactBg = "rgba(74, 124, 47, 0.1)";
+                                              let impactColor = "#4A7C2F";
+                                              let impactLabel = "ECO";
+                                              
+                                              if (d.impactType === "moderate") {
+                                                impactBg = "rgba(244, 168, 50, 0.12)";
+                                                impactColor = "#A06000";
+                                                impactLabel = "MODERATE";
+                                              } else if (d.impactType === "high") {
+                                                impactBg = "rgba(160, 64, 26, 0.1)";
+                                                impactColor = "#A0401A";
+                                                impactLabel = "HIGH";
+                                              }
+                                              
+                                              return (
+                                                <motion.div 
+                                                  initial={{ opacity: 0, x: -10 }} 
+                                                  animate={{ opacity: 1, x: 0 }} 
+                                                  transition={{ delay: di * 0.05 }} 
+                                                  key={di} 
+                                                  style={{ 
+                                                    display: "flex", 
+                                                    alignItems: "center", 
+                                                    justifyContent: "space-between",
+                                                    gap: 12, 
+                                                    fontSize: 13,
+                                                    background: "rgba(255, 255, 255, 0.5)",
+                                                    padding: "8px 12px",
+                                                    borderRadius: 12,
+                                                    border: "1px solid rgba(184, 212, 168, 0.2)"
+                                                  }}
+                                                >
+                                                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                                                    <span style={{ fontSize: 16 }}>{emoji}</span>
+                                                    <span style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", width: 68, textTransform: "capitalize" }}>{d.moment}</span>
+                                                    <span style={{ color: "#2D5016", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                      {d.choice}
+                                                    </span>
+                                                  </div>
+                                                  <span style={{ 
+                                                    fontSize: 9, 
+                                                    fontWeight: 800, 
+                                                    padding: "2px 8px", 
+                                                    borderRadius: 999, 
+                                                    background: impactBg, 
+                                                    color: impactColor,
+                                                    flexShrink: 0
+                                                  }}>
+                                                    {impactLabel}
+                                                  </span>
+                                                </motion.div>
+                                              );
+                                            })}
+                                          </div>
                                         </div>
                                       );
                                     };
                                     
                                     return (
                                       <>
-                                        {renderDecisions("Chapter 1 — Morning", morning)}
-                                        {renderDecisions("Chapter 2 — Evening", evening)}
+                                        {renderDecisions("🌅 Chapter 1 — Morning Recount", morning)}
+                                        {renderDecisions("🌙 Chapter 2 — Evening Recount", evening)}
                                       </>
                                     );
                                   })()}
@@ -666,10 +999,10 @@ export default function MemoryBook() {
                             )}
                           </AnimatePresence>
                         </motion.div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
                 {memoryBook.stories.length === 1 && (
                   <div style={{ marginTop: 24, paddingLeft: 20, fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
                     Play again to add more chapters to your timeline! 🌱
@@ -682,99 +1015,278 @@ export default function MemoryBook() {
 
         {activeTab === "receipts" && (
           <motion.div key="receipts" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-            <div style={{ marginBottom: 24, textAlign: "center" }}>
-              <button
+            {/* Redesigned Analyze Receipt Button (Glassmorphic Action Card) */}
+            <div style={{ marginBottom: 20 }}>
+              <motion.div
+                whileHover={{ scale: 1.015, translateY: -2, boxShadow: "0 8px 24px rgba(74, 124, 47, 0.08)" }}
+                whileTap={{ scale: 0.985 }}
                 onClick={() => router.push("/detective")}
-                style={{ background: "linear-gradient(135deg, #4A7C2F 0%, #7BC67E 100%)", color: "white", padding: "12px 24px", borderRadius: 12, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 16, boxShadow: "0 4px 12px rgba(74,124,47,0.25)", width: "100%" }}
+                style={{
+                  background: "rgba(255, 255, 255, 0.65)",
+                  backdropFilter: "blur(12px)",
+                  border: "1.5px solid rgba(184, 212, 168, 0.5)",
+                  borderRadius: 20,
+                  padding: "16px 20px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  boxShadow: "0 4px 12px rgba(45, 80, 22, 0.03)",
+                  transition: "all 0.2s ease"
+                }}
               >
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  🧾 Analyze New Receipt
-                </motion.div>
-              </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: "rgba(74, 124, 47, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 20,
+                    color: "#4A7C2F",
+                    border: "1px solid rgba(184, 212, 168, 0.4)"
+                  }}>
+                    🔍
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, textAlign: "left" }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#2D5016" }}>
+                      Start a New Carbon Investigation
+                    </span>
+                    <span style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 500 }}>
+                      Analyze a receipt with Verd to reveal item-level emissions insights.
+                    </span>
+                  </div>
+                </div>
+                <div style={{
+                  background: "#4A7C2F",
+                  color: "white",
+                  padding: "6px 14px",
+                  borderRadius: 12,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  boxShadow: "0 2px 6px rgba(74, 124, 47, 0.15)"
+                }}>
+                  Upload
+                </div>
+              </motion.div>
             </div>
+
             {memoryBook.receipts.length === 0 ? (
               <div style={{ textAlign: "center", padding: 20 }}>
                 <p style={{ color: "#4A7C2F", marginBottom: 8 }}>No receipts analyzed yet.</p>
                 <p style={{ color: "#6B8F5E", fontSize: 13, fontStyle: "italic" }}>Upload your first receipt to start tracking.</p>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <AnimatePresence mode="popLayout">
-                  {[...memoryBook.receipts].reverse().map((r, i) => {
+                  {[...memoryBook.receipts].reverse().map((r) => {
                     const isExpanded = expandedReceiptId === r.id;
+                    const theme = getReceiptTheme(r.receiptType);
+                    
+                    // Preview chips (max 3 items)
+                    const previewItems = r.items.slice(0, 3);
+                    
+                    // Programmatic Verd insight
+                    const sortedItems = [...r.items].sort((a, b) => b.estimatedCO2 - a.estimatedCO2);
+                    const maxItem = sortedItems[0];
+                    let verdInsight = "Plant-based or lower carbon choices kept this footprint minimal.";
+                    if (maxItem && maxItem.estimatedCO2 > 2) {
+                      verdInsight = `${maxItem.name} contributed most of this receipt's impact.`;
+                    } else if (r.receiptType === "electricity") {
+                      verdInsight = "Home electricity usage accounts for a steady baseline footprint.";
+                    } else if (r.receiptType === "fuel") {
+                      verdInsight = "Fuel emissions build up quickly. Consider active travel offsets.";
+                    }
+                    
+                    // Carbon Impact Capsule based on r.totalCO2
+                    let impactLabel = "Low Impact";
+                    let impactEmoji = "🌿";
+                    let impactBg = "rgba(76, 175, 80, 0.12)";
+                    let impactColor = "#2D7A1F";
+                    let impactBorder = "rgba(76, 175, 80, 0.25)";
+                    
+                    if (r.totalCO2 > 15) {
+                      impactLabel = "High Impact";
+                      impactEmoji = "🔥";
+                      impactBg = "rgba(217, 93, 57, 0.12)";
+                      impactColor = "#D95D39";
+                      impactBorder = "rgba(217, 93, 57, 0.25)";
+                    } else if (r.totalCO2 > 3) {
+                      impactLabel = "Moderate Impact";
+                      impactEmoji = "🌍";
+                      impactBg = "rgba(244, 168, 50, 0.12)";
+                      impactColor = "#A06000";
+                      impactBorder = "rgba(244, 168, 50, 0.25)";
+                    }
+                    
                     return (
                       <motion.div
                         layout
-                        initial={{ opacity: 0, scale: 0.95 }}
+                        initial={{ opacity: 0, scale: 0.96 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9, height: 0 }}
-                        transition={{ duration: 0.3 }}
+                        exit={{ opacity: 0, scale: 0.92, height: 0 }}
+                        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
                         onClick={() => setExpandedReceiptId(isExpanded ? null : r.id)}
                         key={r.id}
-                        style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", borderRadius: 16, padding: 20, cursor: "pointer", border: "1px solid rgba(184,212,168,0.5)", position: "relative", overflow: "hidden" }}
+                        whileHover={{ scale: 1.012, translateY: -1, boxShadow: "0 6px 18px rgba(45,80,22,0.04)" }}
+                        style={{ 
+                          background: theme.bg, 
+                          backdropFilter: "blur(12px)", 
+                          borderRadius: 20, 
+                          padding: "14px 18px", 
+                          cursor: "pointer", 
+                          border: `1.5px solid ${theme.border}`, 
+                          position: "relative", 
+                          overflow: "hidden",
+                          transition: "box-shadow 0.3s ease, border-color 0.3s ease"
+                        }}
                       >
                         {deletingReceiptId === r.id && (
-                          <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(255,255,255,0.95)", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: 20, textAlign: "center" }}>
-                            <p style={{ margin: 0, color: "#2D5016", fontSize: 14, fontWeight: 600 }}>
+                          <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(255,255,255,0.96)", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: 12, textAlign: "center" }}>
+                            <p style={{ margin: 0, color: "#2D5016", fontSize: 13, fontWeight: 700 }}>
                               Delete this receipt?<br/>
-                              <span style={{ fontSize: 12, color: "rgba(45, 80, 22, 0.6)", fontWeight: 500 }}>This will also remove its carbon impact from your totals and timeline.</span>
+                              <span style={{ fontSize: 11, color: "rgba(45, 80, 22, 0.6)", fontWeight: 500 }}>This will also remove its carbon impact from your totals and timeline.</span>
                             </p>
                             <div style={{ display: "flex", gap: 8 }}>
-                              <button onClick={(e) => { e.stopPropagation(); setDeletingReceiptId(null); }} style={{ padding: "8px 16px", fontSize: 14, borderRadius: 12, border: "none", background: "#E8F0E3", color: "#4A7C2F", cursor: "pointer", fontWeight: 700 }}>Cancel</button>
-                              <button onClick={(e) => { e.stopPropagation(); deleteReceipt(r.id); setDeletingReceiptId(null); }} style={{ padding: "8px 16px", fontSize: 14, borderRadius: 12, border: "none", background: "#D95D39", color: "#FFF", cursor: "pointer", fontWeight: 700 }}>Delete</button>
+                              <button onClick={(e) => { e.stopPropagation(); setDeletingReceiptId(null); }} style={{ padding: "6px 12px", fontSize: 12, borderRadius: 10, border: "none", background: "#E8F0E3", color: "#4A7C2F", cursor: "pointer", fontWeight: 700 }}>Cancel</button>
+                              <button onClick={(e) => { e.stopPropagation(); deleteReceipt(r.id); setDeletingReceiptId(null); }} style={{ padding: "6px 12px", fontSize: 12, borderRadius: 10, border: "none", background: "#D95D39", color: "#FFF", cursor: "pointer", fontWeight: 700 }}>Delete</button>
                             </div>
                           </div>
                         )}
 
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                          {/* TOP ROW: Merchant & Delete */}
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                            <div>
-                              <div style={{ fontSize: 11, textTransform: "uppercase", fontWeight: 700, color: "#6B8F5E", marginBottom: 2 }}>
-                                {r.receiptType} Receipt
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {/* Top row: Category, Merchant, Date & Delete */}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                              <div style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: 10,
+                                background: "rgba(255, 255, 255, 0.6)",
+                                border: `1px solid ${theme.border}`,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 16,
+                                flexShrink: 0
+                              }}>
+                                {theme.emoji}
                               </div>
-                              <div style={{ fontWeight: 700, color: "#2D5016", fontSize: 16 }}>{r.merchantName}</div>
-                              <div style={{ fontSize: 12, color: "#8B6914", marginTop: 2 }}>{formatDate(r.date)}</div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 10, fontWeight: 750, color: theme.text, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                  {theme.title}
+                                </div>
+                                <div style={{ fontWeight: 700, color: "#2D5016", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {r.merchantName}
+                                </div>
+                              </div>
                             </div>
                             
-                            {/* Delete Pill Button */}
-                            {!deletingReceiptId && (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setDeletingReceiptId(r.id); }} 
-                                style={{ 
-                                  padding: "6px 12px", 
-                                  fontSize: 12, 
-                                  borderRadius: 999, 
-                                  border: "1px solid rgba(217, 93, 57, 0.3)", 
-                                  background: "rgba(217, 93, 57, 0.05)", 
-                                  color: "#D95D39", 
-                                  cursor: "pointer", 
-                                  fontWeight: 700, 
-                                  display: "flex", 
-                                  alignItems: "center", 
-                                  gap: 4, 
-                                  zIndex: 5,
-                                  transition: "all 0.2s"
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(217, 93, 57, 0.15)"; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(217, 93, 57, 0.05)"; }}
-                              >
-                                🗑 Delete Receipt
-                              </button>
-                            )}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                              <div style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 500 }}>
+                                {formatDate(r.date).split(" • ")[0]}
+                              </div>
+                              
+                              {/* Delete Pill Button - smaller and softer */}
+                              {!deletingReceiptId && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setDeletingReceiptId(r.id); }} 
+                                  style={{ 
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: 8,
+                                    border: "1px solid rgba(217, 93, 57, 0.2)", 
+                                    background: "rgba(217, 93, 57, 0.04)", 
+                                    color: "#D95D39", 
+                                    cursor: "pointer", 
+                                    display: "flex", 
+                                    alignItems: "center", 
+                                    justifyContent: "center",
+                                    fontSize: 12,
+                                    zIndex: 5,
+                                    transition: "all 0.2s"
+                                  }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(217, 93, 57, 0.12)"; }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(217, 93, 57, 0.04)"; }}
+                                  title="Delete Receipt"
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
                           </div>
 
-                          {/* MIDDLE ROW: Carbon Value and Details button */}
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "1px dashed rgba(184,212,168,0.3)", paddingTop: 10 }}>
-                            <div style={{ fontSize: 12, color: "#6B8F5E", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                              {isExpanded ? "Hide Details" : "View Details"}
-                              <motion.span animate={{ rotate: isExpanded ? 180 : 0 }} style={{ display: "inline-block" }}>▼</motion.span>
-                            </div>
+                          {/* Middle row: Preview Chips & Verd Insight */}
+                          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 2 }}>
+                            {/* Top 3 items preview chips */}
+                            {previewItems.map((item, ii) => (
+                              <div key={ii} style={{ 
+                                display: "flex", 
+                                alignItems: "center", 
+                                gap: 4, 
+                                background: "rgba(255, 255, 255, 0.55)",
+                                border: "1px solid rgba(184, 212, 168, 0.25)",
+                                padding: "2px 8px",
+                                borderRadius: 6,
+                                fontSize: 10,
+                                fontWeight: 550,
+                                color: "#4A7C2F"
+                              }}>
+                                <span>{getItemEmoji(item.name)}</span>
+                                <span>{item.name}</span>
+                              </div>
+                            ))}
                             
-                            <div style={{ textAlign: "right" }}>
-                              <span style={{ fontSize: 20, fontWeight: 800, color: r.totalCO2 > 20 ? "#A0401A" : "#4A7C2F" }}>
-                                {r.totalCO2 <= 0 ? `Saved ${Math.abs(r.totalCO2)} kg CO₂` : `+${r.totalCO2} kg CO₂`}
+                            {/* Verd dynamic insight */}
+                            <div style={{
+                              fontSize: 11,
+                              color: "#6B8F5E",
+                              fontWeight: 500,
+                              fontStyle: "italic",
+                              flex: "1 1 auto",
+                              minWidth: 150,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4
+                            }}>
+                              <span>💡</span>
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 300 }}>
+                                {verdInsight}
                               </span>
+                            </div>
+                          </div>
+
+                          {/* Bottom Row: Impact Badge & Trigger button */}
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed rgba(184,212,168,0.25)", paddingTop: 8, marginTop: 2 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              {/* Impact Badge */}
+                              <div style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                padding: "4px 10px",
+                                borderRadius: 999,
+                                background: impactBg,
+                                color: impactColor,
+                                border: `1.5px solid ${impactBorder}`,
+                                fontSize: 10,
+                                fontWeight: 800,
+                              }}>
+                                <span>{impactEmoji}</span>
+                                <span>{impactLabel}</span>
+                              </div>
+                              
+                              <span style={{ fontSize: 13, fontWeight: 800, color: "#2D5016" }}>
+                                {r.totalCO2 <= 0 ? `Saved ${Math.abs(r.totalCO2)} kg` : `+${r.totalCO2} kg CO₂`}
+                              </span>
+                            </div>
+
+                            <div style={{ fontSize: 11, color: "#4A7C2F", fontWeight: 700, display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.75)", border: "1px solid rgba(184,212,168,0.35)", padding: "4px 10px", borderRadius: 10 }}>
+                              <span>{isExpanded ? "🔍 Hide Analysis" : "🔍 Open Analysis"}</span>
+                              <motion.span animate={{ rotate: isExpanded ? 180 : 0 }} style={{ display: "inline-block" }}>▼</motion.span>
                             </div>
                           </div>
                         </div>
@@ -787,20 +1299,104 @@ export default function MemoryBook() {
                               exit={{ opacity: 0, height: 0 }}
                               style={{ overflow: "hidden", marginTop: 12 }}
                             >
-                              <div style={{ paddingTop: 12, borderTop: "1px solid rgba(184,212,168,0.3)" }}>
-                                <div style={{ fontSize: 12, fontWeight: 600, color: "#6B8F5E", marginBottom: 8 }}>Detected Items:</div>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                  {r.items.map((item, ii) => (
-                                    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: ii * 0.05 }} key={ii} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#2D5016" }}>
-                                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "75%", fontWeight: 500 }}>
-                                        {item.name}
-                                      </span>
-                                      <span style={{ fontWeight: 700, color: item.estimatedCO2 > 5 ? "#A0401A" : "#4A7C2F" }}>
-                                        {item.estimatedCO2 <= 0 ? `Saved ${Math.abs(item.estimatedCO2)} kg` : `+${item.estimatedCO2} kg`}
-                                      </span>
-                                    </motion.div>
-                                  ))}
+                              <div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 12, borderTop: "1px solid rgba(184,212,168,0.25)" }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                  Carbon Breakdown
                                 </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                  {r.items.map((item, ii) => {
+                                    const emoji = getItemEmoji(item.name);
+                                    
+                                    let itemImpactBg = "rgba(76, 175, 80, 0.1)";
+                                    let itemImpactColor = "#2D7A1F";
+                                    let itemImpactLabel = "Low";
+                                    
+                                    if (item.estimatedCO2 > 5) {
+                                      itemImpactBg = "rgba(217, 93, 57, 0.1)";
+                                      itemImpactColor = "#D95D39";
+                                      itemImpactLabel = "High";
+                                    } else if (item.estimatedCO2 > 1.5) {
+                                      itemImpactBg = "rgba(244, 168, 50, 0.1)";
+                                      itemImpactColor = "#A06000";
+                                      itemImpactLabel = "Moderate";
+                                    }
+                                    
+                                    return (
+                                      <motion.div 
+                                        initial={{ opacity: 0, x: -10 }} 
+                                        animate={{ opacity: 1, x: 0 }} 
+                                        transition={{ delay: ii * 0.05 }} 
+                                        key={ii} 
+                                        style={{ 
+                                          display: "flex", 
+                                          alignItems: "center", 
+                                          justifyContent: "space-between",
+                                          gap: 12, 
+                                          fontSize: 13,
+                                          background: "rgba(255, 255, 255, 0.5)",
+                                          padding: "8px 12px",
+                                          borderRadius: 12,
+                                          border: "1px solid rgba(184, 212, 168, 0.15)"
+                                        }}
+                                      >
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                                          <span style={{ fontSize: 15 }}>{emoji}</span>
+                                          <span style={{ color: "#2D5016", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            {item.name}
+                                          </span>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                                          <span style={{ 
+                                            fontSize: 9, 
+                                            fontWeight: 800, 
+                                            padding: "2px 6px", 
+                                            borderRadius: 999, 
+                                            background: itemImpactBg, 
+                                            color: itemImpactColor,
+                                          }}>
+                                            {itemImpactLabel}
+                                          </span>
+                                          <span style={{ fontWeight: 700, color: "#2D5016" }}>
+                                            {item.estimatedCO2 <= 0 ? `Saved ${Math.abs(item.estimatedCO2)} kg` : `+${item.estimatedCO2} kg`}
+                                          </span>
+                                        </div>
+                                      </motion.div>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Verd's detailed analysis highlighted panel */}
+                                {(() => {
+                                  let analysisText = "Excellent selection of low carbon choices! Swapping these items for local organic variants helps heal the atmosphere further.";
+                                  if (maxItem && maxItem.estimatedCO2 > 5) {
+                                    analysisText = `Most emissions came from ${maxItem.name}. Swapping this to a plant-based alternative next time could save up to ${Math.round(maxItem.estimatedCO2 * 0.5 * 10) / 10} kg CO₂.`;
+                                  } else if (maxItem && maxItem.estimatedCO2 > 2) {
+                                    analysisText = `${maxItem.name} contributed moderately to this run. Opting for seasonal local variants can lower this baseline footprint.`;
+                                  }
+                                  
+                                  return (
+                                    <div style={{
+                                      background: "rgba(255, 248, 230, 0.6)",
+                                      border: "1px dashed rgba(244, 168, 50, 0.4)",
+                                      borderRadius: 14,
+                                      padding: "10px 14px",
+                                      display: "flex",
+                                      alignItems: "flex-start",
+                                      gap: 10,
+                                      marginTop: 4
+                                    }}>
+                                      <span style={{ fontSize: 16, marginTop: 1 }}>🌱</span>
+                                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                        <span style={{ fontSize: 10, fontWeight: 800, color: "#A06000", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                          Verd&apos;s Analysis
+                                        </span>
+                                        <span style={{ fontSize: 11, color: "#4A3212", fontWeight: 550, lineHeight: 1.45 }}>
+                                          {analysisText}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </motion.div>
                           )}
@@ -908,11 +1504,11 @@ export default function MemoryBook() {
                   </motion.div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                      <h3 style={{ margin: 0, color: "#4A7C2F", fontSize: 13, fontWeight: 700 }}>Verd's Reflection</h3>
+                      <h3 style={{ margin: 0, color: "#4A7C2F", fontSize: 13, fontWeight: 700 }}>Verd&apos;s Reflection</h3>
                       <span style={{ background: "rgba(74, 124, 47, 0.1)", padding: "2px 8px", borderRadius: 8, fontSize: 8, fontWeight: 700, color: "#4A7C2F", letterSpacing: "0.05em" }}>ECO COACH</span>
                     </div>
                     <div style={{ fontSize: 12, color: "#2D5016", lineHeight: 1.5, fontWeight: 500, fontStyle: "italic" }}>
-                      "{verdReflection}"
+                      &ldquo;{verdReflection}&rdquo;
                     </div>
                   </div>
                 </div>
