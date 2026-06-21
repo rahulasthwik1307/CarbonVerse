@@ -106,6 +106,7 @@ interface SessionState {
       difficulty: string;
       reason: string;
       emoji: string;
+      category: "Transport" | "Food" | "Shopping" | "Electricity";
     }>;
     isCompleted: boolean;
   };
@@ -327,6 +328,65 @@ const isMissionCompletedByChoice = (emoji: string, title: string, choice: string
   return false;
 };
 
+const getUnlockedAchievementsState = (state: any) => {
+  const now = new Date().toISOString();
+  const newlyUnlocked: any[] = [];
+  
+  const newAchievements = state.achievements.map((ach: any) => {
+    if (ach.unlockedAt) return ach;
+    
+    let unlock = false;
+    switch (ach.id) {
+      case "first-green":
+        unlock = state.memoryBook.ecoChoicesCount >= 1;
+        break;
+      case "receipt-detective":
+        unlock = state.memoryBook.receipts.length >= 1;
+        break;
+      case "story-complete":
+        unlock = state.memoryBook.stories.length >= 1;
+        break;
+      case "metro-master": {
+        const publicChoices = state.memoryBook.stories.flatMap((s: any) => s.decisions)
+          .filter((d: any) => d.choice.toLowerCase().includes("metro") || d.choice.toLowerCase().includes("walk"));
+        unlock = publicChoices.length >= 3;
+        break;
+      }
+      case "plant-pro": {
+        const plantChoices = state.memoryBook.stories.flatMap((s: any) => s.decisions)
+          .filter((d: any) => d.impactType === "eco" && (d.choice.toLowerCase().includes("plant") || d.choice.toLowerCase().includes("tiffin") || d.choice.toLowerCase().includes("canteen")));
+        unlock = plantChoices.length >= 3;
+        break;
+      }
+      case "garden-guardian":
+        unlock = state.memoryBook.ecoChoicesCount >= 5;
+        break;
+      case "aqi-protector":
+        unlock = state.memoryBook.ecoChoicesCount >= 10;
+        break;
+      case "sustainability-hero": {
+        if (state.memoryBook.stories.length >= 1) {
+          const recentStory = state.memoryBook.stories[state.memoryBook.stories.length - 1];
+          unlock = recentStory.decisions.length > 0 && recentStory.decisions.every((d: any) => d.impactType === "eco");
+        }
+        break;
+      }
+    }
+    
+    if (unlock) {
+      const unlockedAch = { ...ach, unlockedAt: now };
+      newlyUnlocked.push(unlockedAch);
+      return unlockedAch;
+    }
+    return ach;
+  });
+
+  return {
+    achievements: newAchievements,
+    newlyUnlocked
+  };
+};
+
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
@@ -387,7 +447,7 @@ export const useSessionStore = create<SessionState>()(
     const nowStr = new Date().toISOString();
     const newlyCompletedMissions: typeof state.activeMissions = [];
 
-    const newActiveMissions = state.activeMissions.map((mission) => {
+    const newMissions = state.activeMissions.map((mission) => {
       if (!mission.completed && isMissionCompletedByChoice(mission.emoji, mission.title, choice)) {
         const completedMission = {
           ...mission,
@@ -408,6 +468,43 @@ export const useSessionStore = create<SessionState>()(
       carbonDelta: 0
     }));
 
+    const activeMissionsRemaining = newMissions.filter(m => !m.completed);
+
+    const tempState = {
+      ...state,
+      decisions: newDecisions,
+      totalCarbonDelta: state.totalCarbonDelta + carbonDelta,
+      worldState: {
+        skyQuality,
+        treeDensity,
+        trafficLevel,
+        birdCount,
+        greenCoverage,
+        planetMood: newMood,
+      },
+      activeMissions: activeMissionsRemaining,
+      memoryBook: {
+        ...state.memoryBook,
+        timelineEvents: [
+          ...state.memoryBook.timelineEvents,
+          ...missionTimelineEvents
+        ]
+      }
+    };
+
+    const achResult = getUnlockedAchievementsState(tempState);
+    const now = new Date().toISOString();
+    const finalTimelineEvents = [
+      ...tempState.memoryBook.timelineEvents,
+      ...achResult.newlyUnlocked.map(ach => ({
+        id: crypto.randomUUID(),
+        date: now,
+        type: "achievement_earned" as const,
+        title: `Earned ${ach.title} Badge`,
+        carbonDelta: 0
+      }))
+    ];
+
     return {
       decisions: newDecisions,
       totalCarbonDelta: state.totalCarbonDelta + carbonDelta,
@@ -419,7 +516,9 @@ export const useSessionStore = create<SessionState>()(
         greenCoverage,
         planetMood: newMood,
       },
-      activeMissions: newActiveMissions,
+      activeMissions: activeMissionsRemaining,
+      achievements: achResult.achievements,
+      pendingAchievements: [...state.pendingAchievements, ...achResult.newlyUnlocked],
       pendingMissions: [
         ...state.pendingMissions,
         ...newlyCompletedMissions.map(m => ({
@@ -431,10 +530,7 @@ export const useSessionStore = create<SessionState>()(
       ],
       memoryBook: {
         ...state.memoryBook,
-        timelineEvents: [
-          ...state.memoryBook.timelineEvents,
-          ...missionTimelineEvents
-        ]
+        timelineEvents: finalTimelineEvents
       }
     };
   }),
@@ -551,8 +647,37 @@ export const useSessionStore = create<SessionState>()(
       carbonDelta: 0
     }));
 
+    const activeMissionsRemaining = newMissions.filter(m => !m.completed);
+
+    const tempState = {
+      ...state,
+      activeMissions: activeMissionsRemaining,
+      memoryBook: {
+        ...state.memoryBook,
+        timelineEvents: [
+          ...state.memoryBook.timelineEvents,
+          ...missionTimelineEvents
+        ]
+      }
+    };
+
+    const achResult = getUnlockedAchievementsState(tempState);
+    const now = new Date().toISOString();
+    const finalTimelineEvents = [
+      ...tempState.memoryBook.timelineEvents,
+      ...achResult.newlyUnlocked.map(ach => ({
+        id: crypto.randomUUID(),
+        date: now,
+        type: "achievement_earned" as const,
+        title: `Earned ${ach.title} Badge`,
+        carbonDelta: 0
+      }))
+    ];
+
     return {
-      activeMissions: newMissions,
+      activeMissions: activeMissionsRemaining,
+      achievements: achResult.achievements,
+      pendingAchievements: [...state.pendingAchievements, ...achResult.newlyUnlocked],
       pendingMissions: [
         ...state.pendingMissions,
         ...newlyCompletedMissions.map(m => ({
@@ -564,10 +689,7 @@ export const useSessionStore = create<SessionState>()(
       ],
       memoryBook: {
         ...state.memoryBook,
-        timelineEvents: [
-          ...state.memoryBook.timelineEvents,
-          ...missionTimelineEvents
-        ]
+        timelineEvents: finalTimelineEvents
       }
     };
   }),
@@ -673,6 +795,10 @@ export const useSessionStore = create<SessionState>()(
   }),
 
   generateNewMissions: () => set((state) => {
+    const isBadgeCompleted = (badgeId: string) => {
+      return state.achievements.some(a => a.id === badgeId && a.unlockedAt !== null);
+    };
+
     const decisions = state.memoryBook.stories.flatMap(s => s.decisions);
     
     const highTransport = decisions.filter(d => 
@@ -690,11 +816,11 @@ export const useSessionStore = create<SessionState>()(
 
     const newMissions = [];
     
-    if (highTransport > 0) {
+    if (highTransport > 0 && !isBadgeCompleted("metro-master") && !state.activeMissions.some(m => m.emoji === "🚇")) {
       newMissions.push({
         id: `mission-transport-${Date.now()}`,
         title: "Commute Champion",
-        description: "Choose public transport or walk in next story",
+        description: "Choose public transit or walk in next story",
         emoji: "🚇",
         targetType: "eco_choices" as const,
         targetCount: 1,
@@ -704,7 +830,7 @@ export const useSessionStore = create<SessionState>()(
       });
     }
     
-    if (highFood > 0) {
+    if (highFood > 0 && !isBadgeCompleted("plant-pro") && !state.activeMissions.some(m => m.emoji === "🥗")) {
       newMissions.push({
         id: `mission-food-${Date.now()}`,
         title: "Green Plate",
@@ -718,7 +844,7 @@ export const useSessionStore = create<SessionState>()(
       });
     }
     
-    if (highShopping > 0) {
+    if (highShopping > 0 && !isBadgeCompleted("garden-guardian") && !state.activeMissions.some(m => m.emoji === "🛒")) {
       newMissions.push({
         id: `mission-shop-${Date.now()}`,
         title: "Local Buyer",
@@ -732,7 +858,7 @@ export const useSessionStore = create<SessionState>()(
       });
     }
     
-    if (state.memoryBook.receipts.length === 0) {
+    if (state.memoryBook.receipts.length === 0 && !isBadgeCompleted("receipt-detective") && !state.activeMissions.some(m => m.emoji === "🔍")) {
       newMissions.push({
         id: `mission-receipt-${Date.now()}`,
         title: "Receipt Detective",
@@ -746,11 +872,11 @@ export const useSessionStore = create<SessionState>()(
       });
     }
 
-    const completedMissions = state.activeMissions.filter(m => m.completed);
+    const activeMissionsRemaining = state.activeMissions.filter(m => !m.completed);
     
     return {
       activeMissions: [
-        ...completedMissions,
+        ...activeMissionsRemaining,
         ...newMissions.slice(0, 3),
       ]
     };
@@ -761,26 +887,41 @@ export const useSessionStore = create<SessionState>()(
   })),
 
   acceptCoachPlan: (actionIds) => set((state) => {
+    const isBadgeCompleted = (badgeId: string) => {
+      return state.achievements.some(a => a.id === badgeId && a.unlockedAt !== null);
+    };
+
     const acceptedActions = state.coach.recommendations.filter(r => actionIds.includes(r.id));
-    const remainingActions = state.coach.recommendations.filter(r => !actionIds.includes(r.id));
     
-    const newMissions = acceptedActions.map((act) => ({
-      id: act.id,
-      title: act.title,
-      description: act.reason,
-      emoji: act.emoji,
-      targetType: "eco_choices" as const,
-      targetCount: 1,
-      currentCount: 0,
-      completed: false,
-      reward: `Save ${act.saving}`,
-    }));
+    const newMissions = acceptedActions
+      .filter(act => {
+        // Prevent duplicate missions in activeMissions
+        if (state.activeMissions.some(m => m.id === act.id || m.title === act.title)) return false;
+        
+        // Prevent adding if related badge is already completed
+        if (act.category === "Transport" && isBadgeCompleted("metro-master")) return false;
+        if (act.category === "Food" && isBadgeCompleted("plant-pro")) return false;
+        if (act.category === "Shopping" && isBadgeCompleted("garden-guardian")) return false;
+        
+        return true;
+      })
+      .map((act) => ({
+        id: act.id,
+        title: act.title,
+        description: act.reason,
+        emoji: act.emoji,
+        targetType: "eco_choices" as const,
+        targetCount: 1,
+        currentCount: 0,
+        completed: false,
+        reward: `Save ${act.saving}`,
+      }));
 
     return { 
-      activeMissions: [...state.activeMissions, ...newMissions],
+      activeMissions: [...state.activeMissions.filter(m => !m.completed), ...newMissions],
       coach: {
-        recommendations: remainingActions,
-        isCompleted: remainingActions.length === 0 && actionIds.length > 0
+        ...state.coach,
+        isCompleted: false
       }
     };
   }),
