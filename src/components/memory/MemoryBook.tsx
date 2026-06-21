@@ -11,13 +11,15 @@ type Tab = "stories" | "receipts" | "totals" | "coach";
 
 export default function MemoryBook() {
   const router = useRouter();
-  const { memoryBook, activeMissions, achievements, totalCarbonDelta, deleteReceipt } = useSessionStore();
+  const { memoryBook, activeMissions, achievements, totalCarbonDelta, deleteReceipt, worldState } = useSessionStore();
   const [activeTab, setActiveTab] = useState<Tab>("stories");
   const [expandedStoryId, setExpandedStoryId] = useState<string | null>(null);
   const [expandedReceiptId, setExpandedReceiptId] = useState<string | null>(null);
   const [deletingReceiptId, setDeletingReceiptId] = useState<string | null>(null);
   const [expandedStoryImpact, setExpandedStoryImpact] = useState(false);
   const [expandedReceiptImpact, setExpandedReceiptImpact] = useState(false);
+  const [hoveredBadgeId, setHoveredBadgeId] = useState<string | null>(null);
+  const [showAllTimeline, setShowAllTimeline] = useState(false);
 
   const formatDate = (isoString: string) => {
     const d = new Date(isoString);
@@ -69,6 +71,401 @@ export default function MemoryBook() {
     return { impact, breakdown };
   };
   const storyData = getStoryImpact();
+
+  const getBestChoice = () => {
+    let best: { choice: string; carbonKg: number; moment: string } | null = null;
+    memoryBook.stories.forEach(s => {
+      s.decisions.forEach(d => {
+        if (d.impactType === "eco" && (!best || d.carbonKg < best.carbonKg)) {
+          best = { choice: d.choice, carbonKg: d.carbonKg, moment: d.moment };
+        }
+      });
+    });
+    return best;
+  };
+  const bestChoice = getBestChoice() as { choice: string; carbonKg: number; moment: string } | null;
+
+  const getBiggestImpactArea = () => {
+    const sorted = Object.entries(cats).sort((a, b) => b[1].value - a[1].value);
+    const highest = sorted[0];
+    if (highest && highest[1].value > 0) {
+      return { name: highest[0], pct: highest[1].pct, value: highest[1].value };
+    }
+    return null;
+  };
+  const biggestImpact = getBiggestImpactArea();
+
+  const getLatestAchievement = () => {
+    const unlocked = achievements
+      .filter(a => a.unlockedAt)
+      .sort((a, b) => new Date(b.unlockedAt!).getTime() - new Date(a.unlockedAt!).getTime());
+    return unlocked[0] || null;
+  };
+  const latestAchievement = getLatestAchievement();
+
+  const getActiveMission = () => {
+    const active = activeMissions.filter(m => !m.completed);
+    return active[0] || null;
+  };
+  const activeMission = getActiveMission();
+
+  const getVerdReflection = () => {
+    if (memoryBook.stories.length === 0 && memoryBook.receipts.length === 0) {
+      return "Welcome to CarbonVerse! Your sustainability story is ready to be written. Complete a story chapter or analyze a receipt to see your first reflections here.";
+    }
+
+    const biggest = biggestImpact;
+    const streak = memoryBook.streakDays || 0;
+    const totalSaved = Math.abs(memoryBook.totalCO2Saved || 0);
+
+    if (biggest) {
+      if (biggest.name === "transport") {
+        return `Your transport footprint is your largest impact area at ${biggest.pct}%. Swapping to public transit or walking more will make a huge difference.`;
+      }
+      if (biggest.name === "food") {
+        return `Food choices are currently contributing ${biggest.pct}% to your impact. Swapping some meals for plant-based dishes will help heal the soil.`;
+      }
+      if (biggest.name === "shopping") {
+        return `Shopping and consumer items account for ${biggest.pct}% of your carbon footprints. Choosing local markets and second-hand items will lower this impact.`;
+      }
+      if (biggest.name === "electricity") {
+        return `Home electricity accounts for ${biggest.pct}% of your footprint. Small shifts like switching off lights and unplugging devices will build up fast.`;
+      }
+    }
+
+    if (streak >= 3) {
+      return `You are on a ${streak}-day eco streak! Consistency is becoming a habit. Your planet's atmosphere is recovering beautifully.`;
+    }
+
+    if (totalSaved > 20) {
+      return `Incredible! You have saved a total of ${totalSaved.toFixed(1)} kg of CO₂. Every small action you take is helping rewrite our planet's future.`;
+    }
+
+    return "You've made several eco-friendly choices recently. Let's keep exploring new ways to reduce our carbon footprints together!";
+  };
+  const verdReflection = getVerdReflection();
+
+  const DoubleBezelCard = ({ children, style = {}, onClick, whileHover }: { children: React.ReactNode; style?: React.CSSProperties; onClick?: () => void; whileHover?: any }) => {
+    return (
+      <motion.div
+        whileHover={whileHover}
+        onClick={onClick}
+        style={{
+          background: "rgba(240, 250, 240, 0.4)",
+          border: "1px solid rgba(184, 212, 168, 0.4)",
+          borderRadius: 24,
+          padding: 6,
+          cursor: onClick ? "pointer" : "default",
+          ...style
+        }}
+      >
+        <div style={{
+          background: "white",
+          border: "1px solid rgba(184, 212, 168, 0.7)",
+          borderRadius: 18,
+          padding: 16,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between"
+        }}>
+          {children}
+        </div>
+      </motion.div>
+    );
+  };
+
+  const renderJourneyHighlights = () => {
+    return (
+      <div className="grid grid-cols-2 gap-3" style={{ height: "100%" }}>
+        {/* Best Choice */}
+        <div style={{
+          background: "rgba(255, 255, 255, 0.8)",
+          border: "1px solid rgba(184, 212, 168, 0.4)",
+          borderRadius: 16,
+          padding: 12,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", display: "flex", alignItems: "center", gap: 4 }}>
+            <span>🌟</span> Best Choice
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#2D5016", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", marginTop: 4 }}>
+            {bestChoice ? bestChoice.choice : "None yet"}
+          </div>
+          <div style={{ fontSize: 11, color: "#4A7C2F" }}>
+            {bestChoice ? `${Math.abs(bestChoice.carbonKg)} kg saved` : "Start a run!"}
+          </div>
+        </div>
+
+        {/* Biggest Impact Area */}
+        <div style={{
+          background: "rgba(255, 255, 255, 0.8)",
+          border: "1px solid rgba(184, 212, 168, 0.4)",
+          borderRadius: 16,
+          padding: 12,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", display: "flex", alignItems: "center", gap: 4 }}>
+            <span>🌍</span> Main Impact
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#2D5016", textTransform: "capitalize", marginTop: 4 }}>
+            {biggestImpact ? biggestImpact.name : "None"}
+          </div>
+          <div style={{ fontSize: 11, color: "#4A7C2F" }}>
+            {biggestImpact ? `${biggestImpact.pct}% of total` : "No data yet"}
+          </div>
+        </div>
+
+        {/* Latest Achievement */}
+        <div style={{
+          background: "rgba(255, 255, 255, 0.8)",
+          border: "1px solid rgba(184, 212, 168, 0.4)",
+          borderRadius: 16,
+          padding: 12,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", display: "flex", alignItems: "center", gap: 4 }}>
+            <span>🏆</span> Latest Badge
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#2D5016", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", marginTop: 4 }}>
+            {latestAchievement ? `${latestAchievement.emoji} ${latestAchievement.title}` : "None yet"}
+          </div>
+          <div style={{ fontSize: 11, color: "#4A7C2F" }}>
+            {latestAchievement ? "Unlocked!" : "Keep acting!"}
+          </div>
+        </div>
+
+        {/* Current Active Mission */}
+        <div style={{
+          background: "rgba(255, 255, 255, 0.8)",
+          border: "1px solid rgba(184, 212, 168, 0.4)",
+          borderRadius: 16,
+          padding: 12,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", display: "flex", alignItems: "center", gap: 4 }}>
+            <span>🎯</span> Active Mission
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#2D5016", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", marginTop: 4 }}>
+            {activeMission ? `${activeMission.emoji} ${activeMission.title}` : "All completed!"}
+          </div>
+          <div style={{ fontSize: 11, color: "#4A7C2F" }}>
+            {activeMission ? activeMission.reward : "Visit Coach!"}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderActiveMissions = () => {
+    const activeList = activeMissions.filter(m => !m.completed);
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <h3 style={{ margin: "0 0 4px 0", color: "#2D5016", fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+          <span>🎯</span> Active Missions
+        </h3>
+        
+        {activeList.length === 0 ? (
+          <div style={{
+            textAlign: "center",
+            padding: "16px 8px",
+            color: "#6B8F5E",
+            fontStyle: "italic",
+            fontSize: 13,
+            background: "rgba(255,255,255,0.4)",
+            borderRadius: 16,
+            border: "1px dashed rgba(184,212,168,0.4)"
+          }}>
+            All clear! Visit the Coach to add more. 💡
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {activeList.slice(0, 3).map((mission) => (
+              <motion.div
+                key={mission.id}
+                whileHover={{ scale: 1.01 }}
+                style={{
+                  background: "#FFF",
+                  border: "1px solid rgba(184,212,168,0.5)",
+                  borderRadius: 16,
+                  padding: "10px 12px",
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  boxShadow: "0 2px 8px rgba(45,80,22,0.02)"
+                }}
+              >
+                <div style={{ fontSize: 24, flexShrink: 0 }}>{mission.emoji}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                    <h4 style={{ margin: 0, color: "#2D5016", fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {mission.title}
+                    </h4>
+                    <span style={{ 
+                      fontSize: 9, 
+                      fontWeight: 700, 
+                      color: "#F4A832", 
+                      background: "rgba(244,168,50,0.1)", 
+                      padding: "2px 6px", 
+                      borderRadius: 6,
+                      flexShrink: 0
+                    }}>
+                      ACTIVE
+                    </span>
+                  </div>
+                  <p style={{ margin: "2px 0 0 0", color: "#6B8F5E", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {mission.description}
+                  </p>
+                  {mission.targetCount > 1 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                      <div style={{ flex: 1, height: 4, background: "rgba(74,124,47,0.1)", borderRadius: 2, overflow: "hidden" }}>
+                        <div style={{ 
+                          height: "100%", 
+                          width: `${(mission.currentCount / mission.targetCount) * 100}%`, 
+                          background: "#4A7C2F" 
+                        }} />
+                      </div>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: "#4A7C2F" }}>
+                        {mission.currentCount}/{mission.targetCount}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: 10, color: "#4A7C2F", fontWeight: 700, background: "rgba(74,124,47,0.06)", padding: "4px 8px", borderRadius: 8, flexShrink: 0 }}>
+                  🎁 {mission.reward}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderTimelineEvent = (evt: any, isCompact: boolean = false) => {
+    const isEco = evt.carbonDelta && evt.carbonDelta < 0;
+    const isHigh = evt.carbonDelta && evt.carbonDelta > 0;
+    const color = evt.type === "achievement_earned" ? "#F4A832" : isEco ? "#4CAF50" : isHigh ? "#A0401A" : "#4A7C2F";
+    const dotColor = evt.type === "achievement_earned" ? "#F4A832" : "#4A7C2F";
+    const icon = evt.type === "achievement_earned" ? "🏆" : isEco ? "✓" : isHigh ? "⚠" : "•";
+
+    return (
+      <div 
+        key={evt.id} 
+        style={{ 
+          position: "relative", 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          background: "rgba(255,255,255,0.85)", 
+          padding: "8px 12px", 
+          borderRadius: 12,
+          border: "1px solid rgba(184,212,168,0.3)",
+          boxShadow: "0 2px 6px rgba(45,80,22,0.01)"
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <div style={{ 
+            width: 20, 
+            height: 20, 
+            borderRadius: 10, 
+            background: dotColor + "20", 
+            color: dotColor, 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center", 
+            fontSize: 11,
+            fontWeight: 800,
+            flexShrink: 0
+          }}>
+            {icon}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ 
+              fontSize: 12, 
+              fontWeight: 700, 
+              color: "#2D5016",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }}>
+              {evt.title}
+            </div>
+            <div style={{ fontSize: 10, color: "#6B8F5E", fontWeight: 600 }}>{formatDate(evt.date)}</div>
+          </div>
+        </div>
+        {evt.carbonDelta !== undefined && evt.carbonDelta !== 0 && (
+          <div style={{ fontSize: 13, fontWeight: 800, color, flexShrink: 0, marginLeft: 8 }}>
+            {evt.carbonDelta < 0 
+              ? `Saved ${Math.abs(Math.round(evt.carbonDelta * 10) / 10)} kg` 
+              : `+${Math.round(evt.carbonDelta * 10) / 10} kg`}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderRecentMoments = () => {
+    const sortedEvents = [...(memoryBook.timelineEvents || [])].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const recentEvents = sortedEvents.slice(0, 3);
+    
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <h3 style={{ margin: 0, color: "#2D5016", fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>⏳</span> Recent Moments
+          </h3>
+          {sortedEvents.length > 3 && (
+            <button
+              onClick={() => setShowAllTimeline(true)}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#4A7C2F",
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: "pointer",
+                padding: "2px 6px",
+                borderRadius: 8,
+                transition: "all 0.2s"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.textDecoration = "underline"}
+              onMouseLeave={(e) => e.currentTarget.style.textDecoration = "none"}
+            >
+              View Full Timeline →
+            </button>
+          )}
+        </div>
+        
+        {recentEvents.length === 0 ? (
+          <div style={{
+            textAlign: "center",
+            padding: "16px 8px",
+            color: "#6B8F5E",
+            fontStyle: "italic",
+            fontSize: 13,
+            background: "rgba(255,255,255,0.4)",
+            borderRadius: 16,
+            border: "1px dashed rgba(184,212,168,0.4)"
+          }}>
+            Your timeline is empty. Make choices to see events!
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {recentEvents.map(evt => renderTimelineEvent(evt, true))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
@@ -372,240 +769,335 @@ export default function MemoryBook() {
         )}
 
         {activeTab === "totals" && (
-          <motion.div key="totals" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <motion.div key="totals" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             
-            {/* SECTION 1: HERO CARD (Total Impact + Planet Mood) */}
-            <div style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 100%)", 
-              borderRadius: 28, 
-              padding: 32, 
-              textAlign: "center", 
-              border: "1px solid rgba(184,212,168,0.5)", 
-              boxShadow: "0 12px 40px rgba(45,80,22,0.08)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 24
-            }}>
-              {/* Total Impact */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.15em" }}>Total Impact</span>
-                <span style={{ fontSize: 48, fontWeight: 800, color: (memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) <= 0 ? "#2D7A1F" : "#A0401A", marginTop: 6, letterSpacing: "-0.02em" }}>
-                  {(memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) <= 0 
-                    ? `Saved ${Math.abs(Math.round((memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) * 10) / 10)} kg CO₂` 
-                    : `${Math.round((memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) * 10) / 10} kg CO₂`}
-                </span>
-              </div>
-              
-              {/* Planet Mood */}
+            {/* SECTION 1: BENTO HERO DASHBOARD */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Total Impact Card */}
+              <DoubleBezelCard
+                whileHover={{ y: -4, boxShadow: "0 8px 24px rgba(45,80,22,0.06)" }}
+                style={{ background: "rgba(255, 248, 230, 0.4)" }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em" }}>Journey Impact</span>
+                  <span style={{ 
+                    fontSize: 22, 
+                    fontWeight: 800, 
+                    color: (memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) <= 0 ? "#2D7A1F" : "#A0401A"
+                  }}>
+                    {(memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) <= 0 
+                      ? `Saved ${Math.abs(Math.round((memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) * 10) / 10)} kg` 
+                      : `+${Math.round((memoryBook.totalStoryCO2 + memoryBook.totalReceiptCO2) * 10) / 10} kg`}
+                  </span>
+                  <span style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 500 }}>Net CO₂ footprint</span>
+                </div>
+              </DoubleBezelCard>
+
+              {/* Planet Mood Card */}
               {(() => {
-                const planetMood = useSessionStore.getState().worldState.planetMood;
                 const getMoodTheme = (mood: string) => {
                   switch (mood) {
-                    case "Thriving": return { emoji: "🌸", color: "#2D7A1F", bg: "rgba(240, 250, 240, 0.95)", border: "1px solid rgba(76, 175, 80, 0.3)" };
-                    case "Recovering": return { emoji: "🌱", color: "#F4A832", bg: "rgba(255, 248, 230, 0.95)", border: "1px solid rgba(244, 168, 50, 0.3)" };
-                    case "Under Stress": return { emoji: "⚠️", color: "#FF6B6B", bg: "rgba(255, 107, 107, 0.05)", border: "1px solid rgba(255, 107, 107, 0.2)" };
-                    default: return { emoji: "🌿", color: "#4A7C2F", bg: "rgba(240, 250, 240, 0.8)", border: "1px solid rgba(184, 212, 168, 0.5)" };
+                    case "Thriving": return { emoji: "🌸", color: "#2D7A1F", bg: "rgba(240, 250, 240, 0.4)" };
+                    case "Recovering": return { emoji: "🌱", color: "#F4A832", bg: "rgba(255, 248, 230, 0.4)" };
+                    case "Under Stress": return { emoji: "⚠️", color: "#FF6B6B", bg: "rgba(255, 107, 107, 0.05)" };
+                    default: return { emoji: "🌿", color: "#4A7C2F", bg: "rgba(240, 250, 240, 0.2)" };
                   }
                 };
-                const moodTheme = getMoodTheme(planetMood);
+                const moodTheme = getMoodTheme(worldState?.planetMood || "Stable");
                 return (
-                  <div style={{ background: moodTheme.bg, borderRadius: 20, padding: "16px 24px", border: moodTheme.border, boxShadow: "0 6px 20px rgba(45, 80, 22, 0.04)", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, width: "100%", maxWidth: 360 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.05em" }}>🌎 Planet Mood</span>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: moodTheme.color, display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                      <span>{moodTheme.emoji}</span>
-                      <span>{planetMood}</span>
-                    </span>
-                  </div>
+                  <DoubleBezelCard
+                    whileHover={{ y: -4, boxShadow: "0 8px 24px rgba(45,80,22,0.06)" }}
+                    style={{ background: moodTheme.bg }}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em" }}>Planet Mood</span>
+                      <span style={{ fontSize: 22, fontWeight: 800, color: moodTheme.color, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>{moodTheme.emoji}</span>
+                        <span>{worldState?.planetMood || "Stable"}</span>
+                      </span>
+                      <span style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 500 }}>Current global state</span>
+                    </div>
+                  </DoubleBezelCard>
                 );
               })()}
-            </div>
 
-            {/* SECTION 2: CARBON BREAKDOWN (Side by side cards) */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               {/* Story Choices Card */}
-              <div style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", borderRadius: 20, padding: 20, border: "1px solid rgba(184,212,168,0.5)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, boxShadow: "0 4px 16px rgba(45,80,22,0.04)" }}>
-                <span style={{ fontSize: 32 }}>📖</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase" }}>Story Choices</span>
-                <span style={{ fontSize: 24, fontWeight: 800, color: memoryBook.totalStoryCO2 <= 0 ? "#2D7A1F" : "#A0401A" }}>
-                  {memoryBook.totalStoryCO2 <= 0 ? `Saved ${Math.abs(Math.round(memoryBook.totalStoryCO2 * 10) / 10)}` : `+${Math.round(memoryBook.totalStoryCO2 * 10) / 10}`} <span style={{ fontSize: 16 }}>kg</span>
-                </span>
-              </div>
+              <DoubleBezelCard
+                whileHover={{ y: -4, boxShadow: "0 8px 24px rgba(45,80,22,0.06)" }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em" }}>Story Choices</span>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: memoryBook.totalStoryCO2 <= 0 ? "#2D7A1F" : "#A0401A" }}>
+                    {memoryBook.totalStoryCO2 <= 0 ? `Saved ${Math.abs(Math.round(memoryBook.totalStoryCO2 * 10) / 10)}` : `+${Math.round(memoryBook.totalStoryCO2 * 10) / 10}`} <span style={{ fontSize: 13, fontWeight: 550, color: "#6B8F5E" }}>kg</span>
+                  </span>
+                  <span style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 500 }}>{memoryBook.stories.length} runs completed</span>
+                </div>
+              </DoubleBezelCard>
+
               {/* Receipt Analysis Card */}
-              <div style={{ background: "rgba(255,255,255,0.7)", backdropFilter: "blur(12px)", borderRadius: 20, padding: 20, border: "1px solid rgba(184,212,168,0.5)", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, boxShadow: "0 4px 16px rgba(45,80,22,0.04)" }}>
-                <span style={{ fontSize: 32 }}>🧾</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase" }}>Receipt Analysis</span>
-                <span style={{ fontSize: 24, fontWeight: 800, color: memoryBook.totalReceiptCO2 <= 0 ? "#2D7A1F" : "#A0401A" }}>
-                  {memoryBook.totalReceiptCO2 <= 0 ? `Saved ${Math.abs(Math.round(memoryBook.totalReceiptCO2 * 10) / 10)}` : `+${Math.round(memoryBook.totalReceiptCO2 * 10) / 10}`} <span style={{ fontSize: 16 }}>kg</span>
+              <DoubleBezelCard
+                whileHover={{ y: -4, boxShadow: "0 8px 24px rgba(45,80,22,0.06)" }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#6B8F5E", textTransform: "uppercase", letterSpacing: "0.08em" }}>Receipts</span>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: memoryBook.totalReceiptCO2 <= 0 ? "#2D7A1F" : "#A0401A" }}>
+                    {memoryBook.totalReceiptCO2 <= 0 ? `Saved ${Math.abs(Math.round(memoryBook.totalReceiptCO2 * 10) / 10)}` : `+${Math.round(memoryBook.totalReceiptCO2 * 10) / 10}`} <span style={{ fontSize: 13, fontWeight: 550, color: "#6B8F5E" }}>kg</span>
+                  </span>
+                  <span style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 500 }}>{memoryBook.receipts.length} analyzed</span>
+                </div>
+              </DoubleBezelCard>
+            </div>
+
+            {/* SECTIONS 2 & 3: JOURNEY HIGHLIGHTS & VERD'S REFLECTION */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Verd's Reflection */}
+              <DoubleBezelCard>
+                <div style={{ display: "flex", gap: 14, alignItems: "center", height: "100%" }}>
+                  <motion.div
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    style={{ flexShrink: 0 }}
+                  >
+                    <VerdOrb size={48} mood="eco" />
+                  </motion.div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                      <h3 style={{ margin: 0, color: "#4A7C2F", fontSize: 13, fontWeight: 700 }}>Verd's Reflection</h3>
+                      <span style={{ background: "rgba(74, 124, 47, 0.1)", padding: "2px 8px", borderRadius: 8, fontSize: 8, fontWeight: 700, color: "#4A7C2F", letterSpacing: "0.05em" }}>ECO COACH</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#2D5016", lineHeight: 1.5, fontWeight: 500, fontStyle: "italic" }}>
+                      "{verdReflection}"
+                    </div>
+                  </div>
+                </div>
+              </DoubleBezelCard>
+
+              {/* Journey Highlights */}
+              {renderJourneyHighlights()}
+            </div>
+
+            {/* SECTION 4: ACHIEVEMENT GARDEN */}
+            <div style={{
+              background: "rgba(255,255,255,0.7)", 
+              backdropFilter: "blur(12px)", 
+              borderRadius: 24, 
+              padding: 16, 
+              border: "1px solid rgba(184,212,168,0.5)",
+              boxShadow: "0 4px 24px rgba(45,80,22,0.04)"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <h3 style={{ margin: 0, color: "#2D5016", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span>🏆</span> Achievement Garden
+                </h3>
+                <span style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 700 }}>
+                  {achievements.filter(a => a.unlockedAt).length} / {achievements.length} Unlocked
                 </span>
               </div>
-            </div>
-
-            {/* SECTION 3: BIGGEST CONTRIBUTOR CARD */}
-            {(() => {
-              const sorted = Object.entries(cats).sort((a, b) => b[1].value - a[1].value);
-              const highestCat = sorted[0];
-              if (!highestCat || highestCat[1].value === 0) return null;
               
-              const emojis: Record<string, string> = { transport: "🚗", food: "🍔", shopping: "🛍️", electricity: "⚡" };
-
-              return (
-                <div style={{ background: "rgba(255, 248, 230, 0.75)", backdropFilter: "blur(12px)", borderRadius: 20, padding: "20px 24px", border: "1px solid rgba(244, 168, 50, 0.35)", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, boxShadow: "0 8px 24px rgba(45, 80, 22, 0.05)" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#8B6914", display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    <span>{emojis[highestCat[0]] || "📊"}</span> Biggest Impact
-                  </span>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: "#2D5016", marginTop: 2, textTransform: "capitalize" }}>
-                    {highestCat[0]}
-                  </span>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#6B8F5E" }}>
-                    {highestCat[1].pct}% of footprint
-                  </span>
-                </div>
-              );
-            })()}
-
-            {/* SECTION 4: VERD INSIGHT CARD */}
-            {(() => {
-              const sorted = Object.entries(cats).sort((a, b) => b[1].value - a[1].value);
-              const highestId = sorted[0]?.[0];
-              if (!highestId || cats[highestId as keyof typeof cats].value === 0) return null;
-              
-              const suggestions: Record<string, string> = {
-                transport: "Taking public transport reduces emissions by up to 80%. Try taking the metro or bus for your next commute.",
-                food: "Meat production has a high carbon footprint. Try swapping one meal a day for a plant-based alternative.",
-                shopping: "Fast fashion and heavy shipping add up. Consider buying from local stores or choosing second-hand items.",
-                electricity: "Power generation can be carbon-heavy. Make sure to switch off unnecessary lights and unplug devices."
-              };
-
-              return (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  style={{ background: "#FFF", borderRadius: 24, padding: 24, display: "flex", gap: 20, alignItems: "center", boxShadow: "0 8px 32px rgba(45, 80, 22, 0.05)" }}
-                >
-                  <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} style={{ flexShrink: 0 }}>
-                    <VerdOrb size={64} mood="eco" />
-                  </motion.div>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <h3 style={{ margin: 0, color: "#4A7C2F", fontSize: 16, fontWeight: 700 }}>Verd's Insight</h3>
-                      <span style={{ background: "rgba(74, 124, 47, 0.1)", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 700, color: "#4A7C2F" }}>AI COACH</span>
-                    </div>
-                    <div style={{ fontSize: 14, color: "#4A7C2F", lineHeight: 1.6 }}>
-                      Most of your impact came from <strong style={{textTransform: "capitalize"}}>{highestId}</strong>. {suggestions[highestId]}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })()}
-
-            {/* Active & Completed Missions */}
-            <div>
-              <h2 style={{ margin: "0 0 16px 0", color: "#2D5016", fontSize: 20, fontWeight: 700 }}>🎯 Active Missions</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
-                <AnimatePresence>
-                  {activeMissions.filter(m => !m.completed).map((mission) => (
-                    <motion.div 
-                      key={mission.id}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9, height: 0 }}
-                      style={{ background: "#FFF", borderRadius: 20, padding: 20, boxShadow: "0 4px 16px rgba(45, 80, 22, 0.04)", display: "flex", gap: 16, alignItems: "center" }}
-                    >
-                      <div style={{ fontSize: 32 }}>{mission.emoji}</div>
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: "0 0 4px 0", color: "#2D5016", fontSize: 16, fontWeight: 700 }}>{mission.title}</h4>
-                        <p style={{ margin: 0, color: "rgba(45, 80, 22, 0.6)", fontSize: 14 }}>{mission.description}</p>
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-                        <div style={{ background: "rgba(244, 168, 50, 0.1)", color: "#F4A832", padding: "4px 12px", borderRadius: 12, fontSize: 12, fontWeight: 700 }}>
-                          🌱 Active
-                        </div>
-                        <div style={{ fontSize: 12, color: "#4A7C2F", fontWeight: 600 }}>{mission.reward}</div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-                {activeMissions.filter(m => !m.completed).length === 0 && (
-                  <div style={{ textAlign: "center", padding: 20, color: "#6B8F5E", fontStyle: "italic", fontSize: 14, background: "rgba(255,255,255,0.4)", borderRadius: 16 }}>
-                    No active missions right now. Add some from the Coach! 💡
-                  </div>
-                )}
-              </div>
-
-              {activeMissions.filter(m => m.completed).length > 0 && (
-                <>
-                  <h3 style={{ margin: "24px 0 16px 0", color: "#2D5016", fontSize: 18, fontWeight: 700 }}>✓ Completed Missions</h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
-                    <AnimatePresence>
-                      {activeMissions.filter(m => m.completed).map((mission) => (
-                        <motion.div 
-                          key={mission.id}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 0.8, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9, height: 0 }}
-                          style={{ background: "#FFF", borderRadius: 20, padding: 20, boxShadow: "0 4px 16px rgba(45, 80, 22, 0.02)", display: "flex", gap: 16, alignItems: "center" }}
-                        >
-                          <div style={{ fontSize: 32, opacity: 0.6 }}>{mission.emoji}</div>
-                          <div style={{ flex: 1, opacity: 0.8 }}>
-                            <h4 style={{ margin: "0 0 4px 0", color: "#2D5016", fontSize: 16, fontWeight: 700, textDecoration: "line-through" }}>{mission.title}</h4>
-                            <p style={{ margin: 0, color: "rgba(45, 80, 22, 0.6)", fontSize: 14 }}>{mission.description}</p>
-                            {mission.completedAt && (
-                              <span style={{ fontSize: 11, color: "#6B8F5E", display: "block", marginTop: 4 }}>
-                                Completed on: {formatDate(mission.completedAt)}
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
-                            <div style={{ background: "rgba(74, 124, 47, 0.1)", color: "#4A7C2F", padding: "4px 12px", borderRadius: 12, fontSize: 12, fontWeight: 700 }}>
-                              ✓ Completed
-                            </div>
-                            <div style={{ fontSize: 12, color: "#6B8F5E", fontWeight: 600 }}>{mission.reward}</div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Carbon Timeline */}
-            <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: 20, padding: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: "#2D5016", marginBottom: 20 }}>Carbon Timeline ⏳</div>
-              {memoryBook.timelineEvents?.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "20px 0", color: "#6B8F5E", fontStyle: "italic", fontSize: 14 }}>
-                  Your journey starts here. Make choices to see events!
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 16, position: "relative", paddingLeft: 16 }}>
-                  <div style={{ position: "absolute", left: 7, top: 8, bottom: 8, width: 2, background: "rgba(184,212,168,0.5)" }} />
-                  {[...(memoryBook.timelineEvents || [])].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((evt, idx) => {
-                    const isEco = evt.carbonDelta && evt.carbonDelta < 0;
-                    const isHigh = evt.carbonDelta && evt.carbonDelta > 0;
-                    const color = evt.type === "achievement_earned" ? "#F4A832" : isEco ? "#4CAF50" : isHigh ? "#A0401A" : "#4A7C2F";
-                    const dotColor = evt.type === "achievement_earned" ? "#F4A832" : "#4A7C2F";
-                    
+              <div style={{ position: "relative" }}>
+                <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                  {achievements.map((ach) => {
+                    const isUnlocked = !!ach.unlockedAt;
                     return (
-                      <motion.div key={evt.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }} style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.8)", padding: 12, borderRadius: 12 }}>
-                        <div style={{ position: "absolute", left: -14, top: "50%", transform: "translateY(-50%)", width: 10, height: 10, borderRadius: 5, background: dotColor, border: "2px solid #FFF8E7" }} />
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "#2D5016" }}>{evt.title}</div>
-                          <div style={{ fontSize: 11, color: "#6B8F5E", fontWeight: 600 }}>{formatDate(evt.date)}</div>
-                        </div>
-                        {evt.carbonDelta !== undefined && evt.carbonDelta !== 0 && (
-                          <div style={{ fontSize: 15, fontWeight: 800, color }}>
-                            {evt.carbonDelta < 0 
-                              ? `Saved ${Math.abs(Math.round(evt.carbonDelta * 10) / 10)} kg` 
-                              : `+${Math.round(evt.carbonDelta * 10) / 10} kg`}
-                          </div>
-                        )}
-                      </motion.div>
+                      <div
+                        key={ach.id}
+                        onMouseEnter={() => setHoveredBadgeId(ach.id)}
+                        onMouseLeave={() => setHoveredBadgeId(null)}
+                        style={{ position: "relative" }}
+                      >
+                        <motion.div
+                          whileHover={{ scale: 1.08, y: -2 }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{
+                            aspectRatio: "1/1",
+                            borderRadius: 16,
+                            background: isUnlocked 
+                              ? "linear-gradient(135deg, #FFF 0%, #F0FAF0 100%)" 
+                              : "rgba(240, 240, 240, 0.4)",
+                            border: isUnlocked 
+                              ? "2px solid #F4A832" 
+                              : "2px dashed #B8D4A8",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 22,
+                            cursor: "pointer",
+                            filter: isUnlocked ? "none" : "grayscale(100%) opacity(40%)",
+                            boxShadow: isUnlocked ? "0 4px 12px rgba(244,168,50,0.12)" : "none",
+                            position: "relative"
+                          }}
+                        >
+                          <span>{ach.emoji}</span>
+                          {!isUnlocked && (
+                            <div style={{
+                              position: "absolute",
+                              bottom: -2,
+                              right: -2,
+                              fontSize: 9,
+                              background: "#FFF",
+                              borderRadius: "50%",
+                              width: 12,
+                              height: 12,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              border: "1px solid #B8D4A8"
+                            }}>
+                              🔒
+                            </div>
+                          )}
+                        </motion.div>
+                      </div>
                     );
                   })}
                 </div>
-              )}
+
+                {/* Custom Badge Tooltip */}
+                <AnimatePresence>
+                  {hoveredBadgeId && (() => {
+                    const ach = achievements.find(a => a.id === hoveredBadgeId);
+                    if (!ach) return null;
+                    const isUnlocked = !!ach.unlockedAt;
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          right: 0,
+                          top: "100%",
+                          marginTop: 10,
+                          background: "#FFF8E7",
+                          border: "1px solid #B8D4A8",
+                          borderRadius: 12,
+                          padding: "10px 14px",
+                          zIndex: 30,
+                          boxShadow: "0 8px 24px rgba(45,80,22,0.08)"
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+                          <span style={{ fontWeight: 700, color: "#2D5016", fontSize: 12 }}>{ach.title}</span>
+                          <span style={{ 
+                            fontSize: 9, 
+                            fontWeight: 700, 
+                            color: isUnlocked ? "#2D7A1F" : "#A0401A",
+                            background: isUnlocked ? "rgba(76,175,80,0.1)" : "rgba(160,64,26,0.1)",
+                            padding: "2px 6px",
+                            borderRadius: 6
+                          }}>
+                            {isUnlocked ? "UNLOCKED" : "LOCKED"}
+                          </span>
+                        </div>
+                        <p style={{ margin: 0, color: "#4A7C2F", fontSize: 11 }}>{ach.description}</p>
+                      </motion.div>
+                    );
+                  })()}
+                </AnimatePresence>
+              </div>
             </div>
+
+            {/* SECTIONS 5 & 6: ACTIVE MISSIONS & RECENT TIMELINE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Active Missions */}
+              {renderActiveMissions()}
+
+              {/* Recent Moments */}
+              {renderRecentMoments()}
+            </div>
+
+            {/* Full Timeline Modal */}
+            <AnimatePresence>
+              {showAllTimeline && (
+                <div style={{
+                  position: "fixed",
+                  inset: 0,
+                  background: "rgba(45, 80, 22, 0.4)",
+                  backdropFilter: "blur(4px)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 50,
+                  padding: 16
+                }}>
+                  {/* Backdrop */}
+                  <div 
+                    onClick={() => setShowAllTimeline(false)} 
+                    style={{ position: "absolute", inset: 0 }} 
+                  />
+
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                    transition={{ duration: 0.23, ease: [0.23, 1, 0.32, 1] }}
+                    style={{
+                      background: "#FFF8E7",
+                      border: "1px solid #B8D4A8",
+                      borderRadius: 24,
+                      padding: 20,
+                      width: "100%",
+                      maxWidth: 440,
+                      maxHeight: "75vh",
+                      display: "flex",
+                      flexDirection: "column",
+                      position: "relative",
+                      zIndex: 51,
+                      boxShadow: "0 20px 40px rgba(45,80,22,0.15)"
+                    }}
+                  >
+                    {/* Header */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, borderBottom: "1px solid rgba(184,212,168,0.3)", paddingBottom: 10 }}>
+                      <h3 style={{ margin: 0, color: "#2D5016", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>⏳</span> Carbon Timeline Logs
+                      </h3>
+                      <button
+                        onClick={() => setShowAllTimeline(false)}
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: 12,
+                          border: "none",
+                          background: "rgba(74, 124, 47, 0.1)",
+                          color: "#4A7C2F",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          fontSize: 14,
+                          fontWeight: 700
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Scrollable Content */}
+                    <div style={{ 
+                      flex: 1, 
+                      overflowY: "auto", 
+                      display: "flex", 
+                      flexDirection: "column", 
+                      gap: 8, 
+                      paddingRight: 2,
+                      scrollbarWidth: "none"
+                    }}>
+                      <style>{`
+                        .timeline-scroll::-webkit-scrollbar { display: none; }
+                      `}</style>
+                      <div className="timeline-scroll" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {[...(memoryBook.timelineEvents || [])]
+                          .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                          .map(evt => renderTimelineEvent(evt, false))
+                        }
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
