@@ -8,6 +8,25 @@ interface UserProfile {
   flights: "none" | "recent" | "";
 }
 
+interface CompletedStoryData {
+  decisions: Array<{
+    chapter: number;
+    choice: string;
+    impactType: "eco" | "moderate" | "high";
+    carbonDelta: number;
+  }>;
+  worldState: {
+    skyQuality: number;
+    treeDensity: number;
+    trafficLevel: number;
+    birdCount: number;
+    greenCoverage: number;
+    planetMood: "Thriving" | "Stable" | "Recovering" | "Under Stress";
+  };
+  totalCarbonDelta: number;
+  profile: UserProfile;
+}
+
 interface SessionState {
   profile: UserProfile;
   currentChapter: number;
@@ -27,6 +46,17 @@ interface SessionState {
     carbonDelta: number;
   }>;
   isOnboarded: boolean;
+
+  // Completed story snapshot for persistence across refresh/navigation
+  storyCompleted: boolean;
+  completedStoryData: CompletedStoryData | null;
+
+  // Cached outcomes so back-navigation doesn't regenerate
+  futureOutcome: { storyState: string; videoType: string } | null;
+  gardenOutcome: { narrative: string; outcome: string } | null;
+
+  // Hydration tracking
+  _hasHydrated: boolean;
   
   // Carbon Memory Book
   memoryBook: {
@@ -126,6 +156,12 @@ interface SessionState {
   applyDecision: (choice: string, impactType: "eco" | "moderate" | "high", carbonDelta: number) => void;
   resetSession: () => void;
 
+  // Story lifecycle actions
+  completeStory: () => void;
+  setFutureOutcome: (outcome: { storyState: string; videoType: string }) => void;
+  setGardenOutcome: (outcome: { narrative: string; outcome: string }) => void;
+  setHasHydrated: (v: boolean) => void;
+
   // Memory Book Actions
   addStoryToMemoryBook: (story: Omit<SessionState["memoryBook"]["stories"][0], "id" | "date">) => void;
   addReceiptToMemoryBook: (receipt: Omit<SessionState["memoryBook"]["receipts"][0], "id" | "date">) => void;
@@ -158,6 +194,11 @@ const defaultState = {
   totalCarbonDelta: 0,
   decisions: [],
   isOnboarded: false,
+  storyCompleted: false,
+  completedStoryData: null,
+  futureOutcome: null,
+  gardenOutcome: null,
+  _hasHydrated: false,
   memoryBook: {
     stories: [],
     receipts: [],
@@ -386,11 +427,33 @@ export const useSessionStore = create<SessionState>()(
 
   resetSession: () => set((state) => ({ 
     ...defaultState,
+    _hasHydrated: true, // keep hydrated after reset
+    isOnboarded: state.isOnboarded, // keep onboarding status
+    profile: state.profile, // keep user profile
     memoryBook: state.memoryBook,
     activeMissions: state.activeMissions,
     achievements: state.achievements,
-    coach: state.coach
+    coach: state.coach,
+    // Clear story-specific cached data
+    storyCompleted: false,
+    completedStoryData: null,
+    futureOutcome: null,
+    gardenOutcome: null,
   })),
+
+  completeStory: () => set((state) => ({
+    storyCompleted: true,
+    completedStoryData: {
+      decisions: state.decisions,
+      worldState: state.worldState,
+      totalCarbonDelta: state.totalCarbonDelta,
+      profile: state.profile,
+    },
+  })),
+
+  setFutureOutcome: (outcome) => set({ futureOutcome: outcome }),
+  setGardenOutcome: (outcome) => set({ gardenOutcome: outcome }),
+  setHasHydrated: (v) => set({ _hasHydrated: v }),
 
   addStoryToMemoryBook: (story) => set((state) => {
     const newStory = {
@@ -714,7 +777,22 @@ export const useSessionStore = create<SessionState>()(
         achievements: state.achievements,
         activeMissions: state.activeMissions,
         coach: state.coach,
+        // Persist story completion state so refresh/new-tab works
+        profile: state.profile,
+        isOnboarded: state.isOnboarded,
+        storyCompleted: state.storyCompleted,
+        completedStoryData: state.completedStoryData,
+        futureOutcome: state.futureOutcome,
+        gardenOutcome: state.gardenOutcome,
+        // Persist in-progress story state
+        decisions: state.decisions,
+        worldState: state.worldState,
+        totalCarbonDelta: state.totalCarbonDelta,
+        currentChapter: state.currentChapter,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

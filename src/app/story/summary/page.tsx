@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import VerdOrb from "@/components/ui/VerdOrb";
@@ -16,16 +16,51 @@ export default function SummaryPage() {
     decisions,
     resetSession,
     activeMissions,
+    totalCarbonDelta,
+    addStoryToMemoryBook,
+    completeStory,
+    storyCompleted,
+    memoryBook,
+    updateMissionProgress,
+    checkAndUnlockAchievements,
   } = useSessionStore();
 
   const [showDecisions, setShowDecisions] = useState(false);
   const [showAllMissions, setShowAllMissions] = useState(false);
   const [actionPlan, setActionPlan] = useState<string[]>([]);
   const [loadingPlan, setLoadingPlan] = useState(false);
+  const storySavedRef = useRef(false);
+
+  // Auto-save story to Memory Book on mount (once)
+  useEffect(() => {
+    if (storySavedRef.current || storyCompleted || decisions.length === 0) return;
+    storySavedRef.current = true;
+
+    // Save to memory book
+    addStoryToMemoryBook({
+      chapterNumber: 1,
+      decisions: decisions.map(d => ({
+        moment: d.choice.toLowerCase().includes("metro") || d.choice.toLowerCase().includes("walk") || d.choice.toLowerCase().includes("cab") ? "commute" :
+                d.choice.toLowerCase().includes("plant") || d.choice.toLowerCase().includes("tiffin") || d.choice.toLowerCase().includes("burger") ? "food" :
+                d.choice.toLowerCase().includes("kirana") || d.choice.toLowerCase().includes("mall") || d.choice.toLowerCase().includes("online") ? "shopping" : "other",
+        choice: d.choice,
+        impactType: d.impactType,
+        carbonKg: d.carbonDelta,
+      })),
+      totalCarbonKg: totalCarbonDelta,
+      planetMood: worldState.planetMood,
+    });
+
+    // Mark story as completed and update missions/achievements
+    completeStory();
+    updateMissionProgress("story_complete");
+    checkAndUnlockAchievements();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handlePlayAgain = () => {
     resetSession();
-    router.push("/");
+    router.push("/story");
   };
 
   // ── Derived state ──────────────────────────────────────────────
@@ -780,7 +815,7 @@ export default function SummaryPage() {
                 cursor: "pointer",
               }}
             >
-              Play Again ↺
+              🌱 Play Another Story
             </motion.button>
           </motion.div>
 

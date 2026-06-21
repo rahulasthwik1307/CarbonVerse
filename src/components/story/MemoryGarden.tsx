@@ -98,7 +98,7 @@ const InnerBentoPanel = ({ children, style = {}, ...props }: any) => {
 };
 
 // Stable memoized video component to prevent re-creation and stuttering
-const GardenVideo = memo(({ src, onLoadedData }: { src: string; onLoadedData?: () => void }) => {
+const GardenVideo = memo(({ src, onLoadedData, onError }: { src: string; onLoadedData?: () => void; onError?: () => void }) => {
   return (
     <video
       src={src}
@@ -108,6 +108,8 @@ const GardenVideo = memo(({ src, onLoadedData }: { src: string; onLoadedData?: (
       playsInline
       preload="auto"
       onLoadedData={onLoadedData}
+      onCanPlayThrough={onLoadedData}
+      onError={onError}
       style={{
         width: "100%",
         height: "100%",
@@ -204,7 +206,14 @@ const shareCardVariants = {
 
 export default function MemoryGarden() {
   const router = useRouter();
-  const { decisions, profile, worldState, totalCarbonDelta, resetSession } = useSessionStore();
+  const {
+    decisions, profile, worldState, totalCarbonDelta, resetSession,
+    storyCompleted, gardenOutcome, setGardenOutcome, memoryBook,
+  } = useSessionStore();
+
+  // Check if user has a valid completed story
+  const hasCompletedStory = storyCompleted || decisions.length > 0;
+
   const ecoCount = decisions.filter(d => d.impactType === "eco").length;
   const highCount = decisions.filter(d => d.impactType === "high").length;
   const totalDecisions = decisions.length;
@@ -229,6 +238,7 @@ export default function MemoryGarden() {
   const [showJourneyModal, setShowJourneyModal] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
     setVideoReady(false);
@@ -253,8 +263,18 @@ export default function MemoryGarden() {
     }
   }[outcome];
 
-  // Narrative fetch
+  // Narrative fetch — use cache if available (for back-navigation)
   useEffect(() => {
+    if (!hasCompletedStory) {
+      setLoading(false);
+      return;
+    }
+    // Use cached narrative if available (back-navigation)
+    if (gardenOutcome?.narrative) {
+      setNarrative(gardenOutcome.narrative);
+      setLoading(false);
+      return;
+    }
     const fetchNarrative = async () => {
       setLoading(true);
       try {
@@ -272,6 +292,8 @@ export default function MemoryGarden() {
         });
         const data = await res.json();
         setNarrative(data.narrative);
+        // Cache the narrative for back-navigation
+        setGardenOutcome({ narrative: data.narrative, outcome });
       } catch (e) {
         // Poetic fallback on error
         setNarrative("");
@@ -280,7 +302,20 @@ export default function MemoryGarden() {
       }
     };
     fetchNarrative();
-  }, [outcome, worldState, profile.city]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outcome, hasCompletedStory]);
+
+  // Video safety timeout — prevent infinite loader
+  useEffect(() => {
+    if (!hasCompletedStory) return;
+    const safetyTimeout = setTimeout(() => {
+      if (!videoReady) {
+        setVideoFailed(true);
+        setVideoReady(true);
+      }
+    }, 8000);
+    return () => clearTimeout(safetyTimeout);
+  }, [hasCompletedStory, videoReady]);
 
   // Decision lookups for Story Reflection
   const getTransportReflection = () => {
@@ -404,6 +439,100 @@ ${shareUrl}
       return;
     }
   };
+
+  // ── EMPTY STATE: No story completed ──
+  if (!hasCompletedStory) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 480,
+          margin: "auto",
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+          style={{
+            background: "rgba(255, 255, 255, 0.85)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(184, 212, 168, 0.6)",
+            boxShadow: "0 12px 40px rgba(45, 80, 22, 0.12)",
+            borderRadius: 32,
+            padding: "48px 32px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+          }}
+        >
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <VerdOrb size={80} mood="eco" />
+          </motion.div>
+
+          <h1 style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#2D5016",
+            margin: "24px 0 8px 0",
+            lineHeight: 1.2,
+          }}>
+            🌱 Your Memory Garden Awaits
+          </h1>
+
+          <p style={{
+            fontSize: 16,
+            color: "#4A7C2F",
+            fontWeight: 500,
+            lineHeight: 1.6,
+            margin: "0 0 8px 0",
+          }}>
+            Every meaningful choice plants a seed.
+          </p>
+          <p style={{
+            fontSize: 14,
+            color: "#6B8F5E",
+            fontWeight: 500,
+            fontStyle: "italic",
+            lineHeight: 1.5,
+            margin: "0 0 28px 0",
+          }}>
+            Complete a story to grow a living garden filled with the memories you create.
+          </p>
+
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => router.push("/story")}
+            style={{
+              padding: "14px 32px",
+              background: "#F4A832",
+              color: "#2D5016",
+              borderRadius: 16,
+              fontWeight: 800,
+              fontSize: 16,
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              boxShadow: "0 4px 18px rgba(244,168,50,0.35)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            {memoryBook.stories.length > 0 ? "🌱 Play Another Story" : "Start Your Story"}
+            <span style={{ fontSize: 18 }}>→</span>
+          </motion.button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <DoubleBezelCard
@@ -586,7 +715,7 @@ ${shareUrl}
               borderColor: "#4CAF50"
             }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => { resetSession(); router.push("/"); }}
+            onClick={() => { resetSession(); router.push("/story"); }}
             style={{
               padding: "10px 18px",
               background: "rgba(255, 255, 255, 0.8)",
@@ -658,7 +787,11 @@ ${shareUrl}
               boxShadow: "0 6px 20px rgba(45, 80, 22, 0.05)"
             }}
           >
-            <GardenVideo src={outcomeDetails.videoUrl} onLoadedData={() => setVideoReady(true)} />
+            <GardenVideo
+              src={outcomeDetails.videoUrl}
+              onLoadedData={() => setVideoReady(true)}
+              onError={() => { setVideoFailed(true); setVideoReady(true); }}
+            />
             
             <AnimatePresence>
               {!videoReady && (
@@ -826,7 +959,7 @@ ${shareUrl}
                 
                 {totalDecisions === 0 ? (
                   <div style={{ padding: "10px 0", fontSize: 13, color: "#6B8F5E", fontStyle: "italic" }}>
-                    No choices recorded in this run. Start a new chapter! 🌱
+                    Your choices are being planted. Start a new chapter! 🌱
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

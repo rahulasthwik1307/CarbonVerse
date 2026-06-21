@@ -9,13 +9,22 @@ import FutureStoryBento from "./FutureStoryBento";
 
 export default function FutureSimulator() {
   const router = useRouter();
-  const { decisions, totalCarbonDelta, resetSession } = useSessionStore();
+  const {
+    decisions, totalCarbonDelta, resetSession, storyCompleted,
+    futureOutcome, setFutureOutcome, memoryBook,
+    addStoryToMemoryBook, completeStory, worldState, profile,
+  } = useSessionStore();
+
+  // Check if user has a valid completed story
+  const hasCompletedStory = storyCompleted || decisions.length > 0;
   
   // Video loading and synchronization states
   const [userVideoReady, setUserVideoReady] = useState(false);
   const [greenerVideoReady, setGreenerVideoReady] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [videosActive, setVideosActive] = useState(true);
+  const [userVideoFailed, setUserVideoFailed] = useState(false);
+  const [greenerVideoFailed, setGreenerVideoFailed] = useState(false);
 
   // Drag slider refs and state
   const containerRef = useRef<HTMLDivElement>(null);
@@ -115,12 +124,22 @@ export default function FutureSimulator() {
     return () => clearInterval(intervalId);
   }, [bothVideosReady, videosActive]);
 
-  // Safety loading bypass
+  // Cache future outcome for back-navigation
+  useEffect(() => {
+    if (hasCompletedStory && !futureOutcome) {
+      setFutureOutcome({ storyState, videoType: baseVideoType });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasCompletedStory, storyState, baseVideoType]);
+
+  // Safety loading bypass — also handles video failure
   useEffect(() => {
     const safetyTimeout = setTimeout(() => {
+      if (!userVideoReady) setUserVideoFailed(true);
+      if (!greenerVideoReady) setGreenerVideoFailed(true);
       setUserVideoReady(true);
       setGreenerVideoReady(true);
-    }, 6000);
+    }, 8000);
     return () => clearTimeout(safetyTimeout);
   }, []);
 
@@ -241,6 +260,96 @@ export default function FutureSimulator() {
     verdMessage = "Room to grow! Try swapping your top carbon activities for eco alternatives.";
   } else {
     verdMessage = "Big impact, but big opportunity too! Small daily changes add up to tonnes saved.";
+  }
+
+  // ── EMPTY STATE: No story completed ──
+  if (!hasCompletedStory) {
+    return (
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", flex: 1, justifyContent: "center", alignItems: "center", width: "100%" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+          style={{
+            maxWidth: 480,
+            width: "90%",
+            background: "rgba(255, 255, 255, 0.85)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(184, 212, 168, 0.6)",
+            boxShadow: "0 12px 40px rgba(45, 80, 22, 0.12)",
+            borderRadius: 32,
+            padding: "48px 32px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+          }}
+        >
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <VerdOrb size={80} />
+          </motion.div>
+
+          <h1 style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#2D5016",
+            margin: "24px 0 8px 0",
+            lineHeight: 1.2,
+          }}>
+            🌎 The Future Has Not Been Written Yet
+          </h1>
+
+          <p style={{
+            fontSize: 16,
+            color: "#4A7C2F",
+            fontWeight: 500,
+            lineHeight: 1.6,
+            margin: "0 0 8px 0",
+          }}>
+            Every decision shapes tomorrow.
+          </p>
+          <p style={{
+            fontSize: 14,
+            color: "#6B8F5E",
+            fontWeight: 500,
+            fontStyle: "italic",
+            lineHeight: 1.5,
+            margin: "0 0 28px 0",
+          }}>
+            Begin your journey and discover the world your choices create.
+          </p>
+
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => router.push("/story")}
+            style={{
+              padding: "14px 32px",
+              background: "#F4A832",
+              color: "#2D5016",
+              borderRadius: 16,
+              fontWeight: 800,
+              fontSize: 16,
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              boxShadow: "0 4px 18px rgba(244,168,50,0.35)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            {memoryBook.stories.length > 0 ? "🌱 Play Another Story" : "Start Your Story"}
+            <span style={{ fontSize: 18 }}>→</span>
+          </motion.button>
+        </motion.div>
+      </div>
+    );
   }
 
   return (
@@ -505,6 +614,8 @@ export default function FutureSimulator() {
                     playsInline
                     preload="auto"
                     onLoadedData={() => setUserVideoReady(true)}
+                    onCanPlayThrough={() => setUserVideoReady(true)}
+                    onError={() => { setUserVideoFailed(true); setUserVideoReady(true); }}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -576,6 +687,8 @@ export default function FutureSimulator() {
                     playsInline
                     preload="auto"
                     onLoadedData={() => setGreenerVideoReady(true)}
+                    onCanPlayThrough={() => setGreenerVideoReady(true)}
+                    onError={() => { setGreenerVideoFailed(true); setGreenerVideoReady(true); }}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -841,7 +954,7 @@ export default function FutureSimulator() {
               <motion.button
                 whileHover={{ scale: 1.015, backgroundColor: "#D7ECD1" }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => { resetSession(); router.push("/story/chapter"); }}
+                onClick={() => { resetSession(); router.push("/story"); }}
                 style={{
                   flex: 0.7,
                   padding: "14px 16px",
@@ -860,7 +973,7 @@ export default function FutureSimulator() {
                   gap: 6,
                 }}
               >
-                <span>↺ Rewrite</span>
+                <span>🌱 Play Another Story</span>
               </motion.button>
             </div>
           </div>
