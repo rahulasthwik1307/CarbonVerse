@@ -473,7 +473,7 @@ export default function MemoryBook() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
       style={{
-        maxWidth: 680,
+        maxWidth: 920,
         margin: "0 auto",
         display: "flex",
         flexDirection: "column",
