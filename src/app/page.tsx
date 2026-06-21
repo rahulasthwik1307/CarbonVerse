@@ -521,7 +521,7 @@ export default function Home() {
                 setHoveredButton("secondary");
               }}
               onHoverEnd={() => setHoveredButton(null)}
-              onClick={() => router.push("/story")}
+              onClick={() => router.push("/detective")}
               className="px-7 py-3.5 rounded-2xl font-medium text-base cursor-pointer outline-none relative overflow-hidden block"
               style={{
                 background: "rgba(255,255,255,0.75)",
@@ -550,44 +550,9 @@ export default function Home() {
                 }}
                 transition={{ duration: 0.4 }}
               />
-              <span style={{ position: "relative", zIndex: 1 }}>👀 See Demo</span>
+              <span style={{ position: "relative", zIndex: 1 }}>🔍 Analyze Receipt</span>
             </motion.button>
           </motion.div>
-        </div>
-
-        {/* Third Button (Receipt) */}
-        <div className="flex flex-col items-center mt-6" style={{ pointerEvents: "auto" }}>
-          <motion.button
-            initial={{ opacity:0, y:20 }}
-            animate={{ opacity:1, y:0 }}
-            transition={{ delay:2.3, duration:0.5,
-              ease:[0.23,1,0.32,1] }}
-            whileHover={{ scale:1.03, y:-1 }}
-            whileTap={{ scale:0.97 }}
-            onClick={() => router.push("/detective")}
-            style={{
-              padding: "12px 32px",
-              background: "rgba(255,255,255,0.65)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: "2px solid rgba(184,212,168,0.6)",
-              color: "#4A7C2F",
-              borderRadius: 16,
-              fontWeight: 600,
-              fontSize: 15,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              pointerEvents: "auto",
-            }}
-          >
-            🔍 Analyze My Receipt
-          </motion.button>
-          <div style={{fontSize:11, color:"#6B8F5E", 
-            opacity:0.7, marginTop:6, pointerEvents:"none"}}>
-            Upload any receipt — food, fuel, electricity
-          </div>
         </div>
 
 

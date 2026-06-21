@@ -71,33 +71,68 @@ Badges Earned: ${badgesCount}.
 
   return (
     <>
-      {/* Floating Button */}
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(!isOpen)}
+      {/* Floating Button / Companion */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.5 }}
         style={{
           position: "fixed",
           bottom: 24,
           right: 24,
           zIndex: 9999,
-          width: 60,
-          height: 60,
-          borderRadius: "50%",
-          background: "rgba(255, 255, 255, 0.8)",
-          backdropFilter: "blur(12px)",
-          border: "2px solid rgba(184, 212, 168, 0.6)",
-          boxShadow: "0 8px 32px rgba(45, 80, 22, 0.15)",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
+          flexDirection: "row", // speech bubble on left, orb on right
+          gap: 12,
+          pointerEvents: "auto",
         }}
       >
-        <VerdOrb size={44} mood="eco" />
-      </motion.button>
+        {/* Speech Bubble / Pill */}
+        <AnimatePresence>
+          {!isOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: 20, scale: 0.8 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 10, scale: 0.8 }}
+              whileHover={{ scale: 1.05 }}
+              onClick={() => setIsOpen(true)}
+              style={{
+                background: "rgba(255, 248, 231, 0.95)",
+                backdropFilter: "blur(12px)",
+                border: "2px solid #B8D4A8",
+                borderRadius: "20px 20px 4px 20px", // speech bubble shape
+                padding: "8px 16px",
+                color: "#2D5016",
+                fontWeight: 700,
+                fontSize: 13,
+                boxShadow: "0 8px 24px rgba(45, 80, 22, 0.12)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                userSelect: "none",
+              }}
+            >
+              <span>Ask Verd</span>
+              <span style={{ fontSize: 14 }}>💬</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* The Companion Orb */}
+        <motion.div
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            cursor: "pointer",
+            filter: "drop-shadow(0 10px 25px rgba(45, 80, 22, 0.18))",
+          }}
+        >
+          <VerdOrb size={72} mood={isOpen ? "thinking" : "eco"} />
+        </motion.div>
+      </motion.div>
 
       {/* Chat Window */}
       <AnimatePresence>
