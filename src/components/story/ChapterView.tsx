@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/lib/session-store";
@@ -196,7 +196,7 @@ const getCommuteCO2 = async (choiceId: string): Promise<number> => {
   }
 };
 
-function TypewriterText({ text }: { text: string }) {
+function TypewriterText({ text, onComplete }: { text: string; onComplete?: () => void }) {
   const [displayedText, setDisplayedText] = useState("");
   useEffect(() => {
     setDisplayedText("");
@@ -205,7 +205,10 @@ function TypewriterText({ text }: { text: string }) {
     const interval = setInterval(() => {
       setDisplayedText(chars.slice(0, i + 1).join(""));
       i++;
-      if (i >= chars.length) clearInterval(interval);
+      if (i >= chars.length) {
+        clearInterval(interval);
+        onComplete?.();
+      }
     }, 25);
     return () => clearInterval(interval);
   }, [text]);
@@ -227,6 +230,15 @@ export default function ChapterView() {
   const [showChapterComplete, setShowChapterComplete] = useState(false);
   const [branchContext, setBranchContext] = useState<string[]>([]);
   const [verdPulseKey, setVerdPulseKey] = useState(0);
+  const [autoAdvancePending, setAutoAdvancePending] = useState(false);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+    };
+  }, []);
 
   const { data: aqiData } = useAirQuality();
 
@@ -294,7 +306,12 @@ export default function ChapterView() {
     }
   };
 
-  const handleNext = () => {
+  // Determines if this question should auto-advance after typewriter finishes.
+  // Q3 (idx 2, chapter 1) and Q6 (idx 2, chapter 2) are chapter-end questions — keep manual.
+  const isAutoAdvanceQuestion = currentDecision !== 2;
+
+  const advanceToNext = () => {
+    setAutoAdvancePending(false);
     if (currentDecision < chapterMoments.length - 1) { 
       setCurrentDecision(prev => prev + 1);
       setSelectedChoice(null);
@@ -335,6 +352,25 @@ export default function ChapterView() {
 
         router.push("/story/summary");
       }
+    }
+  };
+
+  // Use a ref so the timer callback always calls the latest advanceToNext
+  const advanceToNextRef = useRef(advanceToNext);
+  useEffect(() => { advanceToNextRef.current = advanceToNext; });
+
+  const handleNext = advanceToNext;
+
+  const handleTypewriterComplete = () => {
+    if (isAutoAdvanceQuestion) {
+      // Auto-advance: pause 1800ms so user can read Verd's insight, then proceed
+      if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = setTimeout(() => {
+        advanceToNextRef.current();
+      }, 1800);
+    } else {
+      // Chapter-end question (Q3, Q6): reveal the manual CTA button
+      setAutoAdvancePending(true);
     }
   };
 
@@ -452,7 +488,10 @@ export default function ChapterView() {
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ duration: 0.3 }}
                  >
-                   <TypewriterText text={(selectedImpact === "eco" ? "🌿 " : selectedImpact === "high" ? "☀️ " : "") + `“${narrative}”`} />
+                   <TypewriterText
+                     text={(selectedImpact === "eco" ? "🌿 " : selectedImpact === "high" ? "☀️ " : "") + `“${narrative}”`}
+                     onComplete={handleTypewriterComplete}
+                   />
                  </motion.div>
                ) :
                `“${currentSituation}”`}
@@ -562,9 +601,9 @@ export default function ChapterView() {
           })}
         </div>
 
-        {/* Next Button inside the panel */}
+        {/* Next Button — only shown for chapter-end questions (Q3, Q6) */}
         <AnimatePresence>
-          {selectedChoice && thinkingPhase !== "thinking" && (
+          {!isAutoAdvanceQuestion && selectedChoice && thinkingPhase !== "thinking" && autoAdvancePending && (
             <motion.button
               initial={{ opacity:0, y:10 }}
               animate={{ opacity:1, y:0 }}
@@ -585,11 +624,9 @@ export default function ChapterView() {
                 cursor: "pointer",
               }}
             >
-              {currentDecision < 2 
-                ? "Next →" 
-                : chapter === 1 
-                  ? "🌇 Continue to Evening →" 
-                  : "📖 See My Story →"}
+              {chapter === 1 
+                ? "🌇 Continue to Evening →" 
+                : "📖 See My Story →"}
             </motion.button>
           )}
         </AnimatePresence>
@@ -680,25 +717,49 @@ export default function ChapterView() {
                 );
 
                 if (idx < arr.length - 1) {
+                  // marginLeft/Right: 14px gap on each side ensures the line visually
+                  // stops before the 44px icon circles — never passes through them.
                   nodes.push(
-                    <div key={`line-${idx}`} style={{ flex: 1, height: 24, marginTop: 10, marginLeft: 8, marginRight: 8, position: "relative" }}>
-                      <svg width="100%" height="100%" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-                        <path 
-                          d={idx === 0 ? "M 0,12 Q 50%,-4 100%,12" : "M 0,12 Q 50%,28 100%,12"} 
-                          stroke="rgba(74, 124, 47, 0.15)" 
-                          strokeWidth="2" 
-                          strokeDasharray="4 4"
-                          fill="none" 
+                    <div key={`line-${idx}`} style={{ flex: 1, height: 44, marginTop: 0, marginLeft: 14, marginRight: 14, position: "relative", display: "flex", alignItems: "center" }}>
+                      <svg width="100%" height="24" preserveAspectRatio="none" style={{ overflow: 'visible', display: 'block' }}>
+                        <defs>
+                          <filter id={`glow-line-${idx}`} x="-20%" y="-100%" width="140%" height="300%">
+                            <feGaussianBlur stdDeviation="2.5" result="blur" />
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                          </filter>
+                        </defs>
+                        {/* Dashed track (background) */}
+                        <path
+                          d={idx === 0 ? "M 0,12 Q 50%,0 100%,12" : "M 0,12 Q 50%,24 100%,12"}
+                          stroke="rgba(184, 212, 168, 0.45)"
+                          strokeWidth="2"
+                          strokeDasharray="5 5"
+                          fill="none"
                         />
-                        <motion.path 
-                          d={idx === 0 ? "M 0,12 Q 50%,-4 100%,12" : "M 0,12 Q 50%,28 100%,12"} 
-                          stroke="#4CAF50" 
-                          strokeWidth="3" 
-                          fill="none" 
+                        {/* Animated fill line */}
+                        <motion.path
+                          d={idx === 0 ? "M 0,12 Q 50%,0 100%,12" : "M 0,12 Q 50%,24 100%,12"}
+                          stroke="#4CAF50"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          fill="none"
+                          filter={lineProgress === 1 ? `url(#glow-line-${idx})` : undefined}
                           initial={{ pathLength: 0 }}
                           animate={{ pathLength: lineProgress }}
-                          transition={{ type: "spring", stiffness: 80, damping: 15 }}
+                          transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
                         />
+                        {/* Traveling glow pulse dot along midpoint of completed line */}
+                        {lineProgress === 1 && (
+                          <motion.circle
+                            r="3.5"
+                            fill="#F4A832"
+                            filter={`url(#glow-line-${idx})`}
+                            cx="50%"
+                            cy={idx === 0 ? 5 : 19}
+                            animate={{ scale: [0.8, 1.6, 0.8], opacity: [0.6, 1, 0.6] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                          />
+                        )}
                       </svg>
                     </div>
                   );

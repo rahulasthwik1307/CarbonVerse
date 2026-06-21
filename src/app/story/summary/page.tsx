@@ -419,10 +419,10 @@ export default function SummaryPage() {
                         textShadow: isEco ? "0 0 24px rgba(76,175,80,0.3)" : "0 0 24px rgba(255,107,107,0.2)",
                       }}
                     >
-                      {isEco ? `−${Math.abs(totalCarbon)}` : `+${Math.abs(totalCarbon)}`}
+                      {isEco ? `${Math.abs(totalCarbon)}` : `+${Math.abs(totalCarbon)}`}
                     </motion.div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "#6B8F5E", marginTop: 2 }}>
-                      kg CO₂ today
+                      {isEco ? "kg CO₂ Saved" : "kg CO₂ today"}
                     </div>
                   </div>
                 </div>

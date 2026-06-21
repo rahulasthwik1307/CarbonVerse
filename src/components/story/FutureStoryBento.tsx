@@ -233,8 +233,8 @@ export default function FutureStoryBento({
                 {userStateLabel}
               </div>
               <div style={{ fontSize: 18, fontWeight: 800, color: userStateColor, lineHeight: 1.1, marginTop: 2 }}>
-                {yearlyTonnes.toFixed(1)}{" "}
-                <span style={{ fontSize: 10, fontWeight: 600, color: "#6B8F5E" }}>t</span>
+                {yearlyTonnes < 0 ? Math.abs(yearlyTonnes).toFixed(1) : yearlyTonnes.toFixed(1)}{" "}
+                <span style={{ fontSize: 10, fontWeight: 600, color: "#6B8F5E" }}>{yearlyTonnes < 0 ? "t Saved" : "t"}</span>
               </div>
             </div>
 
@@ -374,7 +374,9 @@ export default function FutureStoryBento({
                 {highestImpact.choice}
               </div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#FF6B6B" }}>
-                +{highestImpact.carbonDelta} kg CO₂
+                {highestImpact.carbonDelta > 0
+                  ? `+${highestImpact.carbonDelta} kg CO₂ added`
+                  : `${Math.abs(highestImpact.carbonDelta)} kg CO₂ saved`}
               </div>
               <div style={{ fontSize: 10, color: "#6B8F5E", fontStyle: "italic", lineHeight: 1.3 }}>
                 The choice that changed your future most.
